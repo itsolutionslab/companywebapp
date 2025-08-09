@@ -161,14 +161,14 @@ export default function Footer() {
           <h3>Brecomperu IT Solutions</h3>
           <p>Innovación y desarrollo de software a la medida de tu industria.</p>
         </div>
-        <div className="footer-column">
+        {/* <div className="footer-column">
           <h4>Enlaces</h4>
           <ul>
             <li><a href="#servicios">Servicios</a></li>
             <li><a href="#portafolio">Portafolio</a></li>
             <li><a href="#contacto">Contacto</a></li>
           </ul>
-        </div>
+        </div> */}
         <div className="footer-column">
           <h4>Contacto</h4>
           <p>Email: contacto@brecomperu.com</p>
