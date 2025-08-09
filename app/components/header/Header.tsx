@@ -1,7 +1,7 @@
 "use client";
 
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState  } from "react";
 import "./Header.css";
 
 const Header: React.FC = () => {
@@ -121,6 +121,7 @@ const Header: React.FC = () => {
       window.removeEventListener("resize", resize);
     };
   }, []);
+const [hover, setHover] = useState(false);
 
   return (
     <header className="header">
@@ -131,7 +132,39 @@ const Header: React.FC = () => {
         </h1>
           <h2 className="phrase">Llevamos tu negocio al futuro con Inteligencia Artificial</h2>
           <p className="industry">Automatización, innovación y software de alto nivel para cualquier industria</p>
-          <a href="#contacto" className="cta-btn">Comienza tu proyecto</a>
+          <a href="tel:+51994857723" // Número de teléfono
+            style={{
+              position: "fixed",
+              bottom: "20px",
+              right: "20px",
+              background: hover
+                ? "linear-gradient(45deg, #00ffcc, #0066ff)"
+                : "linear-gradient(45deg, #0066ff, #00ffcc)",
+              borderRadius: "50%",
+              width: "65px",
+              height: "65px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 0 20px rgba(0,255,204,0.6)",
+              transition: "all 0.3s ease",
+              zIndex: 9999,
+            }}
+            onMouseEnter={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
+            className="cta-btn">Llamar ahora
+            <style>
+              {`
+                @keyframes shake {
+                  0% { transform: rotate(0deg); }
+                  25% { transform: rotate(10deg); }
+                  50% { transform: rotate(-10deg); }
+                  75% { transform: rotate(10deg); }
+                  100% { transform: rotate(0deg); }
+                }
+              `}
+            </style>
+          </a>
         </div>
     </header>
   );
