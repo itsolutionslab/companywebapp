@@ -89,9 +89,9 @@ const WhatWeDo: React.FC = () => {
       <div className="whatwedo-content">
         <h2>Qué hacemos</h2>
         <p>
-          En <strong>Brecomperu IT Solutions</strong>, desarrollamos sistemas inteligentes
-          que <span>automatizan procesos</span>, potencian la <span>productividad</span> y 
-          transforman industrias usando <strong>Inteligencia Artificial</strong>.
+          En <strong>Brecomperu IT Solutions</strong>, desarrollamos aplicaciones web, aplicaciones moviles,
+          sistemas desktop, <span>sistemas de servidores</span>, servicios de integración, <span>saas</span> y 
+          sistemas basados en la nube usando <strong>Inteligencia Artificial</strong>.
         </p>
         <div className="whatwedo-services">
           <div className="service">
