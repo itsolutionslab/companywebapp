@@ -172,7 +172,7 @@ export default function Footer() {
         <div className="footer-column">
           <h4>Contacto</h4>
           <p>Email: contacto@brecomperu.com</p>
-          <p>Tel: +51 999 999 999</p>
+          <p>Tel: +51 994 857 723</p>
         </div>
       </div>
       <div className="footer-bottom">
