@@ -180,7 +180,7 @@ export default function CallToAction() {
           >
             📅 Agendar reunión de 15 min
           </button>
-          <a href="#servicios" className="cta-btn-secondary">Explora nuestras soluciones</a>
+          {/* <a href="#servicios" className="cta-btn-secondary">Explora nuestras soluciones</a> */}
         </div>
       </div>
     </section>
