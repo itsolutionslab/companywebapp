@@ -3,7 +3,6 @@ import CallToAction from "./components/call-to-action/CallToAction";
 import Footer from "./components/footer/Footer";
 import Header from "./components/header/Header";
 import Industries from "./components/industries/Industries";
-import SuccessStories from "./components/success-stories/SuccessStories";
 import WhatWeDo from "./components/whatwedo/WhatWeDo";
 
 export default function Home() {
@@ -11,6 +10,7 @@ export default function Home() {
     <main>
       {/* Header Section */}
       <Header></Header>
+      
       {/* Hero Section */}
       <WhatWeDo></WhatWeDo>
 
