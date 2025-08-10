@@ -17,9 +17,6 @@ export default function Home() {
       {/* Especializaciones */}
       <Industries></Industries>
 
-      {/* Success Stories */}
-      <SuccessStories></SuccessStories>
-
       {/* Contacto */}
       <CallToAction></CallToAction>
 
