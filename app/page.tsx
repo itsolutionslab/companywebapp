@@ -1,3 +1,4 @@
+import AutoScroll from "./components/auto-scroll/AutoScroll";
 import CallToAction from "./components/call-to-action/CallToAction";
 import Footer from "./components/footer/Footer";
 import Header from "./components/header/Header";
@@ -24,6 +25,9 @@ export default function Home() {
 
       {/* Footer */}
       <Footer></Footer>
+
+      {/* Scroll */}
+      <AutoScroll delayMs={5000} intervalMs={5000} stepPx={500}></AutoScroll>
     </main>
   )
 }

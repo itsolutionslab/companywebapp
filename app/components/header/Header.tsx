@@ -132,7 +132,7 @@ const [hover, setHover] = useState(false);
         </h1>
           <h2 className="phrase">Llevamos tu negocio al futuro con Inteligencia Artificial</h2>
           <p className="industry">Automatización, innovación y software de alto nivel para cualquier industria</p>
-          <a href="tel:+5194857723"
+          <a href="tel:+51994857723"
             className="cta-btn">Llamar ahora
           </a>
         </div>
