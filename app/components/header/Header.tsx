@@ -1,24 +1,95 @@
 "use client";
-
-
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import "./Header.css";
+
+interface Particle {
+  x: number;
+  y: number;
+  size: number;
+  baseX: number;
+  baseY: number;
+  density: number;
+}
 
 const Header: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [hover, setHover] = useState(false);
+
+  const initParticles = useCallback((canvas: HTMLCanvasElement): Particle[] => {
+    const particles: Particle[] = [];
+    const numParticles = 80; // Reducido de 120 a 80
+    for (let i = 0; i < numParticles; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      particles.push({
+        x,
+        y,
+        size: 2,
+        baseX: x,
+        baseY: y,
+        density: Math.random() * 30 + 1,
+      });
+    }
+    return particles;
+  }, []);
+
+  const connectParticles = useCallback((ctx: CanvasRenderingContext2D, particles: Particle[]) => {
+    for (let a = 0; a < particles.length; a++) {
+      for (let b = a + 1; b < particles.length; b++) {
+        const dx = particles[a].x - particles[b].x;
+        const dy = particles[a].y - particles[b].y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 120) {
+          ctx.strokeStyle = "rgba(0, 240, 255, 0.2)";
+          ctx.lineWidth = 0.5; // Reducido de 1 a 0.5
+          ctx.beginPath();
+          ctx.moveTo(particles[a].x, particles[a].y);
+          ctx.lineTo(particles[b].x, particles[b].y);
+          ctx.stroke();
+        }
+      }
+    }
+  }, []);
+
+  const updateParticles = useCallback((particles: Particle[], mouse: { x: number; y: number }) => {
+    particles.forEach((particle) => {
+      const dx = mouse.x - particle.x;
+      const dy = mouse.y - particle.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const maxDistance = 120;
+      const force = (maxDistance - distance) / maxDistance;
+      const directionX = (dx / distance) * force * particle.density;
+      const directionY = (dy / distance) * force * particle.density;
+
+      if (distance < maxDistance) {
+        particle.x -= directionX;
+        particle.y -= directionY;
+      } else {
+        if (particle.x !== particle.baseX) {
+          const dxBase = particle.x - particle.baseX;
+          particle.x -= dxBase / 10;
+        }
+        if (particle.y !== particle.baseY) {
+          const dyBase = particle.y - particle.baseY;
+          particle.y -= dyBase / 10;
+        }
+      }
+    });
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext("2d")!;
     let particles: Particle[] = [];
-
-    // Inicializamos en 0 para evitar null
     let mouse = { x: 0, y: 0 };
+    let animationFrameId: number;
 
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      particles = initParticles(canvas);
     };
+
     window.addEventListener("resize", resize);
     resize();
 
@@ -27,101 +98,27 @@ const Header: React.FC = () => {
       mouse.y = e.y;
     });
 
-    class Particle {
-      x: number;
-      y: number;
-      size: number;
-      baseX: number;
-      baseY: number;
-      density: number;
-
-      constructor(x: number, y: number) {
-        this.x = x;
-        this.y = y;
-        this.size = 2;
-        this.baseX = x;
-        this.baseY = y;
-        this.density = Math.random() * 30 + 1;
-      }
-
-      draw() {
-        ctx.fillStyle = "#00f0ff";
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      update() {
-        let dx = mouse.x - this.x;
-        let dy = mouse.y - this.y;
-        let distance = Math.sqrt(dx * dx + dy * dy);
-        let maxDistance = 120;
-        let force = (maxDistance - distance) / maxDistance;
-        let directionX = (dx / distance) * force * this.density;
-        let directionY = (dy / distance) * force * this.density;
-
-        if (distance < maxDistance) {
-          this.x -= directionX;
-          this.y -= directionY;
-        } else {
-          if (this.x !== this.baseX) {
-            let dx = this.x - this.baseX;
-            this.x -= dx / 10;
-          }
-          if (this.y !== this.baseY) {
-            let dy = this.y - this.baseY;
-            this.y -= dy / 10;
-          }
-        }
-      }
-    }
-
-    const init = () => {
-      particles = [];
-      const numParticles = 120;
-      for (let i = 0; i < numParticles; i++) {
-        let x = Math.random() * canvas.width;
-        let y = Math.random() * canvas.height;
-        particles.push(new Particle(x, y));
-      }
-    };
-    init();
-
-    const connectParticles = () => {
-      for (let a = 0; a < particles.length; a++) {
-        for (let b = a; b < particles.length; b++) {
-          let dx = particles[a].x - particles[b].x;
-          let dy = particles[a].y - particles[b].y;
-          let distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < 120) {
-            ctx.strokeStyle = "rgba(0, 240, 255, 0.2)";
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(particles[a].x, particles[a].y);
-            ctx.lineTo(particles[b].x, particles[b].y);
-            ctx.stroke();
-          }
-        }
-      }
-    };
-
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (let i = 0; i < particles.length; i++) {
-        particles[i].draw();
-        particles[i].update();
-      }
-      connectParticles();
-      requestAnimationFrame(animate);
+      updateParticles(particles, mouse);
+      particles.forEach((particle) => {
+        ctx.fillStyle = "#00f0ff";
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
+      });
+      connectParticles(ctx, particles);
+      animationFrameId = requestAnimationFrame(animate);
     };
+
     animate();
 
     return () => {
       window.removeEventListener("resize", resize);
+      cancelAnimationFrame(animationFrameId);
     };
-  }, []);
-const [hover, setHover] = useState(false);
+  }, [initParticles, connectParticles, updateParticles]);
 
   return (
     <header className="header">
@@ -130,12 +127,12 @@ const [hover, setHover] = useState(false);
         <h1 className="brand-name">
           <span>Brecomperu</span> IT Solutions
         </h1>
-          <h2 className="phrase">Llevamos tu negocio al futuro con Inteligencia Artificial</h2>
-          <p className="industry">Automatización, innovación y software de alto nivel para cualquier industria</p>
-          <a href="tel:+51994857723"
-            className="cta-btn">Llamar ahora
-          </a>
-        </div>
+        <h2 className="phrase">Llevamos tu negocio al futuro con Inteligencia Artificial</h2>
+        <p className="industry">Automatización, innovación y software de alto nivel para cualquier industria</p>
+        <a href="tel:+51972243083" className="cta-btn">
+          Llamar ahora
+        </a>
+      </div>
     </header>
   );
 };
