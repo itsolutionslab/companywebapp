@@ -1,30 +1,38 @@
+import MainView from "./components/main-view/MainView";
 import AutoScroll from "./components/auto-scroll/AutoScroll";
 import CallToAction from "./components/call-to-action/CallToAction";
 import Footer from "./components/footer/Footer";
-import Header from "./components/header/Header";
 import Industries from "./components/industries/Industries";
 import WhatWeDo from "./components/whatwedo/WhatWeDo";
 
 export default function Home() {
   return (
     <main>
-      {/* Header Section */}
-      <Header></Header>
+      {/* Main View - Hero Section */}
+      <section id="main-view">
+        <MainView />
+      </section>
       
-      {/* Hero Section */}
-      <WhatWeDo></WhatWeDo>
+      {/* What We Do - Servicios */}
+      <section id="what-we-do">
+        <WhatWeDo />
+      </section>
 
-      {/* Especializaciones */}
-      <Industries></Industries>
+      {/* Industries - Especializaciones */}
+      <section id="industries">
+        <Industries />
+      </section>
 
-      {/* Contacto */}
-      <CallToAction></CallToAction>
+      {/* Call to Action - Contacto */}
+      <section id="call-to-action">
+        <CallToAction />
+      </section>
 
       {/* Footer */}
-      <Footer></Footer>
-
-      {/* Scroll */}
-      <AutoScroll delayMs={5000} intervalMs={5000} stepPx={500}></AutoScroll>
+      <Footer />
+      
+      {/* Auto Scroll */}
+      <AutoScroll />
     </main>
   )
 }

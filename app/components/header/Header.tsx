@@ -1,137 +1,176 @@
 "use client";
-import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import "./Header.css";
-
-interface Particle {
-  x: number;
-  y: number;
-  size: number;
-  baseX: number;
-  baseY: number;
-  density: number;
-}
+import React, { useState, useEffect, useRef } from "react";
+import styles from "./Header.module.css";
+// Importa la imagen
+import logoImage from '../../assets/bpLogo.png';
 
 const Header: React.FC = () => {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [hover, setHover] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("main-view");
+  const [isScrolled, setIsScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
 
-  const initParticles = useCallback((canvas: HTMLCanvasElement): Particle[] => {
-    const particles: Particle[] = [];
-    const numParticles = 80; // Reducido de 120 a 80
-    for (let i = 0; i < numParticles; i++) {
-      const x = Math.random() * canvas.width;
-      const y = Math.random() * canvas.height;
-      particles.push({
-        x,
-        y,
-        size: 2,
-        baseX: x,
-        baseY: y,
-        density: Math.random() * 30 + 1,
-      });
-    }
-    return particles;
-  }, []);
+  // Secciones para navegación
+  const menuItems = [
+    { name: "Inicio", id: "main-view", icon: "🏠" },
+    { name: "Servicios", id: "what-we-do", icon: "⚡" },
+    { name: "Industrias", id: "industries", icon: "🏭" },
+    { name: "Contacto", id: "call-to-action", icon: "📞" }
+  ];
 
-  const connectParticles = useCallback((ctx: CanvasRenderingContext2D, particles: Particle[]) => {
-    for (let a = 0; a < particles.length; a++) {
-      for (let b = a + 1; b < particles.length; b++) {
-        const dx = particles[a].x - particles[b].x;
-        const dy = particles[a].y - particles[b].y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < 120) {
-          ctx.strokeStyle = "rgba(0, 240, 255, 0.2)";
-          ctx.lineWidth = 0.5; // Reducido de 1 a 0.5
-          ctx.beginPath();
-          ctx.moveTo(particles[a].x, particles[a].y);
-          ctx.lineTo(particles[b].x, particles[b].y);
-          ctx.stroke();
-        }
-      }
-    }
-  }, []);
-
-  const updateParticles = useCallback((particles: Particle[], mouse: { x: number; y: number }) => {
-    particles.forEach((particle) => {
-      const dx = mouse.x - particle.x;
-      const dy = mouse.y - particle.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      const maxDistance = 120;
-      const force = (maxDistance - distance) / maxDistance;
-      const directionX = (dx / distance) * force * particle.density;
-      const directionY = (dy / distance) * force * particle.density;
-
-      if (distance < maxDistance) {
-        particle.x -= directionX;
-        particle.y -= directionY;
-      } else {
-        if (particle.x !== particle.baseX) {
-          const dxBase = particle.x - particle.baseX;
-          particle.x -= dxBase / 10;
-        }
-        if (particle.y !== particle.baseY) {
-          const dyBase = particle.y - particle.baseY;
-          particle.y -= dyBase / 10;
-        }
-      }
-    });
-  }, []);
-
+  // Efecto para detectar scroll y sección activa
   useEffect(() => {
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext("2d")!;
-    let particles: Particle[] = [];
-    let mouse = { x: 0, y: 0 };
-    let animationFrameId: number;
-
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      particles = initParticles(canvas);
-    };
-
-    window.addEventListener("resize", resize);
-    resize();
-
-    window.addEventListener("mousemove", (e) => {
-      mouse.x = e.x;
-      mouse.y = e.y;
-    });
-
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      updateParticles(particles, mouse);
-      particles.forEach((particle) => {
-        ctx.fillStyle = "#00f0ff";
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.fill();
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      setIsScrolled(scrollTop > 50);
+      
+      // Detectar sección activa
+      const sections = menuItems.map(item => item.id);
+      const current = sections.find(sectionId => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          return rect.top <= 100 && rect.bottom >= 100;
+        }
+        return false;
       });
-      connectParticles(ctx, particles);
-      animationFrameId = requestAnimationFrame(animate);
+      
+      if (current) setActiveSection(current);
     };
 
-    animate();
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-    return () => {
-      window.removeEventListener("resize", resize);
-      cancelAnimationFrame(animationFrameId);
+  // Función para scroll suave a sección
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const headerHeight = headerRef.current?.offsetHeight || 70; // 70px mobile first
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+      
+      setIsMenuOpen(false);
+    }
+  };
+
+  // Cerrar menú al hacer resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 969) { // Cambiado a 969px para desktop
+        setIsMenuOpen(false);
+      }
     };
-  }, [initParticles, connectParticles, updateParticles]);
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
-    <header className="header">
-      <canvas ref={canvasRef} className="particles-bg"></canvas>
-      <div className="header-content">
-        <h1 className="brand-name">
-          <span>Brecomperu</span> IT Solutions
-        </h1>
-        <h2 className="phrase">Llevamos tu negocio al futuro con Inteligencia Artificial</h2>
-        <p className="industry">Automatización, innovación y software de alto nivel para cualquier industria</p>
-        <a href="tel:+51972243083" className="cta-btn">
-          Llamar ahora
-        </a>
+    <header 
+      ref={headerRef}
+      className={`${styles.header} ${isScrolled ? styles.scrolled : ''} ${isMenuOpen ? styles.menuOpen : ''}`}
+    >
+      {/* Fondo animado */}
+      <div className={styles.headerBackground}>
+        <div className={styles.floatingParticles}>
+          {[...Array(6)].map((_, i) => (
+            <div 
+              key={i} 
+              className={styles.particle}
+              style={{
+                animationDelay: `${i * 0.5}s`,
+                animationDuration: `${12 + i * 2}s`
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className={styles.headerContainer}>
+        {/* Logo */}
+        <div className={styles.logoContainer}>
+          <div className={styles.logo} onClick={() => scrollToSection('main-view')}>
+            <div className={styles.logoContainer}>
+              <div className={styles.logo} onClick={() => scrollToSection('main-view')}>
+                <img 
+                  src={logoImage.src} 
+                  alt="Brecomperu - IT Solutions"
+                  className={styles.logoImage}
+                />
+              </div>
+            </div>
+            <div className={styles.logoText}>
+              <span className={styles.logoPrimary}>Brecomperu</span>
+              <span className={styles.logoSecondary}>IT Solutions</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Navegación Desktop - Solo se muestra en desktop */}
+        <nav className={styles.navDesktop}>
+          {menuItems.map((item) => (
+            <button
+              key={item.id}
+              className={`${styles.navItem} ${activeSection === item.id ? styles.active : ''}`}
+              onClick={() => scrollToSection(item.id)}
+            >
+              <span className={styles.navIcon}>{item.icon}</span>
+              <span className={styles.navText}>{item.name}</span>
+              <div className={styles.navUnderline}></div>
+            </button>
+          ))}
+        </nav>
+
+        {/* CTA Desktop - Solo se muestra en desktop */}
+        <div className={styles.headerActions}>
+          <a href="tel:+51972243083" className={styles.ctaButton}>
+            <span className={styles.ctaIcon}>📞</span>
+            <span className={styles.ctaText}>+51 972 243 083</span>
+          </a>
+        </div>
+
+        {/* Botón móvil - Siempre visible en mobile/tablet */}
+        <button 
+          className={styles.menuToggle}
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          <div className={`${styles.hamburger} ${isMenuOpen ? styles.active : ''}`}>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </button>
+      </div>
+
+      {/* Menú móvil - Solo para mobile/tablet */}
+      <div className={`${styles.mobileMenu} ${isMenuOpen ? styles.active : ''}`}>
+        <nav className={styles.navMobile}>
+          {menuItems.map((item) => (
+            <button
+              key={item.id}
+              className={`${styles.mobileNavItem} ${activeSection === item.id ? styles.active : ''}`}
+              onClick={() => scrollToSection(item.id)}
+            >
+              <span className={styles.mobileNavIcon}>{item.icon}</span>
+              <span className={styles.mobileNavText}>{item.name}</span>
+              <div className={styles.mobileNavIndicator}></div>
+            </button>
+          ))}
+          
+          <div className={styles.mobileActions}>
+            <a href="tel:+51972243083" className={styles.mobileCta}>
+              <span>📞 Llamar Ahora</span>
+              <span className={styles.mobilePhone}>+51 972 243 083</span>
+            </a>
+          </div>
+        </nav>
       </div>
     </header>
   );

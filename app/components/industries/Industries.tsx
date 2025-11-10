@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import "./Industries.css";
 
 const industriesData = [
@@ -11,70 +11,112 @@ const industriesData = [
   { icon: "🎓", title: "Educación", desc: "Plataformas de aprendizaje adaptativo impulsadas por IA." },
 ];
 
+interface Particle {
+  x: number;
+  y: number;
+}
+
 const Industries: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const particlesRef = useRef<Particle[]>([]);
+  const connectionsRef = useRef<[number, number][]>([]);
 
-  // Efecto de partículas en el fondo
+  // Pre-calcular partículas estáticas
+  const initStaticParticles = useMemo(() => {
+    return (canvas: HTMLCanvasElement): Particle[] => {
+      const particles: Particle[] = [];
+      const numParticles = 30; // Reducido de 40 para mejor rendimiento
+      
+      for (let i = 0; i < numParticles; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+        });
+      }
+      
+      return particles;
+    };
+  }, []);
+
+  // Pre-calcular conexiones una sola vez
+  const initConnections = useMemo(() => {
+    return (particles: Particle[]): [number, number][] => {
+      const connections: [number, number][] = [];
+      const maxDistance = 150;
+      const maxDistanceSquared = maxDistance * maxDistance;
+      
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const distanceSquared = dx * dx + dy * dy;
+          
+          if (distanceSquared < maxDistanceSquared) {
+            connections.push([i, j]);
+          }
+        }
+      }
+      
+      return connections;
+    };
+  }, []);
+
+  // Dibujar escena estática una sola vez
+  const drawStaticScene = useMemo(() => {
+    return (canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const particles = particlesRef.current;
+      const connections = connectionsRef.current;
+
+      // Dibujar conexiones
+      ctx.strokeStyle = "rgba(0,255,204,0.08)"; // Más transparente
+      ctx.lineWidth = 0.8;
+      
+      connections.forEach(([i, j]) => {
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.stroke();
+      });
+
+      // Dibujar partículas
+      ctx.fillStyle = "rgba(0,255,204,0.4)"; // Más transparente
+      particles.forEach(particle => {
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, 2, 0, Math.PI * 2); // Tamaño reducido
+        ctx.fill();
+      });
+    };
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
-    let particles: { x: number; y: number; vx: number; vy: number }[] = [];
-    const numParticles = 40;
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      
+      // Reinicializar solo en resize
+      particlesRef.current = initStaticParticles(canvas);
+      connectionsRef.current = initConnections(particlesRef.current);
+      
+      // Dibujar una sola vez
+      drawStaticScene(canvas, ctx);
     };
+
+    // Inicialización
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
 
-    for (let i = 0; i < numParticles; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.6,
-        vy: (Math.random() - 0.5) * 0.6,
-      });
-    }
-
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = "rgba(0,255,204,0.2)";
-      ctx.fillStyle = "rgba(0,255,204,0.6)";
-
-      particles.forEach((p, idx) => {
-        p.x += p.vx;
-        p.y += p.vy;
-
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        for (let j = idx + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          const dist = Math.sqrt((p.x - p2.x) ** 2 + (p.y - p2.y) ** 2);
-          if (dist < 150) {
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-          }
-        }
-      });
-
-      requestAnimationFrame(animate);
+    return () => {
+      window.removeEventListener("resize", resizeCanvas);
     };
-
-    animate();
-
-    return () => window.removeEventListener("resize", resizeCanvas);
-  }, []);
+  }, [initStaticParticles, initConnections, drawStaticScene]);
 
   return (
     <section className="industries-section">
