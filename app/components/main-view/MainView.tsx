@@ -211,7 +211,7 @@ const MainView: React.FC = () => {
         <h1 className="brand-name">
           <span>Brecomperu</span> IT Solutions
         </h1>
-        <h2 className="phrase">Llevamos tu negocio al futuro con Inteligencia Artificial</h2>
+        <h2 className="phrase">Llevamos tu negocio al siguiente nivel con Inteligencia Artificial</h2>
         <p className="industry">Automatización, innovación y software de alto nivel para cualquier industria</p>
         <a href="tel:+51972243083" className="cta-btn">
           Llamar Ahora +51 972 243 083
