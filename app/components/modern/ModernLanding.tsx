@@ -120,6 +120,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                             src={img}
                             alt={t('all-rights')}
                             fill
+                            sizes="100vw"
                             className="object-cover"
                             priority={idx === 0}
                             quality={90}
@@ -348,6 +349,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                         src={`/images/services/${service.img}.${service.ext}`}
                                         alt={t(`service${service.id}-title`)}
                                         fill
+                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                         className="object-cover transition-transform duration-700 group-hover:scale-110"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/20 to-transparent group-hover:from-[#0f172a]/90 transition-all duration-500"></div>
@@ -374,6 +376,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                         src="/images/services/ai_models.jpg"
                                         alt={t('service7-title')}
                                         fill
+                                        sizes="(max-width: 1024px) 100vw, 33vw"
                                         className="object-cover transition-transform duration-700 group-hover:scale-105"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#0f172a]/80 lg:to-[#0f172a] hidden lg:block"></div>
@@ -433,6 +436,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                         src={`/images/industries/${industry.img}.jpg`}
                                         alt={t(`industry${industry.id}`)}
                                         fill
+                                        sizes="(max-width: 1024px) 100vw, 50vw"
                                         className="object-cover transition-transform duration-700 group-hover:scale-105 filter saturate-[0.8] group-hover:saturate-100"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a]/60 to-transparent"></div>
@@ -488,7 +492,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                     <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
                         <div className="card-glass rounded-2xl overflow-hidden hover:border-cyan-500/30 transition-colors group">
                             <div className="relative h-48 w-full">
-                                <Image src="/images/usa_office.png" alt={t('office-usa')} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                                <Image src="/images/usa_office.png" alt={t('office-usa')} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] to-transparent opacity-60"></div>
                             </div>
                             <div className="p-6">
@@ -506,7 +510,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                         </div>
                         <div className="card-glass rounded-2xl overflow-hidden hover:border-cyan-500/30 transition-colors group">
                             <div className="relative h-48 w-full">
-                                <Image src="/images/data_center.png" alt={t('office-peru')} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                                <Image src="/images/data_center.png" alt={t('office-peru')} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] to-transparent opacity-60"></div>
                             </div>
                             <div className="p-6">
@@ -621,6 +625,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                             src={`/images/projects/${project.img}.${project.ext}`}
                                             alt={t(`project${project.id}-title`)}
                                             fill
+                                            sizes="(max-width: 768px) 100vw, 33vw"
                                             className="object-cover transition-transform duration-700 group-hover:scale-110"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent opacity-80"></div>

@@ -1,20 +1,15 @@
 export type LeadStatus =
     | 'LEAD_NEW'
     | 'CONTACTED'
-    | 'MEETING_SCHEDULED'
-    | 'QUOTATION_SENT'
-    | 'QUOTATION_APPROVED'
-    | 'PROJECT_PLANNING'
-    | 'WAITING_DOWNPAYMENT'
-    | 'DOWNPAYMENT_RECEIVED'
-    | 'PROJECT_STARTING'
-    | 'IN_PROGRESS'
-    | 'TESTING'
-    | 'COMPLETED'
-    | 'DELIVERY_PENDING'
+    | 'SCHEDULED'
+    | 'IN_PROPOSAL'
+    | 'PROJ_APPROVED'
+    | 'DOWN_PAYMENT'
+    | 'PROJ_STARTED'
+    | 'IN_TESTING'
+    | 'PROJ_FINISHED'
     | 'DELIVERED'
-    | 'SUPPORT_ACTIVE'
-    | 'SUPPORT_ENDED'
+    | 'CLOSED'
     | 'CLOSED_LOST';
 
 export interface StatusHistory {
@@ -30,7 +25,8 @@ export interface LeadData {
     phone?: string;
     project_desc?: string;
     file_url?: string;
-    service_interest?: string;
+    service_interest?: string; // Legacy
+    service_interests?: string[]; // New multiselect
     budget_range?: string;
     region?: string;
 }

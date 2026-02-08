@@ -1,0 +1,154 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ========================================
+    // AUTH & ROLE HELPER FUNCTIONS
+    // ========================================
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAnonymous() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function hasRole(role) {
+      return isSignedIn() && !isAnonymous() && getUserData().role == role;
+    }
+    
+    // Role Hierarchy (from highest to lowest privilege)
+    function isOwnerAdmin() {
+      return hasRole('owneradmin');
+    }
+    
+    function isAdmin() {
+      return hasRole('admin') || isOwnerAdmin();
+    }
+    
+    function isStaff() {
+      return hasRole('staff') || isAdmin();
+    }
+    
+    function isClient() {
+      return hasRole('client');
+    }
+    
+    // ========================================
+    // LEADS (PROSPECTOS) - Public Lead Capture
+    // ========================================
+    match /leads/{leadId} {
+      // Allow public creation (unauthenticated) to ensure leads are always captured
+      // This prevents "Missing or insufficient permissions" when anonymous auth fails
+      allow create: if true;
+      
+      // Only staff and admins can read leads
+      allow read: if isStaff();
+      
+      // Allow public update for drafts and KPI tracking
+      allow update: if true;
+      
+      // Only admins can delete leads
+      allow delete: if isAdmin();
+    }
+    
+    // ========================================
+    // INTERACTIONS - Analytics & Tracking
+    // ========================================
+    match /interactions/{interactionId} {
+      // Anyone can log tracking events (including anonymous)
+      allow create: if true;
+      
+      // Only staff can read analytics data
+      allow read: if isStaff();
+      
+      // Only admins can modify or delete tracking data
+      allow update, delete: if isAdmin();
+    }
+
+    // ========================================
+    // SERVICES - Portfolio & Service Catalog
+    // ========================================
+    match /services/{serviceId} {
+      // Publicly readable (for website portfolio display)
+      allow read: if true;
+      
+      // Only admins can create, update, or delete services
+      allow write: if isAdmin();
+    }
+
+    // ========================================
+    // BOOKINGS - Appointment Reservations
+    // ========================================
+    match /bookings/{bookingId} {
+      // Anyone can create bookings (public booking widget)
+      allow create: if true;
+      
+      // Staff can read all bookings
+      // Clients can read their own bookings
+      allow read: if isStaff() 
+                  || (isClient() && isSignedIn() && request.auth.uid == resource.data.userId);
+      
+      // Staff can update booking status and details
+      // Clients can update their own bookings (e.g., cancel)
+      allow update: if isStaff() 
+                    || (isClient() && isSignedIn() && request.auth.uid == resource.data.userId);
+      
+      // Only admins can delete bookings
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // USERS - User Profiles & Roles
+    // ========================================
+    match /users/{userId} {
+      // CRITICAL: Users MUST be able to read their own document BEFORE role checking
+      // Otherwise getUserData() in helper functions creates a circular dependency
+      // Staff can also read all user profiles (but this check happens AFTER self-read)
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      
+      // Additional read permission for staff to view all users
+      // This is separate to avoid circular dependency
+      allow read: if isSignedIn() && !isAnonymous() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'admin', 'owneradmin'];
+      
+      // Users can create their own profile during registration
+      // Admins can create any user profile
+      allow create: if (isSignedIn() && request.auth.uid == userId) || isAdmin();
+      
+      // Users can update their own profile (except role field)
+      // Admins can update any profile including roles
+      allow update: if (isSignedIn() && request.auth.uid == userId && request.resource.data.role == resource.data.role)
+                    || isAdmin();
+      
+      // Only owner admins can delete users
+      allow delete: if isOwnerAdmin();
+    }
+
+    // ========================================
+    // SETTINGS - Business Configuration
+    // ========================================
+    match /settings/{settingId} {
+      // Publicly readable (for business hours, availability calculations)
+      allow read: if true;
+      
+      // Only admins can modify business settings
+      allow write: if isAdmin();
+    }
+    
+    // ========================================
+    // DISABLED_SLOTS - Availability Management
+    // ========================================
+    match /disabled_slots/{slotId} {
+      // Publicly readable (needed for calendar availability checks)
+      allow read: if true;
+      
+      // Only staff can manage disabled slots
+      allow write: if isStaff();
+    }
+  }
+}

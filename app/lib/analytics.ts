@@ -44,7 +44,8 @@ export const trackConversion = (eventName: string, metadata: object = {}) => {
  */
 export const setUserProperties = (properties: AnalyticsMetadata) => {
     if (process.env.NODE_ENV === 'development') {
-        console.log('%c[Analytics] User Properties Set:', 'color: #06b6d4; font-weight: bold;', properties);
+        console.log('.');
+        //console.log('%c[Analytics] User Properties Set:', 'color: #06b6d4; font-weight: bold;', properties);
     }
 
     if (typeof window !== 'undefined' && window.gtag) {
