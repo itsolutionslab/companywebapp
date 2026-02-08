@@ -29,8 +29,8 @@ export const REGIONAL_CONFIG: Record<string, RegionConfig> = {
     US: {
         countryCode: 'US',
         name: 'United States',
-        phone: '+14697564476',
-        phoneFormatted: '+1 (469) 756-4476',
+        phone: '+12146997537',
+        phoneFormatted: '+1 (214) 699-7537',
         whatsapp: '14697564476',
         whatsappFormatted: '+1 (469) 756-4476',
         email: 'solutions@brecomperu.com',
