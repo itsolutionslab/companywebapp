@@ -48,8 +48,13 @@ class TrackingService {
         if (!auth.currentUser) {
             try {
                 await signInAnonymously(auth);
-            } catch (error) {
-                console.error("Error signing in anonymously", error);
+            } catch (error: any) {
+                // Don't block execution if auth fails - we now allow public submission in rules
+                if (error.code === 'auth/operation-not-allowed') {
+                    console.warn("Tracking: Anonymous Auth disabled. Proceeding unauthenticated.");
+                } else {
+                    console.warn("Tracking: Auth failed, proceeding unauthenticated.", error.message);
+                }
             }
         }
     }
@@ -176,6 +181,8 @@ class TrackingService {
 
     async trackEvent(eventType: InteractionEvent['event_type'], metadata: object = {}) {
         this.clicksCount++;
+        await this.ensureAuth();
+
         const leadId = typeof window !== 'undefined' ? localStorage.getItem(LEAD_ID_KEY) : undefined;
 
         const event: InteractionEvent = {
@@ -199,8 +206,14 @@ class TrackingService {
                 });
             }
 
-        } catch (e) {
-            console.error("Error tracking event", e);
+        } catch (e: any) {
+            if (e.message?.includes('Missing or insufficient permissions')) {
+                console.error("Firebase PERMISSION ERROR: Ensure you have applied the Rules from firebase_rules.md in your Firebase Console.");
+            } else if (e.message?.includes('blocked-by-client')) {
+                console.error("Firebase CONNECTION ERROR: Your ad-blocker is preventing data from being sent to Firebase.");
+            } else {
+                console.error("Error tracking event", e);
+            }
         }
     }
 
@@ -208,22 +221,32 @@ class TrackingService {
         if (!storage) return null;
         await this.ensureAuth();
 
-        // Validation (Client side - secure rules should also be on server)
+        // Validation (Client side - secure rules also enforced on server)
         const validTypes = [
+            // Documents
             'application/pdf',
-            'image/jpeg',
-            'image/png',
-            'image/webp',
             'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            // Images
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            // Compressed files
+            'application/zip',
+            'application/x-rar-compressed',
+            'application/x-7z-compressed'
         ];
+
         if (!validTypes.includes(file.type)) {
-            console.error("Invalid file type");
+            console.error("Invalid file type. Allowed: PDF, Word, Images (JPEG, PNG, GIF, WebP), ZIP, RAR, 7z");
             return null;
         }
 
-        if (file.size > 5 * 1024 * 1024) { // 5MB limit
-            console.error("File too large");
+        // Updated size limit to match Storage rules (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            console.error("File too large. Maximum size: 10MB");
             return null;
         }
 
@@ -232,10 +255,15 @@ class TrackingService {
             const snapshot = await uploadBytes(fileRef, file);
             const url = await getDownloadURL(snapshot.ref);
 
-            this.trackEvent('file_uploaded', { fileName: file.name, url });
+            this.trackEvent('file_uploaded', { fileName: file.name, fileSize: file.size, fileType: file.type, url });
             return url;
-        } catch (e) {
-            console.error("Error uploading file", e);
+        } catch (e: any) {
+            // Enhanced error messaging
+            if (e.code === 'storage/unauthorized') {
+                console.error("Storage PERMISSION ERROR: File upload denied. Check Firebase Storage Rules.");
+            } else {
+                console.error("Error uploading file:", e.message);
+            }
             return null;
         }
     }
