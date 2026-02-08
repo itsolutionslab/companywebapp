@@ -609,16 +609,16 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                     </div>
                     <div className="grid md:grid-cols-3 gap-8">
                         {[
-                            { id: 1, img: 'retail', url: '#' },
-                            { id: 2, img: 'hospitality', url: '#' },
-                            { id: 3, img: 'tech_hub', url: '#' }
+                            { id: 1, img: 'farmaciasenlinea', ext: 'png', url: 'https://farmaciasenlinea.pe' },
+                            { id: 2, img: 'nailsbysana', ext: 'png', url: 'https://nailsbysana.com' },
+                            { id: 3, img: 'chayay', ext: 'png', url: 'https://chayay.pe' }
                         ].map((project) => (
                             <div key={project.id} className="group relative">
                                 <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-cyan-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
                                 <div className="relative card-glass rounded-2xl overflow-hidden hover:translate-y-[-8px] transition-all duration-500">
                                     <div className="relative h-48 w-full overflow-hidden">
                                         <Image
-                                            src={`/images/industries/${project.img}.jpg`}
+                                            src={`/images/projects/${project.img}.${project.ext}`}
                                             alt={t(`project${project.id}-title`)}
                                             fill
                                             className="object-cover transition-transform duration-700 group-hover:scale-110"
