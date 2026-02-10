@@ -21,7 +21,8 @@ export type TranslationKey =
     | 'password_requirements' | 'change_password' | 'current_password' | 'new_password' | 'confirm_password' | 'password_updated'
     | 'req_length' | 'req_number' | 'req_special' | 'req_uppercase' | 'security_priority' | 'create_user' | 'user_created_success'
     | 'status_new' | 'status_contacted' | 'status_scheduled' | 'status_proposal' | 'status_approved' | 'status_downpayment'
-    | 'status_started' | 'status_testing' | 'status_finished' | 'status_delivered' | 'status_closed' | 'status_lost';
+    | 'status_started' | 'status_testing' | 'status_finished' | 'status_delivered' | 'status_closed' | 'status_lost'
+    | 'security_integrity' | 'last_modified';
 
 export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, string>>> = {
     en: {
@@ -171,7 +172,9 @@ export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, stri
         status_finished: 'Finished',
         status_delivered: 'Delivered',
         status_closed: 'Closed',
-        status_lost: 'Lost'
+        status_lost: 'Lost',
+        security_integrity: 'Account Security Integrity',
+        last_modified: 'Last modified'
     },
     es: {
         dashboard: 'Panel Control',
@@ -320,7 +323,9 @@ export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, stri
         status_finished: 'Terminado',
         status_delivered: 'Entregado',
         status_closed: 'Cerrado',
-        status_lost: 'Perdido'
+        status_lost: 'Perdido',
+        security_integrity: 'Integridad de Seguridad',
+        last_modified: 'Última modificación'
     },
     ru: {
         dashboard: 'Панель',

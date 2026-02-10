@@ -47,8 +47,11 @@ service cloud.firestore {
       // This prevents "Missing or insufficient permissions" when anonymous auth fails
       allow create: if true;
       
-      // Only staff and admins can read leads
-      allow read: if isStaff();
+      // Anyone can 'get' a lead if they have the ID (UUID), needed for TrackingService verification.
+      allow get: if true;
+      
+      // Only staff and admins can 'list' all leads
+      allow list: if isStaff();
       
       // Allow public update for drafts and KPI tracking
       allow update: if true;

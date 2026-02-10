@@ -126,6 +126,10 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
             await trackingService.saveLeadDraft(finalData);
 
             setSubmitted(true);
+
+            // Reset lead ID for next submission (clean state)
+            trackingService.resetLead();
+
             if (onComplete) {
                 setTimeout(() => onComplete(), 3000);
             }
@@ -265,6 +269,30 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
 
                         <div>
                             <h3 className="text-xl font-bold text-white mb-3">
+                                {region === 'es' || region === 'latam' || region === 'pe' ? 'Rango de Presupuesto (USD)' : "Budget Range (USD)"}
+                            </h3>
+                            <div className="grid grid-cols-2 gap-2">
+                                {['5k-10k', '10k-20k', '20k-50k', '50k+'].map(range => (
+                                    <button
+                                        key={range}
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, budget_range: range }))}
+                                        className={`
+                                            p-3 rounded-xl border transition-all text-xs font-bold
+                                            ${formData.budget_range === range
+                                                ? 'border-emerald-400 bg-emerald-400/10 text-white shadow-[0_0_15px_rgba(52,211,153,0.2)]'
+                                                : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600 hover:bg-slate-800'
+                                            }
+                                        `}
+                                    >
+                                        {range}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="text-xl font-bold text-white mb-3">
                                 {region === 'es' || region === 'latam' || region === 'pe' ? 'Cuéntanos sobre tu proyecto' : "Tell us about your project"}
                             </h3>
                             <div className="relative group">
@@ -278,7 +306,6 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                                     className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 pb-10 text-white focus:ring-2 focus:ring-cyan-500 outline-none resize-none placeholder:text-slate-500"
                                     required
                                 />
-                                {/* Inline File Upload Button */}
                                 <button
                                     type="button"
                                     onClick={() => fileInputRef.current?.click()}
@@ -303,7 +330,6 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                                 />
                             </div>
 
-                            {/* File Status Display */}
                             {fileName && (
                                 <div className="mt-2 flex items-center gap-2 text-xs bg-slate-800/50 px-3 py-2 rounded-lg border border-slate-700 inline-flex animate-in fade-in slide-in-from-top-1">
                                     <span className="text-cyan-400">📄</span>
@@ -319,10 +345,10 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                             )}
                         </div>
 
-                        {/* Turnstile & Submit */}
                         <div className="pt-2">
                             <div className="mb-4 flex justify-center">
                                 <Turnstile
+                                    key="stable-turnstile"
                                     sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
                                     onVerify={(token) => setTurnstileToken(token)}
                                     theme="dark"

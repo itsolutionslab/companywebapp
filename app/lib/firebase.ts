@@ -57,6 +57,17 @@ export const getServices = async (): Promise<Service[]> => {
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service));
 };
 
+export const onServicesUpdate = (callback: (data: Service[]) => void) => {
+    console.log("[Firestore] Starting onServicesUpdate listener...");
+    return onSnapshot(collection(db, "services"), (snapshot) => {
+        console.log(`[Firestore] snapshot received for 'services'. size: ${snapshot.size}`);
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service));
+        callback(data);
+    }, (error) => {
+        console.error("[Firestore] Error in onServicesUpdate listener:", error);
+    });
+};
+
 export const updateService = async (id: string, data: Partial<Service>) => {
     const serviceRef = doc(db, "services", id);
     await updateDoc(serviceRef, data);
@@ -87,6 +98,8 @@ export const onBookingsUpdate = (callback: (data: BookingData[]) => void) => {
     return onSnapshot(q, (snapshot) => {
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BookingData));
         callback(data);
+    }, (error) => {
+        console.error("[Firestore] Error in onBookingsUpdate listener:", error);
     });
 };
 
@@ -106,6 +119,8 @@ export const onAvailabilityUpdate = (callback: (disabled: string[]) => void) => 
         } else {
             callback([]);
         }
+    }, (error) => {
+        console.error("[Firestore] Error in onAvailabilityUpdate listener:", error);
     });
 };
 
@@ -133,19 +148,69 @@ export const deleteUser = async (uid: string) => {
 };
 
 // Leads (Prospectos)
+const normalizeLeadData = (raw: any): Lead => {
+    const lead: any = { ...raw };
+
+    // Initialize core objects if they don't exist
+    if (!lead.data) lead.data = {};
+    if (!lead.audit_logs) lead.audit_logs = {};
+    if (!lead.kpis) lead.kpis = {};
+    if (!lead.status_flow) lead.status_flow = { current: 'LEAD_NEW', history: [] };
+    if (!lead.source_attribution) lead.source_attribution = {};
+
+    // Process all keys to find literal dotted keys (e.g., "data.name")
+    Object.keys(lead).forEach(key => {
+        if (key.includes('.')) {
+            const parts = key.split('.');
+            let current = lead;
+
+            // Traverse/Create nested structure
+            for (let i = 0; i < parts.length - 1; i++) {
+                const part = parts[i];
+                if (!current[part]) current[part] = {};
+                current = current[part];
+            }
+
+            // Set the value at the leaf
+            const lastPart = parts[parts.length - 1];
+            current[lastPart] = lead[key];
+
+            // Remove the flat dotted key
+            delete lead[key];
+        }
+    });
+
+    return lead as Lead;
+};
+
 export const getLeads = async (): Promise<Lead[]> => {
     const querySnapshot = await getDocs(query(collection(db, "leads"), orderBy("audit_logs.created_at", "desc")));
-    return querySnapshot.docs.map(doc => ({
+    return querySnapshot.docs.map(doc => normalizeLeadData({
         ...doc.data(),
         lead_id: doc.id
-    } as Lead));
+    }));
+};
+
+export const onLeadsUpdate = (callback: (data: Lead[]) => void) => {
+    console.log("[Firestore] Starting onLeadsUpdate listener...");
+    const q = query(collection(db, "leads"));
+    return onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
+        console.log(`[Firestore] snapshot received for 'leads'. empty: ${snapshot.empty}, size: ${snapshot.size}`);
+        const data = snapshot.docs.map(doc => normalizeLeadData({
+            ...doc.data(),
+            lead_id: doc.id
+        }));
+        callback(data);
+    }, (error) => {
+        console.error("[Firestore] Error in onLeadsUpdate listener:", error);
+    });
 };
 
 export const getLeadById = async (id: string): Promise<Lead | null> => {
     const docRef = doc(db, "leads", id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-        return { ...docSnap.data(), lead_id: docSnap.id } as Lead;
+        return normalizeLeadData({ ...docSnap.data(), lead_id: docSnap.id });
     }
     return null;
 };

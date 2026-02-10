@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { getLeads, updateLead } from "@/lib/firebase";
+import { onLeadsUpdate, updateLead } from "@/lib/firebase";
 import { Lead, LeadStatus } from "@/types/tracking";
 import { useTranslation } from "@/components/admin/LanguageContext";
 import Link from "next/link";
@@ -17,31 +17,38 @@ export default function ProspectosPage() {
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        fetchLeads();
-    }, []);
-
-    async function fetchLeads() {
-        setLoading(true);
-        try {
-            const data = await getLeads();
+        const unsubscribe = onLeadsUpdate((data) => {
             setLeads(data);
-        } catch (error) {
-            console.error("Error fetching leads:", error);
-            showNotification("Error loading leads", "error");
-        } finally {
             setLoading(false);
-        }
-    }
+        });
+
+        return () => unsubscribe();
+    }, []);
 
     const filteredLeads = useMemo(() => {
         return leads.filter(lead => {
-            const matchesFilter = filter === 'ALL' || lead.status_flow.current === filter;
+            // 1. Verificación de seguridad inicial
+            if (!lead) return false;
+
+            // 2. Filtro de estado (Protegemos status_flow)
+            const matchesFilter = filter === 'ALL' || lead.status_flow?.current === filter;
+
+            // 3. Búsqueda de texto (Protegemos data y lead_id)
             const searchTermLower = searchTerm.toLowerCase();
+
+            const name = (lead.data?.name || "").toLowerCase();
+            const email = (lead.data?.email || "").toLowerCase();
+            const phone = (lead.data?.phone || "").toLowerCase();
+            const company = (lead.data?.company || "").toLowerCase();
+            const id = (lead.lead_id || "").toLowerCase();
+
             const matchesSearch =
-                lead.data.name?.toLowerCase().includes(searchTermLower) ||
-                lead.data.email?.toLowerCase().includes(searchTermLower) ||
-                lead.data.phone?.toLowerCase().includes(searchTermLower) ||
-                lead.lead_id.toLowerCase().includes(searchTermLower);
+                name.includes(searchTermLower) ||
+                email.includes(searchTermLower) ||
+                phone.includes(searchTermLower) ||
+                company.includes(searchTermLower) ||
+                id.includes(searchTermLower);
+
             return matchesFilter && matchesSearch;
         });
     }, [leads, filter, searchTerm]);
@@ -118,9 +125,16 @@ export default function ProspectosPage() {
                                     <td className="px-6 py-5">
                                         <div className="flex flex-col">
                                             <span className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                                                {lead.data.name || 'Sin Nombre'}
+                                                {lead.data?.name || 'Sin Nombre'}
+                                                {lead.data?.company && (
+                                                    <span className="ml-2 text-[10px] text-blue-500 font-bold uppercase tracking-wider bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
+                                                        {lead.data.company}
+                                                    </span>
+                                                )}
                                             </span>
-                                            <span className="text-xs text-gray-500 font-medium">{lead.data.email || lead.data.phone || 'Sin contacto'}</span>
+                                            <span className="text-xs text-gray-500 font-medium">
+                                                {lead.data?.email || lead.data?.phone || 'Sin contacto'}
+                                            </span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-5">
@@ -139,10 +153,11 @@ export default function ProspectosPage() {
                                     <td className="px-6 py-5">
                                         <div className="flex flex-col">
                                             <span className="text-xs font-bold text-gray-600">
-                                                {lead.kpis.clicks_count} clics • {Math.round(lead.kpis.session_duration / 60)}m
+                                                {lead.kpis?.clicks_count || 0} clics • {Math.round((lead.kpis?.session_duration || 0) / 60)}m
                                             </span>
                                             <span className="text-[10px] text-gray-400 font-medium">
-                                                {new Date(lead.audit_logs.created_at?.toDate?.() || lead.audit_logs.created_at).toLocaleDateString()}
+                                                {new Date(lead.audit_logs?.created_at?.toDate?.() ||
+                                                    (lead.audit_logs?.created_at ? new Date(lead.audit_logs?.created_at) : new Date())).toLocaleDateString()}
                                             </span>
                                         </div>
                                     </td>

@@ -1,7 +1,6 @@
-import { db, storage, auth } from '../lib/firebase';
+import { db, storage } from '../lib/firebase';
 import { collection, addDoc, doc, updateDoc, setDoc, query, where, getDocs, Timestamp, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { signInAnonymously } from 'firebase/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { Lead, LeadData, InteractionEvent, LeadStatus } from '../types/tracking';
 
@@ -13,14 +12,25 @@ class TrackingService {
     startTime: number;
     clicksCount: number = 0;
     sourceRegion: 'US_LANDING' | 'LATAM_LANDING' | 'PE_LANDING' = 'US_LANDING';
+    private _leadId: string | null = null;
 
     constructor() {
         if (typeof window !== 'undefined') {
             this.sessionId = localStorage.getItem(SESSION_KEY) || uuidv4();
             localStorage.setItem(SESSION_KEY, this.sessionId);
             this.startTime = Date.now();
+            this._leadId = localStorage.getItem(LEAD_ID_KEY);
         } else {
             this.sessionId = 'server-side';
+            this.startTime = Date.now();
+        }
+    }
+
+    resetLead() {
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem(LEAD_ID_KEY);
+            this._leadId = null;
+            this.clicksCount = 0;
             this.startTime = Date.now();
         }
     }
@@ -44,20 +54,6 @@ class TrackingService {
         };
     }
 
-    private async ensureAuth() {
-        if (!auth.currentUser) {
-            try {
-                await signInAnonymously(auth);
-            } catch (error: any) {
-                // Don't block execution if auth fails - we now allow public submission in rules
-                if (error.code === 'auth/operation-not-allowed') {
-                    console.warn("Tracking: Anonymous Auth disabled. Proceeding unauthenticated.");
-                } else {
-                    console.warn("Tracking: Auth failed, proceeding unauthenticated.", error.message);
-                }
-            }
-        }
-    }
 
     private async getIPData() {
         try {
@@ -97,91 +93,83 @@ class TrackingService {
      * Otherwise creates a new one.
      */
     async saveLeadDraft(data: Partial<LeadData>) {
+        console.log("::100---------__TrackingService__saveLeadDraft__==>: saveLeadDraft data: ", data);
         if (!db) return null; // Guard against SSR/no-firebase
-        await this.ensureAuth();
 
-        let leadId = typeof window !== 'undefined' ? localStorage.getItem(LEAD_ID_KEY) : null;
+        // Use cached ID or fetch from storage
+        let leadId = this._leadId;
+        if (!leadId && typeof window !== 'undefined') {
+            leadId = localStorage.getItem(LEAD_ID_KEY);
+        }
+
+        console.log("::105---------__TrackingService__saveLeadDraft__==>: leadId: ", leadId);
+        const isNew = !leadId;
+
+        if (isNew) {
+            leadId = uuidv4();
+            this._leadId = leadId;
+            if (typeof window !== 'undefined') localStorage.setItem(LEAD_ID_KEY, leadId);
+        }
+
         const timestamp = new Date().toISOString();
-        const existingData = leadId ? { updated_at: serverTimestamp() } : {};
-
         const ipData = await this.getIPData();
-
-        const leadPayload: Partial<Lead> = {
-            data: { ...data }, // Merge new data
-            kpis: {
-                session_duration: (Date.now() - this.startTime) / 1000,
-                clicks_count: this.clicksCount
-            },
-            audit_logs: {
-                updated_at: serverTimestamp(),
-                ip: ipData.ip || 'unknown',
-                user_agent: typeof window !== 'undefined' ? navigator.userAgent : '',
-                geo_location: {
-                    city: ipData.city,
-                    country: ipData.country,
-                    region: ipData.region
-                },
-                created_at: null // Placeholder, will set if new
-            }
+        const kpis = {
+            session_duration: (Date.now() - this.startTime) / 1000,
+            clicks_count: this.clicksCount
         };
 
         try {
-            if (leadId) {
-                // Update existing lead using dot notation to avoid overwriting entire map
-                const leadRef = doc(db, 'leads', leadId);
-                const updateObject: any = {};
+            const leadRef = doc(db, 'leads', leadId!);
 
-                // Update data fields
-                Object.keys(data).forEach(k => {
-                    updateObject[`data.${k}`] = data[k as keyof LeadData];
-                });
+            // Build a clean, nested update object
+            const updateObject: any = {
+                kpis: kpis,
+                audit_logs: {
+                    updated_at: serverTimestamp(),
+                    ip: ipData.ip || 'unknown',
+                    user_agent: typeof window !== 'undefined' ? navigator.userAgent : '',
+                    geo_location: {
+                        city: ipData.city || null,
+                        country: ipData.country || null,
+                        region: ipData.region || null
+                    }
+                }
+            };
 
-                // Update KPIs
-                updateObject['kpis'] = leadPayload.kpis;
-
-                // Update Audit Logs (only what changed)
-                updateObject['audit_logs.updated_at'] = serverTimestamp();
-                if (ipData.ip) updateObject['audit_logs.ip'] = ipData.ip;
-
-                await updateDoc(leadRef, updateObject);
-                return leadId;
-
-            } else {
-                // Create New Lead
-                leadId = uuidv4();
-                if (typeof window !== 'undefined') localStorage.setItem(LEAD_ID_KEY, leadId);
-
-                const newLead: Lead = {
-                    lead_id: leadId,
-                    status_flow: {
-                        current: 'LEAD_NEW',
-                        history: [{ status: 'LEAD_NEW', timestamp }]
-                    },
-                    audit_logs: {
-                        ...leadPayload.audit_logs,
-                        created_at: serverTimestamp(),
-                    } as any,
-                    source_attribution: {
-                        ...this.getUTMParams(),
-                        landing_page: this.sourceRegion
-                    },
-                    data: data,
-                    kpis: leadPayload.kpis!,
-                    priority: 'MEDIUM'
-                };
-
-                await setDoc(doc(db, 'leads', leadId), newLead);
-                return leadId;
+            // Handle data nested fields properly for setDoc with merge
+            if (data && Object.keys(data).length > 0) {
+                updateObject.data = data;
             }
+
+            // If new, add the base fields that don't change
+            if (isNew) {
+                updateObject.lead_id = leadId;
+                updateObject.status_flow = {
+                    current: 'LEAD_NEW',
+                    history: [{ status: 'LEAD_NEW', timestamp, notes: 'Initial capture' }]
+                };
+                updateObject.audit_logs.created_at = serverTimestamp();
+                updateObject.source_attribution = {
+                    ...this.getUTMParams(),
+                    landing_page: this.sourceRegion
+                };
+                updateObject.priority = 'MEDIUM';
+            }
+
+            console.log("::156---------__TrackingService__saveLeadDraft__==>: updateObject: ", updateObject);
+            // setDoc with { merge: true } works perfectly with nested objects to merge sub-fields
+            await setDoc(leadRef, updateObject, { merge: true });
+
+            console.log("::162---------__TrackingService__saveLeadDraft__==>: Successfully saved lead: ", leadId);
+            return leadId;
         } catch (error) {
-            console.error("Error saving lead draft:", error);
+            console.error("::165---------__TrackingService__saveLeadDraft__==>: ERROR saving lead:", error);
             return null;
         }
     }
 
     async trackEvent(eventType: InteractionEvent['event_type'], metadata: object = {}) {
         this.clicksCount++;
-        await this.ensureAuth();
 
         const leadId = typeof window !== 'undefined' ? localStorage.getItem(LEAD_ID_KEY) : undefined;
 
@@ -219,7 +207,6 @@ class TrackingService {
 
     async uploadFile(file: File): Promise<string | null> {
         if (!storage) return null;
-        await this.ensureAuth();
 
         // Validation (Client side - secure rules also enforced on server)
         const validTypes = [
