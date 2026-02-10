@@ -13,9 +13,29 @@ export default function SettingsPage() {
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const [lastChangedDate, setLastChangedDate] = useState<string | null>(null);
     const [showCurrent, setShowCurrent] = useState(false);
     const [showNew, setShowNew] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            const user = auth.currentUser;
+            if (user) {
+                const { doc, getDoc } = await import("firebase/firestore");
+                const { db } = await import("@/lib/firebase");
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    if (data.last_password_change) {
+                        const date = data.last_password_change.toDate ? data.last_password_change.toDate() : new Date(data.last_password_change);
+                        setLastChangedDate(date.toLocaleString());
+                    }
+                }
+            }
+        };
+        fetchUserData();
+    }, []);
 
     // Password Strength State
     const [checks, setChecks] = useState({
@@ -58,7 +78,15 @@ export default function SettingsPage() {
             await reauthenticateWithCredential(user, credential);
             await updatePassword(user, newPassword);
 
+            // Update Firestore with last_password_change
+            const { doc, updateDoc, Timestamp } = await import("firebase/firestore");
+            const { db } = await import("@/lib/firebase");
+            await updateDoc(doc(db, "users", user.uid), {
+                last_password_change: Timestamp.now()
+            });
+
             showNotification(t('password_updated'), 'success');
+            setLastChangedDate(new Date().toLocaleString());
             setCurrentPassword("");
             setNewPassword("");
             setConfirmPassword("");
@@ -256,11 +284,34 @@ export default function SettingsPage() {
                         )}
                     </button>
 
-                    <div className="mt-8 text-center space-y-1">
-                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                            Secure Infrastructure
-                        </p>
-                        <p className="text-[12px] text-gray-300 font-medium">
+                    <div className="mt-8 pt-6 border-t border-gray-100 space-y-4">
+                        <div className="flex items-center justify-between px-1">
+                            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                                {t('security_integrity') || 'Account Security Integrity'}
+                            </p>
+                            {lastChangedDate && (
+                                <span className="text-[10px] bg-gray-50 text-gray-500 px-2 py-1 rounded-md border border-gray-100">
+                                    {t('last_modified') || 'Last modified'}: {lastChangedDate}
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Security Audit Card */}
+                        <div className="bg-blue-600/5 rounded-3xl p-5 border border-blue-100 flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-2xl bg-blue-500 flex items-center justify-center text-white flex-shrink-0">
+                                🛡️
+                            </div>
+                            <div>
+                                <h4 className="text-[14px] font-bold text-blue-900 mb-1">Auditoría de Seguridad</h4>
+                                <ul className="text-[12px] text-blue-700/80 space-y-1 font-medium">
+                                    <li>• No reutilices contraseñas de otros sitios.</li>
+                                    <li>• Cambia tu contraseña cada 90 días por seguridad.</li>
+                                    <li>• Evita nombres, fechas o datos públicos.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <p className="text-[12px] text-gray-300 font-medium text-center pt-2">
                             {t('security_priority')}
                         </p>
                     </div>

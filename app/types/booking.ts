@@ -31,6 +31,7 @@ export interface UserProfile {
     full_name: string;
     role: 'client' | 'staff' | 'admin' | 'owneradmin' | 'employ';
     created_at: any;
+    last_password_change?: any;
 }
 
 export interface BusinessProfile {

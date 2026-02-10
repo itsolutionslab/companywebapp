@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { getLeads, getServices } from "@/lib/firebase";
+import { onLeadsUpdate, onServicesUpdate } from "@/lib/firebase";
 import { Lead } from "@/types/tracking";
 import { Service } from "@/types/booking";
 import { useTranslation } from "@/components/admin/LanguageContext";
@@ -18,34 +18,66 @@ export default function DashboardPage() {
     const [leads, setLeads] = useState<Lead[]>([]);
     const [services, setServices] = useState<Service[]>([]);
     const [loading, setLoading] = useState(true);
+    const [leadsLoading, setLeadsLoading] = useState(true);
+    const [servicesLoading, setServicesLoading] = useState(true);
     const [filter, setFilter] = useState<TimeFilter>('month');
     const [startDate, setStartDate] = useState<string>('');
     const [endDate, setEndDate] = useState<string>('');
 
     useEffect(() => {
-        async function fetchData() {
-            try {
-                const [leadsData, servicesData] = await Promise.all([
-                    getLeads(),
-                    getServices()
-                ]);
-                setLeads(leadsData);
-                setServices(servicesData);
-            } catch (error) {
-                console.error("Error fetching dashboard data:", error);
-            } finally {
-                setLoading(false);
-            }
-        }
-        fetchData();
+        const unsubLeads = onLeadsUpdate((data) => {
+            // Sort locally as we removed order from Firestore query for robustness
+            const sortedData = [...data].sort((a, b) => {
+                const getTimestamp = (l: Lead) => {
+                    if (!l?.audit_logs?.created_at) return 0;
+                    const ca = l.audit_logs.created_at;
+
+                    if (ca && typeof ca === 'object' && 'toDate' in ca && typeof ca.toDate === 'function') {
+                        return ca.toDate().getTime();
+                    }
+
+                    const date = new Date(ca);
+                    return isNaN(date.getTime()) ? 0 : date.getTime();
+                };
+
+                return getTimestamp(b) - getTimestamp(a);
+            });
+            setLeads(sortedData);
+            setLeadsLoading(false);
+        });
+
+        const unsubServices = onServicesUpdate((data) => {
+            setServices(data);
+            setServicesLoading(false);
+        });
+
+        return () => {
+            unsubLeads();
+            unsubServices();
+        };
     }, []);
+
+    useEffect(() => {
+        if (!leadsLoading && !servicesLoading) {
+            setLoading(false);
+        }
+    }, [leadsLoading, servicesLoading]);
 
     const filteredLeads = useMemo(() => {
         const now = new Date();
-        return leads.filter(l => {
-            const lDate = l.audit_logs.created_at?.toDate?.() || new Date(l.audit_logs.created_at);
-            if (isNaN(lDate.getTime())) return false;
+        const filtered = leads.filter(l => {
+            if (!l?.audit_logs?.created_at) return false;
 
+            const ca = l.audit_logs.created_at;
+            const lDate = (ca && typeof ca === 'object' && 'toDate' in ca)
+                ? ca.toDate()
+                : (ca ? new Date(ca) : new Date(0));
+
+            if (isNaN(lDate.getTime()) || lDate.getTime() === 0) {
+                return false;
+            }
+
+            // --- Resto de la lógica de filtros ---
             if (filter === 'day') {
                 return lDate.toDateString() === now.toDateString();
             }
@@ -69,47 +101,48 @@ export default function DashboardPage() {
             }
             return true;
         });
+
+        return filtered;
     }, [leads, filter, startDate, endDate]);
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-[50vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
-        );
-    }
 
     // Calculations
     const totalLeads = filteredLeads.length;
-    const completedLeads = filteredLeads.filter(l => l.status_flow.current === 'CLOSED' || l.status_flow.current === 'PROJ_FINISHED').length;
-    const newLeads = filteredLeads.filter(l => l.status_flow.current === 'LEAD_NEW').length;
+    const completedLeads = filteredLeads.filter(l => l.status_flow?.current === 'CLOSED' || l.status_flow?.current === 'PROJ_FINISHED').length;
+    const newLeadsCount = filteredLeads.filter(l => l.status_flow?.current === 'LEAD_NEW').length;
     const conversionRate = totalLeads > 0 ? (completedLeads / totalLeads) * 100 : 0;
 
     // Average session duration from KPIs
     const avgDuration = totalLeads > 0
-        ? filteredLeads.reduce((sum, l) => sum + (l.kpis.session_duration || 0), 0) / totalLeads
+        ? filteredLeads.reduce((sum, l) => sum + (l.kpis?.session_duration || 0), 0) / totalLeads
         : 0;
 
     // Charts Data Preparation
 
     // 1. Leads Growth
-    const leadsGrowthData = filteredLeads.reduce((acc: any[], l) => {
-        const lDate = l.audit_logs.created_at?.toDate?.() || new Date(l.audit_logs.created_at);
-        const dateStr = lDate.toLocaleDateString(lang, { day: 'numeric', month: 'short' });
-        const existing = acc.find(item => item.name === dateStr);
-        if (existing) {
-            existing.value += 1;
-        } else {
-            acc.push({ name: dateStr, value: 1 });
-        }
-        return acc;
-    }, [])
-        .sort((a, b) => new Date(a.name).getTime() - new Date(b.name).getTime())
-        .slice(-7);
+    const leadsGrowthData = useMemo(() => {
+        const data = filteredLeads.reduce((acc: any[], l) => {
+            const ca = l.audit_logs?.created_at;
+            const lDate = ca?.toDate?.() || (ca ? new Date(ca) : new Date());
+            const dateStr = lDate.toLocaleDateString(lang, { day: 'numeric', month: 'short' });
+
+            const existing = acc.find(item => item.name === dateStr);
+            if (existing) {
+                existing.value += 1;
+            } else {
+                acc.push({ name: dateStr, value: 1, rawDate: lDate });
+            }
+            return acc;
+        }, []);
+
+        return data
+            .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime())
+            .slice(-7);
+    }, [filteredLeads, lang]);
 
     // 2. Performance by Landing Page
     const landingImpact = filteredLeads.reduce((acc: any, l) => {
-        const landing = l.source_attribution.landing_page || 'Unknown';
+        const landing = l.source_attribution?.landing_page || 'Unknown';
         acc[landing] = (acc[landing] || 0) + 1;
         return acc;
     }, {});
@@ -119,15 +152,35 @@ export default function DashboardPage() {
 
     // 3. Source Attribution
     const sourceImpact = filteredLeads.reduce((acc: any, l) => {
-        const source = l.source_attribution.utm_source || 'Direct';
+        const source = l.source_attribution?.utm_source || 'Direct';
         acc[source] = (acc[source] || 0) + 1;
         return acc;
     }, {});
     const sourcesData = Object.entries(sourceImpact).map(([name, value]) => ({ name, value: value as number }));
 
+    // 4. Budget Range Distribution
+    const budgetImpact = filteredLeads.reduce((acc: any, l) => {
+        const budget = l.data?.budget_range || 'N/A';
+        acc[budget] = (acc[budget] || 0) + 1;
+        return acc;
+    }, {});
+    const budgetData = Object.entries(budgetImpact).map(([name, value]) => ({ name, value: value as number }))
+        .sort((a, b) => b.value - a.value);
+
+    // 5. Service Interests Distribution
+    const serviceImpact = filteredLeads.reduce((acc: any, l) => {
+        const interests = l.data?.service_interests || [];
+        interests.forEach((service: string) => {
+            acc[service] = (acc[service] || 0) + 1;
+        });
+        return acc;
+    }, {});
+    const servicesInterestsData = Object.entries(serviceImpact).map(([name, value]) => ({ name, value: value as number }))
+        .sort((a, b) => b.value - a.value);
+
     const mainStats = [
         { name: 'Total Leads', value: totalLeads, icon: '🎯', color: 'bg-blue-50 text-blue-600', border: 'border-blue-100' },
-        { name: 'Nuevos', value: newLeads, icon: '✨', color: 'bg-emerald-50 text-emerald-600', border: 'border-emerald-100' },
+        { name: 'Nuevos', value: newLeadsCount, icon: '✨', color: 'bg-emerald-50 text-emerald-600', border: 'border-emerald-100' },
         { name: 'Conversión', value: `${conversionRate.toFixed(1)}%`, icon: '📈', color: 'bg-indigo-50 text-indigo-600', border: 'border-indigo-100' },
         { name: 'Sesión Prom.', value: `${Math.round(avgDuration / 60)}m`, icon: '⏱️', color: 'bg-purple-50 text-purple-600', border: 'border-purple-100' },
     ];
@@ -138,6 +191,14 @@ export default function DashboardPage() {
         { id: 'month', label: 'month' },
         { id: 'year', label: 'year' },
     ];
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-[50vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-5 duration-700">
@@ -186,7 +247,7 @@ export default function DashboardPage() {
                         <span className="w-2 h-8 bg-blue-400 rounded-full mr-3" />
                         Crecimiento de Leads
                     </h3>
-                    <div className="h-64 w-full">
+                    <div className="h-[300px] w-full min-h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={leadsGrowthData}>
                                 <defs>
@@ -211,7 +272,7 @@ export default function DashboardPage() {
                         <span className="w-2 h-8 bg-indigo-400 rounded-full mr-3" />
                         Conversion por Landing
                     </h3>
-                    <div className="h-64 w-full">
+                    <div className="h-[300px] w-full min-h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={popularLandingsData} layout="vertical">
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
@@ -230,7 +291,7 @@ export default function DashboardPage() {
                         <span className="w-2 h-8 bg-emerald-400 rounded-full mr-3" />
                         Fuentes de Tráfico
                     </h3>
-                    <div className="h-64 w-full">
+                    <div className="h-[300px] w-full min-h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
@@ -248,6 +309,44 @@ export default function DashboardPage() {
                                 </Pie>
                                 <Tooltip />
                             </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* 4. Budget Distribution */}
+                <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
+                    <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                        <span className="w-2 h-8 bg-amber-400 rounded-full mr-3" />
+                        Distribución de Presupuestos
+                    </h3>
+                    <div className="h-[300px] w-full min-h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={budgetData} layout="vertical">
+                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
+                                <XAxis type="number" hide />
+                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 10, fontWeight: 600 }} width={100} />
+                                <Tooltip cursor={{ fill: 'transparent' }} />
+                                <Bar dataKey="value" radius={[0, 10, 10, 0]} barSize={24} fill="#f59e0b" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* 5. Service Interests */}
+                <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm lg:col-span-2">
+                    <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                        <span className="w-2 h-8 bg-rose-400 rounded-full mr-3" />
+                        Servicios más Solicitados
+                    </h3>
+                    <div className="h-[300px] w-full min-h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={servicesInterestsData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 10, fontWeight: 600 }} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 11 }} />
+                                <Tooltip cursor={{ fill: 'transparent' }} />
+                                <Bar dataKey="value" radius={[10, 10, 0, 0]} barSize={40} fill="#f43f5e" />
+                            </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>

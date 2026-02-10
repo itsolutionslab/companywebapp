@@ -160,7 +160,7 @@ export default function LeadDetailPage() {
                     ←
                 </button>
                 <div>
-                    <h1 className="text-2xl font-bold text-black tracking-tight">{lead.data.name || 'Sin Nombre'}</h1>
+                    <h1 className="text-2xl font-bold text-black tracking-tight">{lead.data?.name || 'Sin Nombre'}</h1>
                     <p className="text-[#8E8E93] text-xs font-bold uppercase tracking-widest mt-0.5">ID: {lead.lead_id}</p>
                 </div>
             </div>
@@ -178,16 +178,28 @@ export default function LeadDetailPage() {
                             <div className="space-y-3">
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-400 uppercase">Email</label>
-                                    <p className="font-bold text-gray-900">{lead.data.email || 'N/A'}</p>
+                                    <p className="font-bold text-gray-900">{lead.data?.email || 'N/A'}</p>
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-400 uppercase">Teléfono</label>
-                                    <p className="font-bold text-gray-900">{lead.data.phone || 'N/A'}</p>
+                                    <p className="font-bold text-gray-900">{lead.data?.phone || 'N/A'}</p>
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-400 uppercase">Empresa</label>
-                                    <p className="font-bold text-gray-900">{lead.data.company || 'N/A'}</p>
+                                    <p className="font-bold text-gray-900">{lead.data?.company || 'N/A'}</p>
                                 </div>
+                                {(lead.data?.service_interests && lead.data.service_interests.length > 0) && (
+                                    <div className="pt-2">
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Servicios de Interés</label>
+                                        <div className="flex flex-wrap gap-1">
+                                            {lead.data.service_interests.map((s: string, idx: number) => (
+                                                <span key={idx} className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[9px] font-black border border-blue-100 uppercase">
+                                                    {s.replace(/-/g, ' ')}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </section>
 
@@ -199,16 +211,21 @@ export default function LeadDetailPage() {
                             <div className="space-y-3">
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-400 uppercase">Landing Page</label>
-                                    <p className="font-bold text-gray-900">{lead.source_attribution.landing_page || 'N/A'}</p>
+                                    {/* Protegemos source_attribution */}
+                                    <p className="font-bold text-gray-900">{lead?.source_attribution?.landing_page || 'N/A'}</p>
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-400 uppercase">Fuente (UTM)</label>
-                                    <p className="font-bold text-gray-900">{lead.source_attribution.utm_source || 'Directo'}</p>
+                                    {/* Protegemos source_attribution */}
+                                    <p className="font-bold text-gray-900">{lead?.source_attribution?.utm_source || 'Directo'}</p>
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-400 uppercase">Fecha Registro</label>
                                     <p className="font-bold text-gray-900">
-                                        {new Date(lead.audit_logs.created_at?.toDate?.() || lead.audit_logs.created_at).toLocaleString()}
+                                        {lead?.audit_logs?.created_at
+                                            ? new Date(lead.audit_logs.created_at?.toDate?.() || lead.audit_logs.created_at).toLocaleString()
+                                            : 'Fecha no disponible'
+                                        }
                                     </p>
                                 </div>
                             </div>
@@ -222,12 +239,12 @@ export default function LeadDetailPage() {
                             Descripción del Proyecto
                         </h3>
                         <p className="text-gray-700 font-medium leading-relaxed whitespace-pre-wrap bg-gray-50 rounded-2xl p-6">
-                            {lead.data.project_desc || 'No se proporcionó descripción.'}
+                            {lead.data?.project_desc || 'No se proporcionó descripción.'}
                         </p>
                     </div>
 
                     {/* Documentos Adjuntos */}
-                    {lead.data.file_url && (
+                    {lead.data?.file_url && (
                         <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8">
                             <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-6 flex items-center gap-2">
                                 <span className="w-1 h-3 bg-rose-500 rounded-full"></span>
@@ -266,25 +283,25 @@ export default function LeadDetailPage() {
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
                             <div className="p-4 bg-orange-50 rounded-2xl border border-orange-100">
                                 <span className="block text-xl mb-1">🖱️</span>
-                                <span className="block text-lg font-black text-orange-600">{lead.kpis.clicks_count}</span>
+                                <span className="block text-lg font-black text-orange-600">{lead.kpis?.clicks_count || 0}</span>
                                 <span className="text-[9px] font-black uppercase tracking-widest text-orange-400">Clics</span>
                             </div>
                             <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
                                 <span className="block text-xl mb-1">⏱️</span>
-                                <span className="block text-lg font-black text-indigo-600">{Math.round(lead.kpis.session_duration / 60)}m</span>
+                                <span className="block text-lg font-black text-indigo-600">{Math.round((lead.kpis?.session_duration || 0) / 60)}m</span>
                                 <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">Duración</span>
                             </div>
                             <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
                                 <span className="block text-xl mb-1">🌍</span>
                                 <span className="block text-md font-black text-emerald-600 truncate px-1">
-                                    {lead.audit_logs.geo_location?.city || 'Local'}
+                                    {lead.audit_logs?.geo_location?.city || 'Local'}
                                 </span>
                                 <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400">Ubicación</span>
                             </div>
                             <div className="p-4 bg-rose-50 rounded-2xl border border-rose-100 opacity-50">
                                 <span className="block text-xl mb-1">📄</span>
                                 <span className="block text-lg font-black text-rose-600">
-                                    {lead.data.file_url ? 'SÍ' : 'NO'}
+                                    {lead.data?.file_url ? 'SÍ' : 'NO'}
                                 </span>
                                 <span className="text-[9px] font-black uppercase tracking-widest text-rose-400">Archivo</span>
                             </div>
@@ -301,7 +318,7 @@ export default function LeadDetailPage() {
                             {/* Vertical Line */}
                             <div className="absolute top-0 bottom-0 left-0 w-px bg-gray-100 -ml-4 z-0"></div>
 
-                            {lead.status_flow.history.slice().reverse().map((item, idx) => (
+                            {(lead.status_flow?.history || []).slice().reverse().map((item, idx) => (
                                 <div key={idx} className="relative z-10 flex items-start gap-6 group">
                                     <div className="w-8 h-8 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm text-gray-300 group-hover:text-blue-500 group-hover:border-blue-100 transition-all">
                                         <div className="w-2 h-2 rounded-full bg-current"></div>
@@ -373,7 +390,7 @@ export default function LeadDetailPage() {
                         <div className="mt-8 pt-8 border-t border-gray-50 space-y-2">
                             <div className="flex justify-between items-center text-[10px] font-bold">
                                 <span className="text-gray-400">IP</span>
-                                <span className="text-gray-900">{lead.audit_logs.ip}</span>
+                                <span className="text-gray-900">{lead.audit_logs?.ip}</span>
                             </div>
                             <div className="flex justify-between items-center text-[10px] font-bold">
                                 <span className="text-gray-400">Canal</span>
