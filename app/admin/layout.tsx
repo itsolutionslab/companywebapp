@@ -66,7 +66,7 @@ export default function AdminLayout({
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#E6007E]"></div>
             </div>
         );
     }
@@ -88,7 +88,7 @@ export default function AdminLayout({
                 <p>Staff members cannot access this area.</p>
                 <button
                     onClick={() => router.push('/admin/dashboard')}
-                    className="px-4 py-2 bg-pink-500 text-white rounded-xl"
+                    className="px-4 py-2 bg-[#E6007E] text-white rounded-xl"
                 >
                     Go to Dashboard
                 </button>
@@ -135,7 +135,7 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath }: 
             {/* Top Header - Mobile Only - Added z-50 to stay on top of backdrop */}
             <header className="md:hidden bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 px-6 py-4 flex items-center justify-between flex-shrink-0">
                 <div className="flex items-center space-x-2">
-                    <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
+                    <span className="text-xl font-bold bg-gradient-to-r from-[#0081C8] via-[#00A651] to-[#C5D900] bg-clip-text text-transparent">
                         BRECOMPERU Solutions
                     </span>
                 </div>
@@ -145,7 +145,7 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath }: 
                             <button
                                 key={l}
                                 onClick={() => setLang(l as any)}
-                                className={`text-[9px] px-2 py-1 rounded-md transition-all uppercase ${lang === l ? "bg-white shadow-sm text-pink-600 font-bold" : "text-gray-400"}`}
+                                className={`text-[9px] px-2 py-1 rounded-md transition-all uppercase ${lang === l ? "bg-white shadow-sm text-[#E6007E] font-bold" : "text-gray-400"}`}
                             >
                                 {l}
                             </button>
@@ -156,7 +156,7 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath }: 
                     <div className="relative">
                         <button
                             onClick={() => setShowSettings(!showSettings)}
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-500 active:scale-90 ${showSettings ? "bg-pink-500 text-white shadow-md shadow-pink-100" : "bg-gray-50 text-gray-400 border border-gray-100"}`}
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-500 active:scale-90 ${showSettings ? "bg-[#E6007E] text-white shadow-md shadow-[#E6007E]/10" : "bg-gray-50 text-gray-400 border border-gray-100"}`}
                         >
                             <span className={`text-lg transition-transform duration-700 ${showSettings ? 'rotate-180 scale-110' : 'rotate-0'}`}>⚙️</span>
                         </button>
@@ -168,7 +168,7 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath }: 
                                         <Link
                                             href={getCleanPath("/admin/users")}
                                             onClick={() => setShowSettings(false)}
-                                            className={`flex items-center justify-between p-3 rounded-[1rem] transition-all active:bg-gray-100/50 ${currentAdminPath === '/admin/users' ? "bg-pink-500 text-white shadow-md shadow-pink-100 font-bold" : "text-gray-700 hover:bg-gray-50/50"}`}
+                                            className={`flex items-center justify-between p-3 rounded-[1rem] transition-all active:bg-gray-100/50 ${currentAdminPath === '/admin/users' ? "bg-[#E6007E] text-white shadow-md shadow-[#E6007E]/10 font-bold" : "text-gray-700 hover:bg-gray-50/50"}`}
                                         >
                                             <div className="flex items-center space-x-2.5">
                                                 <span className="text-sm">👥</span>
@@ -182,7 +182,7 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath }: 
                                 <Link
                                     href={getCleanPath("/admin/settings")}
                                     onClick={() => setShowSettings(false)}
-                                    className={`flex items-center justify-between p-3 rounded-[1rem] transition-all active:bg-gray-100/50 ${currentAdminPath === '/admin/settings' ? "bg-pink-500 text-white shadow-md shadow-pink-100 font-bold" : "text-gray-700 hover:bg-gray-50/50"}`}
+                                    className={`flex items-center justify-between p-3 rounded-[1rem] transition-all active:bg-gray-100/50 ${currentAdminPath === '/admin/settings' ? "bg-[#E6007E] text-white shadow-md shadow-[#E6007E]/10 font-bold" : "text-gray-700 hover:bg-gray-50/50"}`}
                                 >
                                     <div className="flex items-center space-x-2.5">
                                         <span className="text-sm">⚙️</span>
@@ -208,10 +208,10 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath }: 
             <aside className="hidden md:flex w-64 bg-white shadow-sm flex-shrink-0 z-50 border-r border-gray-100 h-screen overflow-y-auto">
                 <div className="p-8 flex flex-col min-h-full">
                     <div className="flex items-center space-x-2 mb-12 flex-shrink-0">
-                        <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
+                        <span className="text-2xl font-bold bg-gradient-to-r from-[#0081C8] via-[#00A651] to-[#C5D900] bg-clip-text text-transparent">
                             BRECOMPERU
                         </span>
-                        <span className="text-[10px] bg-blue-50 text-blue-500 px-2 py-1 rounded-lg uppercase tracking-wider font-bold">Solutions</span>
+                        <span className="text-[10px] bg-[#0081C8]/10 text-[#0081C8] px-2 py-1 rounded-lg uppercase tracking-wider font-bold">Solutions</span>
                     </div>
 
                     <nav className="flex-grow space-y-2">
@@ -220,7 +220,7 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath }: 
                                 key={item.path}
                                 href={getCleanPath(item.path)}
                                 className={`flex items-center space-x-3 p-4 rounded-2xl transition-all duration-300 ${currentAdminPath === item.path
-                                    ? "bg-pink-500 text-white shadow-lg shadow-pink-100 translate-x-1"
+                                    ? "bg-[#E6007E] text-white shadow-lg shadow-[#E6007E]/20 translate-x-1"
                                     : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                                     }`}
                             >
@@ -236,7 +236,7 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath }: 
                                 <button
                                     key={l}
                                     onClick={() => setLang(l as any)}
-                                    className={`flex-1 text-[10px] py-2 rounded-lg transition-all uppercase ${lang === l ? "bg-white shadow-sm text-pink-600 font-bold" : "text-gray-400 hover:text-gray-600"
+                                    className={`flex-1 text-[10px] py-2 rounded-lg transition-all uppercase ${lang === l ? "bg-white shadow-sm text-[#E6007E] font-bold" : "text-gray-400 hover:text-gray-600"
                                         }`}
                                 >
                                     {l}
@@ -246,7 +246,7 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath }: 
 
                         <Link
                             href={getCleanPath("/admin/settings")}
-                            className={`w-full flex items-center space-x-3 p-4 rounded-2xl transition-all duration-300 group ${currentAdminPath === '/admin/settings' ? "bg-pink-50 text-pink-600 font-bold" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}
+                            className={`w-full flex items-center space-x-3 p-4 rounded-2xl transition-all duration-300 group ${currentAdminPath === '/admin/settings' ? "bg-[#E6007E]/10 text-[#E6007E] font-bold" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}
                         >
                             <span className="text-xl group-hover:rotate-90 transition-transform duration-500">⚙️</span>
                             <span className="font-semibold">{t('settings')}</span>
@@ -281,12 +281,12 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath }: 
                                 key={item.path}
                                 href={getCleanPath(item.path)}
                                 onClick={() => setShowSettings(false)}
-                                className={`flex flex-col items-center justify-center py-1.5 px-2 rounded-[1.25rem] transition-all relative active:scale-95 ${isActive ? "text-pink-600" : "text-gray-400 hover:text-gray-600"}`}
+                                className={`flex flex-col items-center justify-center py-1.5 px-2 rounded-[1.25rem] transition-all relative active:scale-95 ${isActive ? "text-[#E6007E]" : "text-gray-400 hover:text-gray-600"}`}
                             >
-                                <span className={`text-lg mb-0.5 transition-all duration-500 ${isActive ? "scale-105 drop-shadow-[0_0_8px_rgba(236,72,153,0.3)]" : "scale-100"}`}>{item.icon}</span>
+                                <span className={`text-lg mb-0.5 transition-all duration-500 ${isActive ? "scale-105 drop-shadow-[0_0_8px_rgba(230,0,126,0.3)]" : "scale-100"}`}>{item.icon}</span>
                                 <span className={`text-[8px] uppercase tracking-tighter font-bold transition-all ${isActive ? "opacity-100" : "opacity-50"}`}>{item.name}</span>
                                 {isActive && (
-                                    <div className="absolute -bottom-0.5 w-0.5 h-0.5 bg-pink-500 rounded-full shadow-[0_0_8px_rgba(236,72,153,0.6)]"></div>
+                                    <div className="absolute -bottom-0.5 w-0.5 h-0.5 bg-[#E6007E] rounded-full shadow-[0_0_8px_rgba(230,0,126,0.6)]"></div>
                                 )}
                             </Link>
                         );

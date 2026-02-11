@@ -56,11 +56,11 @@ export default function LoginPage() {
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
             <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-gray-100">
                 <div className="text-center mb-10">
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent inline-block">
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-[#0081C8] to-[#00A651] bg-clip-text text-transparent inline-block">
                         BRECOMPERU Solutions
                     </h1>
                     <p className="text-gray-500 mt-2 font-medium tracking-wide flex items-center justify-center gap-2">
-                        <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                        <span className="w-2 h-2 bg-[#C5D900] rounded-full animate-pulse"></span>
                         Admin Panel Authorization
                     </p>
                 </div>
@@ -75,7 +75,7 @@ export default function LoginPage() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all"
+                            className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#E6007E] focus:border-transparent outline-none transition-all"
                             placeholder="admin@example.com"
                         />
                     </div>
@@ -90,7 +90,7 @@ export default function LoginPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all pr-12"
+                                className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#E6007E] focus:border-transparent outline-none transition-all pr-12"
                                 placeholder="••••••••"
                             />
                             <button
@@ -131,7 +131,7 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-400 text-white rounded-2xl font-bold shadow-lg shadow-pink-200 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                        className="w-full py-4 bg-gradient-to-r from-[#E6007E] to-[#00A651] text-white rounded-2xl font-bold shadow-lg shadow-[#E6007E]/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
                     >
                         {loading ? "Logging in..." : "Login"}
                     </button>
