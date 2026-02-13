@@ -97,13 +97,17 @@ export default function AdminLayout({
     }
 
     return (
-        <LanguageProvider>
-            <NotificationProvider>
-                <AdminLayoutContent handleLogout={handleLogout} role={role} currentAdminPath={currentAdminPath}>
-                    {children}
-                </AdminLayoutContent>
-            </NotificationProvider>
-        </LanguageProvider>
+        <html lang="en">
+            <body className="antialiased">
+                <LanguageProvider>
+                    <NotificationProvider>
+                        <AdminLayoutContent handleLogout={handleLogout} role={role} currentAdminPath={currentAdminPath}>
+                            {children}
+                        </AdminLayoutContent>
+                    </NotificationProvider>
+                </LanguageProvider>
+            </body>
+        </html>
     );
 }
 

@@ -14,11 +14,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased">
-        <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID || ""} />
-        {children}
-      </body>
-    </html>
+    <>
+      <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID || ""} />
+      {children}
+    </>
   );
 }

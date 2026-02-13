@@ -6,12 +6,23 @@ export function proxy(request: NextRequest) {
 
     // 1. Detect country from Vercel header or fallback
     const country = request.headers.get('x-vercel-ip-country') || 'US';
-    const region = country.toUpperCase() === 'PE' ? 'pe' : 'us';
+
+    // 2. Detect preferred language from Accept-Language header
+    const acceptLanguage = request.headers.get('accept-language') || '';
+    const isSpanishPreferred = acceptLanguage.toLowerCase().includes('es');
+
+    // 3. Determine target region based on language and country
+    let region = 'us'; // Default
+    if (isSpanishPreferred) {
+        region = country.toUpperCase() === 'PE' ? 'pe' : 'latam';
+    } else if (country.toUpperCase() === 'PE') {
+        region = 'pe'; // If in Peru but language not specified/Spanish, default to PE
+    }
 
     const host = request.headers.get('host') || '';
-    const isSubdomain = host.startsWith('solutions.brecomperu.com');
+    const isSubdomain = host.startsWith('solutions.brecomperu.com') || host.startsWith('admin.');
 
-    // 2. Handle sub-domain routing for solutions.brecomperu.com
+    // 4. Handle sub-domain routing for solutions.brecomperu.com and admin.
     if (isSubdomain) {
         // Rewrite root of subdomain to /admin
         if (url.pathname === '/') {
@@ -23,21 +34,25 @@ export function proxy(request: NextRequest) {
         }
     }
 
-    // 3. Set region cookie if not present or different
+    // 5. Handle root path redirection (Automatic Language Switching)
+    if (url.pathname === '/') {
+        return NextResponse.redirect(new URL(`/${region}`, request.url));
+    }
+
+    // 6. Set region cookie if not present or different (on non-root paths)
     const response = NextResponse.next();
     const currentRegionCookie = cookies.get('NEXT_REGION')?.value;
 
-    if (currentRegionCookie !== region) {
-        response.cookies.set('NEXT_REGION', region, {
+    // Determine region from path if possible for cookie consistency
+    const pathRegion = url.pathname.split('/')[1];
+    const finalRegion = ['us', 'pe', 'latam'].includes(pathRegion) ? pathRegion : region;
+
+    if (currentRegionCookie !== finalRegion) {
+        response.cookies.set('NEXT_REGION', finalRegion, {
             path: '/',
             maxAge: 60 * 60 * 24 * 30, // 30 days
             sameSite: 'lax',
         });
-    }
-
-    // 3. Handle root path redirection
-    if (url.pathname === '/') {
-        return NextResponse.redirect(new URL(`/${region}`, request.url));
     }
 
     return response;

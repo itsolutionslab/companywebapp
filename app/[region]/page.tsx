@@ -41,8 +41,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const config = seoConfigs[region] || seoConfigs['latam'];
 
+    const alternates = {
+        canonical: `/${region}`,
+        languages: {
+            'en-US': '/us',
+            'es-PE': '/pe',
+            'es-419': '/latam',
+        }
+    };
+
     return {
         ...config,
+        alternates,
         openGraph: {
             title: config.title as string,
             description: config.description as string,
