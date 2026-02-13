@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Script from "next/script";
+import { GoogleTagManager } from "@next/third-parties/google";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,21 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        {/* Google Analytics 4 */}
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX`}
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-XXXXXXXXXX', {
-              page_path: window.location.pathname,
-            });
-          `}
-        </Script>
+        <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID || ""} />
         {children}
       </body>
     </html>
