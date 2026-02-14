@@ -11,7 +11,16 @@ import {
     BarChart, Bar, Cell, AreaChart, Area, PieChart, Pie
 } from 'recharts';
 
-type TimeFilter = 'day' | 'week' | 'month' | 'year' | 'custom';
+import DateFilterModal from "@/components/admin/DateFilterModal";
+
+type TimeFilter = 'day' | 'week' | 'month' | 'year' | 'single' | 'range' | 'custom';
+
+const getLocalDateString = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 export default function DashboardPage() {
     const { t, lang } = useTranslation();
@@ -23,6 +32,8 @@ export default function DashboardPage() {
     const [filter, setFilter] = useState<TimeFilter>('month');
     const [startDate, setStartDate] = useState<string>('');
     const [endDate, setEndDate] = useState<string>('');
+    const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+    const [dateModalMode, setDateModalMode] = useState<'single' | 'range'>('single');
 
     useEffect(() => {
         const unsubLeads = onLeadsUpdate((data) => {
@@ -77,7 +88,9 @@ export default function DashboardPage() {
                 return false;
             }
 
-            // --- Resto de la lógica de filtros ---
+            const lDateStr = getLocalDateString(lDate);
+
+            // --- Filter logic ---
             if (filter === 'day') {
                 return lDate.toDateString() === now.toDateString();
             }
@@ -92,6 +105,13 @@ export default function DashboardPage() {
             if (filter === 'year') {
                 return lDate.getFullYear() === now.getFullYear();
             }
+            if (filter === 'single') {
+                return lDateStr === startDate;
+            }
+            if (filter === 'range') {
+                if (!startDate || !endDate) return true;
+                return lDateStr >= startDate && lDateStr <= endDate;
+            }
             if (filter === 'custom') {
                 if (!startDate || !endDate) return true;
                 const start = new Date(startDate);
@@ -104,6 +124,7 @@ export default function DashboardPage() {
 
         return filtered;
     }, [leads, filter, startDate, endDate]);
+
 
 
     // Calculations
@@ -185,11 +206,13 @@ export default function DashboardPage() {
         { name: 'Sesión Prom.', value: `${Math.round(avgDuration / 60)}m`, icon: '⏱️', color: 'bg-purple-50 text-purple-600', border: 'border-purple-100' },
     ];
 
-    const filterOptions: { id: TimeFilter; label: TranslationKey }[] = [
-        { id: 'day', label: 'day' },
-        { id: 'week', label: 'week' },
-        { id: 'month', label: 'month' },
-        { id: 'year', label: 'year' },
+    const filterOptions: { id: TimeFilter; label: TranslationKey; icon: string }[] = [
+        { id: 'day', label: 'day', icon: '☀️' },
+        { id: 'week', label: 'week', icon: '📅' },
+        { id: 'month', label: 'month', icon: '🗓️' },
+        { id: 'year', label: 'year', icon: '📊' },
+        { id: 'single', label: 'filter_date', icon: '📍' },
+        { id: 'range', label: 'filter_range', icon: '↔️' },
     ];
 
     if (loading) {
@@ -209,21 +232,53 @@ export default function DashboardPage() {
                     <p className="text-[#8E8E93] text-sm font-medium leading-tight">Métricas de tracking y conversión en tiempo real</p>
                 </div>
 
-                <div className="flex bg-[#EEEEF0] p-0.5 rounded-xl shadow-inner overflow-x-auto no-scrollbar">
-                    {filterOptions.map((opt) => (
-                        <button
-                            key={opt.id}
-                            onClick={() => setFilter(opt.id)}
-                            className={`px-4 py-1.5 rounded-[10px] text-[13px] font-semibold transition-all duration-200 ${filter === opt.id
-                                ? "bg-white text-black shadow-sm ring-1 ring-black/5"
-                                : "text-[#8E8E93] hover:text-black"
-                                }`}
-                        >
-                            {t(opt.label as any)}
-                        </button>
-                    ))}
+                <div className="flex bg-white p-1.5 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 overflow-x-auto no-scrollbar max-w-full">
+                    <div className="flex items-center gap-1.5">
+                        {filterOptions.map((opt) => {
+                            const isActive = filter === opt.id;
+                            return (
+                                <button
+                                    key={opt.id}
+                                    onClick={() => {
+                                        if (opt.id === 'single' || opt.id === 'range') {
+                                            setDateModalMode(opt.id);
+                                            setIsDateModalOpen(true);
+                                        } else {
+                                            setFilter(opt.id);
+                                        }
+                                    }}
+                                    className={`
+                                        px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.12em] transition-all duration-300 flex items-center justify-center gap-2.5 whitespace-nowrap group
+                                        ${isActive
+                                            ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-100 scale-[1.05] ring-1 ring-blue-400/20"
+                                            : "text-gray-500 hover:text-blue-600 hover:bg-blue-50/50"
+                                        }
+                                    `}
+                                >
+                                    <span className={`text-lg transition-all duration-500 ${isActive ? 'scale-110 rotate-[5deg]' : 'opacity-40 grayscale group-hover:opacity-100 group-hover:grayscale-0'}`}>
+                                        {opt.icon}
+                                    </span>
+                                    <span>{t(opt.label as any)}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
+
+            {/* Date Filter Modal */}
+            <DateFilterModal
+                isOpen={isDateModalOpen}
+                onClose={() => setIsDateModalOpen(false)}
+                mode={dateModalMode}
+                initialStart={startDate}
+                initialEnd={endDate}
+                onSelect={(start, end) => {
+                    setStartDate(start);
+                    setEndDate(end);
+                    setFilter(dateModalMode);
+                }}
+            />
 
             {/* Main Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

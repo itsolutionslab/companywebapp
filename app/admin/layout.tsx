@@ -116,8 +116,8 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath }: 
     const menuItems = [
         { name: t('dashboard') || 'Dashboard', path: '/admin/dashboard', icon: '📊', roles: ['admin', 'staff', 'employ'] },
         { name: t('prospectos') || 'Prospectos', path: '/admin/prospectos', icon: '🎯', roles: ['admin', 'staff', 'employ'] },
-        { name: t('reservations') || 'Reservations', path: '/admin/reservations', icon: '📅', roles: ['admin', 'staff', 'employ'] },
-        { name: t('services') || 'Services', path: '/admin/services', icon: '🛠️', roles: ['admin'] },
+        { name: t('reservations') || 'Discovery Meets', path: '/admin/reservations', icon: '🤝', roles: ['admin', 'staff', 'employ'] },
+        //{ name: t('services') || 'Services', path: '/admin/services', icon: '🛠️', roles: ['admin'] },
         { name: t('schedules') || 'Schedules', path: '/admin/schedules', icon: '⏰', roles: ['admin', 'staff', 'employ'] },
         { name: t('users') || 'Users', path: '/admin/users', icon: '👥', roles: ['admin'] },
     ];

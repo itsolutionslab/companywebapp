@@ -111,6 +111,29 @@ export const updateBookingStatus = async (id: string, status: BookingData['statu
     });
 };
 
+export const addBooking = async (data: Omit<BookingData, 'id'>) => {
+    return await addDoc(collection(db, "bookings"), data);
+};
+
+export const isSlotAvailable = async (date: string, time: string): Promise<boolean> => {
+    // 1. Check if blocked in settings
+    const availDoc = await getDoc(doc(db, "settings", "availability"));
+    if (availDoc.exists()) {
+        const disabledSlots = availDoc.data().disabledSlots || [];
+        if (disabledSlots.includes(`${date}_${time}`)) return false;
+    }
+
+    // 2. Check if already booked locally or in other status
+    const q = query(
+        collection(db, "bookings"),
+        where("date", "==", date),
+        where("time", "==", time),
+        where("status", "in", ["pending", "confirmed", "attended"])
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.empty;
+};
+
 // Availability & Settings
 export const onAvailabilityUpdate = (callback: (disabled: string[]) => void) => {
     return onSnapshot(doc(db, "settings", "availability"), (doc) => {
