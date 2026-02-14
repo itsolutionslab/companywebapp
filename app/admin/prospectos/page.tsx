@@ -124,17 +124,25 @@ export default function ProspectosPage() {
                                 <tr key={lead.lead_id} className="hover:bg-gray-50/50 transition-colors group">
                                     <td className="px-6 py-5">
                                         <div className="flex flex-col">
-                                            <span className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                                                {lead.data?.name || 'Sin Nombre'}
-                                                {lead.data?.company && (
-                                                    <span className="ml-2 text-[10px] text-blue-500 font-bold uppercase tracking-wider bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
-                                                        {lead.data.company}
-                                                    </span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                                    {lead.data?.name || 'Sin Nombre'}
+                                                </span>
+                                                {lead.data?.decision_maker === 'yes' && (
+                                                    <span className="text-[9px] font-black bg-lime-500 text-white px-1.5 py-0.5 rounded shadow-sm" title="Decision Maker">DM</span>
                                                 )}
-                                            </span>
-                                            <span className="text-xs text-gray-500 font-medium">
-                                                {lead.data?.email || lead.data?.phone || 'Sin contacto'}
-                                            </span>
+                                                {lead.data?.investment_level === 'ultra' && (
+                                                    <span className="text-[9px] font-black bg-cyan-500 text-white px-1.5 py-0.5 rounded shadow-sm" title="High Investment">★</span>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <span className="text-xs text-gray-500 font-medium truncate max-w-[150px]">
+                                                    {lead.data?.email || lead.data?.phone || 'Sin contacto'}
+                                                </span>
+                                                {lead.data?.role && (
+                                                    <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">• {lead.data.role}</span>
+                                                )}
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-5">
@@ -144,9 +152,9 @@ export default function ProspectosPage() {
                                     </td>
                                     <td className="px-6 py-5">
                                         <div className="flex flex-col">
-                                            <span className="text-xs font-bold text-gray-700">{lead.source_attribution.landing_page?.split('_')[0] || 'Desconocido'}</span>
-                                            <span className="text-[10px] text-gray-400 font-medium">
-                                                {lead.source_attribution.utm_source || 'Directo'}
+                                            <span className="text-xs font-bold text-gray-900">{lead.source_attribution.landing_page?.split('_')[0] || 'Desconocido'}</span>
+                                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
+                                                {lead.data?.region || 'Global'} / {lead.source_attribution.utm_source || 'Directo'}
                                             </span>
                                         </div>
                                     </td>

@@ -188,12 +188,42 @@ export default function LeadDetailPage() {
                                     <label className="text-[10px] font-bold text-gray-400 uppercase">Empresa</label>
                                     <p className="font-bold text-gray-900">{lead.data?.company || 'N/A'}</p>
                                 </div>
-                                {(lead.data?.service_interests && lead.data.service_interests.length > 0) && (
+                                {lead.data?.website && (
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase">Website</label>
+                                        <p className="font-bold text-blue-600 truncate">
+                                            <a href={lead.data.website.startsWith('http') ? lead.data.website : `https://${lead.data.website}`} target="_blank" rel="noopener noreferrer">
+                                                {lead.data.website}
+                                            </a>
+                                        </p>
+                                    </div>
+                                )}
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Rol / Cargo</label>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-[9px] font-black uppercase border border-gray-200">
+                                            {lead.data?.role || 'N/A'}
+                                        </span>
+                                    </div>
+                                </div>
+                                {lead.data?.objectives && lead.data.objectives.length > 0 && (
                                     <div className="pt-2">
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Servicios de Interés</label>
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Objetivos Estratégicos</label>
+                                        <div className="flex flex-wrap gap-1">
+                                            {lead.data.objectives.map((obj: string, idx: number) => (
+                                                <span key={idx} className="px-2 py-0.5 bg-cyan-50 text-cyan-600 rounded-md text-[9px] font-black border border-cyan-100 uppercase">
+                                                    {obj.replace(/-/g, ' ')}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {lead.data?.service_interests && lead.data.service_interests.length > 0 && (
+                                    <div className="pt-2">
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Servicios (Legacy)</label>
                                         <div className="flex flex-wrap gap-1">
                                             {lead.data.service_interests.map((s: string, idx: number) => (
-                                                <span key={idx} className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[9px] font-black border border-blue-100 uppercase">
+                                                <span key={idx} className="px-2 py-0.5 bg-gray-50 text-gray-400 rounded-md text-[9px] font-black border border-gray-100 uppercase italic">
                                                     {s.replace(/-/g, ' ')}
                                                 </span>
                                             ))}
@@ -232,15 +262,62 @@ export default function LeadDetailPage() {
                         </section>
                     </div>
 
-                    {/* Project Description */}
-                    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8">
-                        <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-6 flex items-center gap-2">
-                            <span className="w-1 h-3 bg-emerald-500 rounded-full"></span>
-                            Descripción del Proyecto
-                        </h3>
-                        <p className="text-gray-700 font-medium leading-relaxed whitespace-pre-wrap bg-gray-50 rounded-2xl p-6">
-                            {lead.data?.project_desc || 'No se proporcionó descripción.'}
-                        </p>
+                    {/* Strategic Insights */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-3">Etapa Actual</label>
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-lime-50 text-lime-700 rounded-xl border border-lime-100 text-xs font-black uppercase">
+                                <span className="w-2 h-2 rounded-full bg-lime-500 animate-pulse"></span>
+                                {lead.data?.stage || 'No definida'}
+                            </div>
+                        </div>
+                        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-3">Urgencia / Timeline</label>
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-cyan-50 text-cyan-700 rounded-xl border border-cyan-100 text-xs font-black uppercase">
+                                📅 {lead.data?.timeline || 'No definida'}
+                            </div>
+                        </div>
+                        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-3">Inversión Estimada</label>
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 text-xs font-black uppercase">
+                                💰 {lead.data?.investment_level || 'No definida'}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Impact & Project Description */}
+                    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8 space-y-8">
+                        <section>
+                            <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+                                <span className="w-1 h-3 bg-emerald-500 rounded-full"></span>
+                                Resultados de Negocio Esperados (Impacto)
+                            </h3>
+                            <p className="text-gray-900 font-bold leading-relaxed bg-emerald-50/30 rounded-2xl p-6 border border-emerald-50">
+                                {lead.data?.impact || 'No se especificó el impacto esperado.'}
+                            </p>
+                        </section>
+
+                        <section>
+                            <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+                                <span className="w-1 h-3 bg-blue-500 rounded-full"></span>
+                                Toma de Decisión
+                            </h3>
+                            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                <p className="text-xs font-bold text-gray-700 uppercase tracking-tight">
+                                    ¿Es el tomador de decisión final?: <span className="text-blue-600 ml-2">{lead.data?.decision_maker || 'N/A'}</span>
+                                </p>
+                            </div>
+                        </section>
+
+                        <section>
+                            <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+                                <span className="w-1 h-3 bg-gray-300 rounded-full"></span>
+                                Notas del Proyecto / Descripción Original
+                            </h3>
+                            <p className="text-gray-600 font-medium leading-relaxed whitespace-pre-wrap">
+                                {lead.data?.project_desc || 'No se proporcionó descripción detallada.'}
+                            </p>
+                        </section>
                     </div>
 
                     {/* Documentos Adjuntos */}

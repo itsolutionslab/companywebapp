@@ -21,13 +21,21 @@ export interface StatusHistory {
 export interface LeadData {
     name?: string;
     company?: string;
+    website?: string;
+    role?: string;
     email?: string;
     phone?: string;
     project_desc?: string;
+    objectives?: string[];
+    stage?: string;
+    timeline?: string;
+    investment_level?: string;
+    impact?: string;
+    decision_maker?: string;
     file_url?: string;
     service_interest?: string; // Legacy
     service_interests?: string[]; // New multiselect
-    budget_range?: string;
+    budget_range?: string; // Legacy?
     region?: string;
 }
 

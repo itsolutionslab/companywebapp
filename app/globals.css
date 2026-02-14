@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --font-heading: 'Space Grotesk', sans-serif;
-  --font-body: 'DM Sans', sans-serif;
+  --font-heading: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
 }
 
 body {
@@ -58,6 +58,32 @@ body {
   transform: translateY(-8px);
   border-color: #00aeef80;
   box-shadow: 0 20px 40px -12px rgba(141, 198, 63, 0.25);
+}
+
+.card-glow {
+  position: relative;
+  transition: all 0.4s ease;
+}
+
+.card-glow:hover {
+  transform: translateY(-5px);
+  border-color: rgba(0, 174, 239, 0.5);
+  box-shadow: 0 0 20px rgba(0, 174, 239, 0.2);
+}
+
+.card-glow::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(135deg, rgba(0, 174, 239, 0.3), rgba(141, 198, 63, 0.3));
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.card-glow:hover::after {
+  opacity: 1;
 }
 
 .animate-float {
@@ -132,6 +158,22 @@ body {
   from {
     opacity: 0;
     transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-reveal {
+  animation: reveal 0.8s cubic-bezier(0.2, 0, 0.2, 1) forwards;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
   }
 
   to {

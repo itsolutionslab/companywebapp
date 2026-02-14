@@ -9,9 +9,10 @@ interface ContactActionsProps {
     className?: string;
     variant?: 'primary' | 'secondary' | 'outline';
     lang?: 'en' | 'es';
+    label?: string;
 }
 
-export const ContactActions: React.FC<ContactActionsProps> = ({ className = '', variant = 'primary', lang = 'en' }) => {
+export const ContactActions: React.FC<ContactActionsProps> = ({ className = '', variant = 'primary', lang = 'en', label }) => {
     const { region, isLoading } = useContactRegion();
 
     const t = (key: string) => {
@@ -68,12 +69,12 @@ export const ContactActions: React.FC<ContactActionsProps> = ({ className = '', 
             rel="noopener noreferrer"
             onClick={() => {
                 const eventName = region.primaryContact === 'WHATSAPP' ? 'click_contact_whatsapp_pe' : 'click_contact_call_us';
-                trackConversion(eventName, { variant, location: 'modern_landing' });
+                trackConversion(eventName, { variant, location: 'modern_landing', label: label || primaryAction.label });
             }}
             className={`${baseClasses} ${variantClasses} ${className}`}
         >
             {primaryAction.icon}
-            <span>{primaryAction.label}</span>
+            <span>{label || primaryAction.label}</span>
         </a>
     );
 };

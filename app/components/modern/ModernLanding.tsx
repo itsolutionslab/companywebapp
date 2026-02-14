@@ -91,6 +91,30 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
             window.removeEventListener('scroll', handleScroll);
             clearTimeout(timeoutId);
         };
+    }, [heroImages.length]);
+
+    // Scroll-reveal Intersection Observer
+    useEffect(() => {
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-reveal');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        const sections = document.querySelectorAll('section');
+        sections.forEach(section => observer.observe(section));
+
+        return () => {
+            sections.forEach(section => observer.unobserve(section));
+        };
     }, []);
 
     // Translation helper
@@ -257,16 +281,16 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                     <h1
                                         className="font-heading text-5xl md:text-7xl lg:text-8xl font-black leading-[0.9] mb-8 text-white tracking-tighter uppercase"
                                         dangerouslySetInnerHTML={{
-                                            __html: regionConfig.countryCode === 'US'
-                                                ? t('hero_title_texas')
+                                            __html: initialRegionCode === 'us'
+                                                ? t('hero_title_us')
                                                 : initialRegionCode === 'pe'
                                                     ? t('hero_title_peru')
                                                     : t('hero_title_latam')
                                         }}
                                     ></h1>
                                     <p className="text-slate-400 text-lg md:text-xl leading-relaxed mb-12 max-w-xl font-light border-l-2 border-cyan-500/30 pl-8">
-                                        {regionConfig.countryCode === 'US'
-                                            ? t('hero_subtitle_texas')
+                                        {initialRegionCode === 'us'
+                                            ? t('hero_subtitle_us')
                                             : initialRegionCode === 'pe'
                                                 ? t('hero_subtitle_peru')
                                                 : t('hero_subtitle_latam')}
@@ -275,12 +299,16 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                             )}
 
                             <div className="flex flex-col sm:flex-row gap-6 mt-12">
-                                <ContactActions className="px-10 py-5 text-xl font-bold rounded-none uppercase tracking-widest min-w-[240px]" lang={lang} />
+                                <ContactActions
+                                    className="px-10 py-5 text-xl font-bold rounded-none uppercase tracking-widest min-w-[240px]"
+                                    lang={lang}
+                                    label={initialRegionCode === 'us' ? t('cta-primary-us') : initialRegionCode === 'pe' ? t('cta-primary-peru') : t('cta-primary-latam')}
+                                />
                                 <Link
-                                    href="#servicios"
+                                    href={initialRegionCode === 'us' ? '#casos' : '#servicios'}
                                     className="px-10 py-5 rounded-none font-bold text-xl border-2 border-slate-800 hover:bg-white hover:text-black transition-all inline-flex items-center justify-center gap-3 text-white tracking-widest uppercase min-w-[240px]"
                                 >
-                                    {t('btn-secondary')}
+                                    {initialRegionCode === 'us' ? t('cta-secondary-us') : initialRegionCode === 'latam' ? t('cta-secondary-latam') : t('btn-secondary')}
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                                 </Link>
                             </div>
@@ -358,7 +386,9 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                     </div>
                                 </div>
                                 <div className="p-6 lg:p-8 flex flex-col flex-grow">
-                                    <h3 className="font-heading text-xl font-bold mb-3 group-hover:text-cyan-400 transition-colors">{t(`service${service.id}-title`)}</h3>
+                                    <h3 className="font-heading text-xl font-bold mb-3 group-hover:text-cyan-400 transition-colors">
+                                        {t(`service${service.id}-title-${initialRegionCode}`)}
+                                    </h3>
                                     <p className="text-gray-400 text-sm leading-relaxed mb-6 flex-grow">{t(`service${service.id}-desc`)}</p>
                                     <div className="pt-4 border-t border-white/5 flex items-center justify-between">
                                         <span className="text-cyan-400 text-xs font-semibold uppercase tracking-wider">{t(`service${service.id}-result`)}</span>
@@ -384,7 +414,9 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                 </div>
                                 <div className="p-8 lg:p-10 flex-grow flex flex-col justify-center relative z-10">
                                     <div className="flex flex-wrap items-center gap-3 mb-4">
-                                        <h3 className="font-heading text-2xl md:text-3xl font-bold text-white group-hover:text-cyan-400 transition-colors">{t('service7-title')}</h3>
+                                        <h3 className="font-heading text-2xl md:text-3xl font-bold text-white group-hover:text-cyan-400 transition-colors">
+                                            {t(`service7-title-${initialRegionCode}`)}
+                                        </h3>
                                         <span className="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-medium border border-cyan-500/20 shadow-glow-cyan">{t('premium-label')}</span>
                                     </div>
                                     <p className="text-gray-300 text-lg leading-relaxed mb-8 max-w-2xl">{t('service7-desc')}</p>
@@ -575,7 +607,9 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                 <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full gradient-accent flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-cyan-900/20">
                                     {step}
                                 </div>
-                                <h4 className="font-heading text-lg font-bold mb-3 pt-4 group-hover:text-cyan-400 transition-colors">{t(`process${step}-title`)}</h4>
+                                <h4 className="font-heading text-lg font-bold mb-3 pt-4 group-hover:text-cyan-400 transition-colors">
+                                    {initialRegionCode === 'us' ? t(`process${step}-title-us`) : t(`process${step}-title-es`)}
+                                </h4>
                                 <p className="text-gray-400 text-sm">{t(`process${step}-desc`)}</p>
                             </div>
                         ))}
@@ -601,8 +635,8 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                 </div>
             </section >
 
-            {/* Testimonials Section */}
-            < section className="py-10 md:py-20 relative" >
+            {/* Portfolio Section */}
+            < section id="casos" className="py-10 md:py-20 relative" >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16 md:mb-20">
                         <span className="inline-block px-4 py-1 rounded-none bg-cyan-500/10 border-l-2 border-cyan-500 text-cyan-400 text-[10px] font-black tracking-[0.3em] uppercase mb-4">{t('portfolio-label')}</span>
@@ -637,7 +671,16 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                     </div>
                                     <div className="p-6">
                                         <h4 className="font-heading text-xl font-bold text-white mb-2 group-hover:text-cyan-400 transition-colors">{t(`project${project.id}-title`)}</h4>
-                                        <p className="text-gray-400 text-sm mb-6 line-clamp-2">{t(`project${project.id}-desc`)}</p>
+                                        <p className="text-gray-400 text-sm mb-4 line-clamp-2">{t(`project${project.id}-desc`)}</p>
+                                        <div className="mb-6 p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10 group-hover:border-cyan-500/30 transition-colors">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></div>
+                                                <p className="text-[10px] font-black text-cyan-500 uppercase tracking-widest">Business Outcome</p>
+                                            </div>
+                                            <p className="text-sm text-white font-medium leading-tight">
+                                                {initialRegionCode === 'us' ? t(`project${project.id}-result-us`) : t(`project${project.id}-result-es`)}
+                                            </p>
+                                        </div>
                                         <a
                                             href={project.url}
                                             onClick={() => {
@@ -659,6 +702,82 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                     </div>
                 </div>
             </section >
+
+            {/* Is it for you? (Filter Section) */}
+            <section className="py-6 md:py-10 relative overflow-hidden bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-20 animate-reveal">
+                        <span className="inline-block px-4 py-1 rounded-none bg-cyan-500/10 border-l-2 border-cyan-500 text-cyan-400 text-[10px] font-black tracking-[0.3em] uppercase mb-4">
+                            {initialRegionCode === 'us' ? t('filter-label') : initialRegionCode === 'pe' ? t('filter-label-peru') : t('filter-label-latam')}
+                        </span>
+                        <h2 className="font-heading text-4xl md:text-6xl font-black mb-6 tracking-tighter uppercase italic leading-none">
+                            {t('filter-title').replace('?', '')}
+                            <span className="stroke-text">?</span>
+                        </h2>
+                        <p className="text-slate-400 text-lg max-w-2xl mx-auto font-light border-l-2 border-white/10 pl-6">
+                            {initialRegionCode === 'us' ? t('filter-subtitle') : initialRegionCode === 'pe' ? t('filter-subtitle-peru') : t('filter-subtitle-latam')}
+                        </p>
+                    </div>
+
+                    <div className="relative max-w-5xl mx-auto group">
+                        {/* Vertical Separator for Desktop */}
+                        <div className="hidden md:block absolute left-1/2 top-4 bottom-4 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent z-10"></div>
+
+                        <div className="grid md:grid-cols-2 gap-4">
+                            {/* Fit Section */}
+                            <div className="p-8 md:p-12 card-glass card-hover rounded-[2rem] border-t-2 border-t-cyan-500/30">
+                                <h3 className="text-2xl font-bold mb-8 flex items-center gap-4 text-white uppercase tracking-tight">
+                                    <div className="w-10 h-10 rounded-lg gradient-accent flex items-center justify-center text-white">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                                    </div>
+                                    {t('filter-yes-title')}
+                                </h3>
+                                <ul className="space-y-5">
+                                    {[1, 2, 3, 4, 5].map(i => {
+                                        const key = initialRegionCode === 'us' ? `filter-yes-${i}` : initialRegionCode === 'pe' ? `filter-yes-${i}-peru` : `filter-yes-${i}-latam`;
+                                        const text = t(key);
+                                        if (text === key) return null;
+                                        return (
+                                            <li key={i} className="flex items-start gap-4 group">
+                                                <div className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mt-1 flex-shrink-0 group-hover:bg-cyan-500 transition-colors">
+                                                    <svg className="w-3 h-3 text-cyan-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                                                </div>
+                                                <span className="text-base text-slate-300 font-light group-hover:text-white transition-colors">{text}</span>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </div>
+
+                            {/* Not a Fit Section */}
+                            <div className="p-8 md:p-12 card-glass card-hover rounded-[2rem] border-t-2 border-t-white/10 opacity-80 hover:opacity-100 transition-opacity">
+                                <h3 className="text-2xl font-bold mb-8 flex items-center gap-4 text-slate-400 uppercase tracking-tight">
+                                    <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-slate-500 border border-white/10">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </div>
+                                    {t('filter-no-title')}
+                                </h3>
+                                <ul className="space-y-5">
+                                    {[1, 2, 3, 4].map(i => {
+                                        const key = initialRegionCode === 'us' ? `filter-no-${i}` : initialRegionCode === 'pe' ? `filter-no-${i}-peru` : `filter-no-${i}-latam`;
+                                        const text = t(key);
+                                        if (text === key) return null;
+                                        return (
+                                            <li key={i} className="flex items-start gap-4">
+                                                <div className="w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mt-1 flex-shrink-0">
+                                                    <svg className="w-3 h-3 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                </div>
+                                                <span className="text-base text-slate-500 font-light italic">{text}</span>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
 
             {/* Why Choose Us */}
             < section id="nosotros" className="py-4 md:py-10 relative bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent" >
@@ -742,6 +861,32 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                 <ContactActions variant="outline" className="px-8 py-4 text-lg" lang={lang} />
                             </div>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Strategic FAQ Section */}
+            <section className="py-12 md:py-20 relative">
+                <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-12">
+                        <span className="inline-block px-4 py-1 rounded-none bg-cyan-500/10 border-l-2 border-cyan-500 text-cyan-400 text-[10px] font-black tracking-[0.3em] uppercase mb-4">FAQ</span>
+                        <h2 className="font-heading text-4xl font-black mb-6 tracking-tighter uppercase italic">{t('faq-title')}</h2>
+                    </div>
+                    <div className="space-y-4">
+                        {[1, 2, 3].map(i => (
+                            <details key={i} className="card-glass rounded-2xl group border border-white/5 transition-all hover:border-cyan-500/30 overflow-hidden">
+                                <summary className="p-6 cursor-pointer list-none flex items-center justify-between font-bold text-white group-hover:text-cyan-400 transition-colors">
+                                    <span className="flex items-center gap-4">
+                                        <span className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 text-sm font-black">0{i}</span>
+                                        {t(`faq-q${i}`)}
+                                    </span>
+                                    <svg className="w-5 h-5 text-cyan-500 transform group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                </summary>
+                                <div className="px-6 pb-6 text-slate-400 leading-relaxed border-t border-white/5 pt-4 bg-white/[0.02]">
+                                    {t(`faq-a${i}`)}
+                                </div>
+                            </details>
+                        ))}
                     </div>
                 </div>
             </section>

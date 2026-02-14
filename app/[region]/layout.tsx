@@ -8,6 +8,7 @@ export default async function RegionalLayout({
     params: Promise<{ region: string }>;
 }) {
     const { region } = await params;
+    const lang = region === 'us' ? 'en' : 'es';
 
     return (
         <RegionProvider initialRegion={region}>
