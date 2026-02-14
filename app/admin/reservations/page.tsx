@@ -1,16 +1,19 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { onBookingsUpdate, updateBookingStatus, auth } from "@/lib/firebase";
+import { onBookingsUpdate, updateBookingStatus, auth, isSlotAvailable } from "@/lib/firebase";
 import { BookingData } from "@/types/booking";
 import { useTranslation } from "@/components/admin/LanguageContext";
 import { useNotification } from "@/components/admin/NotificationContext";
+import ScheduleModal from "@/components/admin/ScheduleModal";
 
 export default function ReservationsPage() {
     const { lang, t } = useTranslation();
     const { showNotification } = useNotification();
     const [bookings, setBookings] = useState<BookingData[]>([]);
     const [loading, setLoading] = useState(true);
+    const [reschedulingBooking, setReschedulingBooking] = useState<BookingData | null>(null);
+    const [isSavingReschedule, setIsSavingReschedule] = useState(false);
 
     function getTodayStr() {
         const d = new Date();
@@ -23,7 +26,7 @@ export default function ReservationsPage() {
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
-    const [filterDate, setFilterDate] = useState(getTodayStr()); // Default to today
+    const [filterDate, setFilterDate] = useState(""); // Default to show all groups (Today, Tomorrow, Upcoming)
     const [statusFilter, setStatusFilter] = useState("all");
 
     useEffect(() => {
@@ -52,6 +55,54 @@ export default function ReservationsPage() {
             showNotification(`Estado actualizado a ${newStatus}`, 'success');
         } catch (error) {
             showNotification(t('error_updating'), 'error');
+        }
+    };
+
+    const handleReactivate = async (booking: BookingData) => {
+        try {
+            const available = await isSlotAvailable(booking.date, booking.time);
+            if (available) {
+                await handleStatusChange(booking.id, 'confirmed');
+            } else {
+                showNotification(t('slot_unavailable') || "Horario no disponible", 'error');
+                // Return false or handle UI state if needed
+                return false;
+            }
+        } catch (error) {
+            showNotification(t('error_updating'), 'error');
+        }
+        return true;
+    };
+
+    const handleReschedule = async (date: string, time: string) => {
+        if (!reschedulingBooking) return;
+        setIsSavingReschedule(true);
+        try {
+            const currentUser = auth.currentUser;
+            const historyEntry = {
+                action: 'rescheduled',
+                changed_by: currentUser ? (currentUser.email || currentUser.uid) : 'unknown',
+                timestamp: new Date().toISOString(),
+                details: `Meeting rescheduled from ${reschedulingBooking.date} ${reschedulingBooking.time} to ${date} ${time}`
+            };
+
+            // We update both status and time/date
+            const { db } = await import("@/lib/firebase");
+            const { doc, updateDoc, arrayUnion } = await import("firebase/firestore");
+            const bookingRef = doc(db, "bookings", reschedulingBooking.id);
+            await updateDoc(bookingRef, {
+                date,
+                time,
+                status: 'confirmed',
+                history: arrayUnion(historyEntry)
+            });
+
+            showNotification("Reunión reagendada con éxito", "success");
+            setReschedulingBooking(null);
+        } catch (error) {
+            showNotification("Error al reagendar", "error");
+        } finally {
+            setIsSavingReschedule(false);
         }
     };
 
@@ -129,7 +180,7 @@ export default function ReservationsPage() {
                 <div className="flex flex-col gap-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-2xl font-black text-gray-900 tracking-tight">📅 {t('reservations')}</h1>
+                            <h1 className="text-2xl font-black text-gray-900 tracking-tight">🤝 {t('reservations')}</h1>
                             <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{t('manage_reservations')}</p>
                         </div>
                     </div>
@@ -218,6 +269,8 @@ export default function ReservationsPage() {
                                         t={t}
                                         onStatusChange={handleStatusChange}
                                         formatDate={formatDate}
+                                        onReactivate={handleReactivate}
+                                        onRescheduleAttempt={(b) => setReschedulingBooking(b)}
                                     />
                                 ))}
                             </div>
@@ -232,25 +285,49 @@ export default function ReservationsPage() {
                     </div>
                 )}
             </div>
+
+            {/* Rescheduling Modal */}
+            <ScheduleModal
+                isOpen={!!reschedulingBooking}
+                onClose={() => setReschedulingBooking(null)}
+                onSave={handleReschedule}
+                title={t('reschedule') || 'Reagendar Sesión'}
+                subtitle={`${reschedulingBooking?.customerName}`}
+                initialDate={reschedulingBooking?.date}
+                isSaving={isSavingReschedule}
+            />
         </div>
     );
 }
 
-function BookingCard({ booking, t, onStatusChange, formatDate }: {
+function BookingCard({ booking, t, onStatusChange, formatDate, onReactivate, onRescheduleAttempt }: {
     booking: BookingData;
     t: any;
     onStatusChange: any;
     formatDate: any;
+    onReactivate: (b: BookingData) => Promise<boolean>;
+    onRescheduleAttempt: (b: BookingData) => void;
 }) {
     const statusConfig = {
-        pending: { color: 'bg-yellow-400', bg: 'bg-yellow-50', icon: '⏳', text: 'text-yellow-700' },
-        confirmed: { color: 'bg-blue-500', bg: 'bg-blue-50', icon: '✅', text: 'text-blue-700' },
-        attended: { color: 'bg-green-500', bg: 'bg-green-50', icon: '✨', text: 'text-green-700' },
-        cancelled: { color: 'bg-red-500', bg: 'bg-red-50', icon: '❌', text: 'text-red-700' }
+        pending: { color: 'bg-amber-400', bg: 'bg-amber-50', icon: '⏳', text: 'text-amber-700' },
+        confirmed: { color: 'bg-cyan-500', bg: 'bg-cyan-50', icon: '✅', text: 'text-cyan-700' },
+        attended: { color: 'bg-emerald-500', bg: 'bg-emerald-50', icon: '✨', text: 'text-emerald-700' },
+        cancelled: { color: 'bg-rose-500', bg: 'bg-rose-50', icon: '❌', text: 'text-rose-700' }
     };
 
     const config = statusConfig[booking.status as keyof typeof statusConfig] || statusConfig.pending;
     const cleanPhone = booking.customerPhone?.replace(/\D/g, '');
+    const [reactivationFailed, setReactivationFailed] = useState(false);
+    const [isReactivating, setIsReactivating] = useState(false);
+
+    const handleReactivateClick = async () => {
+        setIsReactivating(true);
+        const success = await onReactivate(booking);
+        if (!success) {
+            setReactivationFailed(true);
+        }
+        setIsReactivating(false);
+    };
 
     return (
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden animate-in fade-in zoom-in-95 duration-300">
@@ -290,7 +367,7 @@ function BookingCard({ booking, t, onStatusChange, formatDate }: {
                 <div className="bg-gray-50 rounded-2xl p-3 mb-4 flex flex-wrap gap-1.5">
                     {booking.services?.map((s, idx) => (
                         <span key={idx} className="text-[10px] font-black uppercase tracking-tighter bg-white text-gray-600 px-2 py-1 rounded-lg border border-gray-100 shadow-sm">
-                            💅 {s.name}
+                            🚀 {s.name}
                         </span>
                     ))}
                     {(!booking.services || booking.services.length === 0) && (
@@ -299,31 +376,61 @@ function BookingCard({ booking, t, onStatusChange, formatDate }: {
                 </div>
 
                 {/* Quick Actions Footer */}
-                <div className="flex gap-2 pt-2 border-t border-gray-50">
-                    {booking.status === 'pending' && (
-                        <button
-                            onClick={() => onStatusChange(booking.id, 'confirmed')}
-                            className="flex-1 py-3 bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-100 active:scale-95 transition-all"
-                        >
-                            {t('confirmed')}
-                        </button>
+                <div className="flex flex-col gap-2 pt-2 border-t border-gray-50">
+                    {reactivationFailed && (
+                        <div className="p-3 bg-amber-50 rounded-xl border border-amber-100 mb-2">
+                            <p className="text-[9px] font-black text-amber-700 uppercase leading-tight">
+                                ⚠️ {t('slot_unavailable') || "Horario no disponible, reagende su reunion"}
+                            </p>
+                        </div>
                     )}
-                    {booking.status !== 'attended' && booking.status !== 'cancelled' && (
-                        <button
-                            onClick={() => onStatusChange(booking.id, 'attended')}
-                            className="flex-1 py-3 bg-green-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-green-100 active:scale-95 transition-all"
-                        >
-                            {t('attended')}
-                        </button>
-                    )}
-                    {booking.status !== 'cancelled' && (
-                        <button
-                            onClick={() => onStatusChange(booking.id, 'cancelled')}
-                            className="px-4 py-3 bg-red-50 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-                        >
-                            ✕
-                        </button>
-                    )}
+
+                    <div className="flex gap-2">
+                        {booking.status === 'pending' && (
+                            <button
+                                onClick={() => onStatusChange(booking.id, 'confirmed')}
+                                className="flex-1 py-3 bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-100 active:scale-95 transition-all"
+                            >
+                                {t('confirmed')}
+                            </button>
+                        )}
+                        {booking.status === 'cancelled' && (
+                            <div className="flex flex-1 gap-2">
+                                <button
+                                    onClick={handleReactivateClick}
+                                    disabled={isReactivating}
+                                    className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                >
+                                    {isReactivating && <div className="w-2 h-2 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin"></div>}
+                                    {t('reactivate') || 'Reactivar'}
+                                </button>
+                                {reactivationFailed && (
+                                    <button
+                                        onClick={() => onRescheduleAttempt(booking)}
+                                        className="flex-1 py-3 bg-cyan-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-cyan-100 transition-all font-black"
+                                    >
+                                        {t('reschedule') || 'Reagendar'}
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                        {booking.status !== 'attended' && booking.status !== 'cancelled' && (
+                            <button
+                                onClick={() => onStatusChange(booking.id, 'attended')}
+                                className="flex-1 py-3 bg-green-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-green-100 active:scale-95 transition-all"
+                            >
+                                {t('attended')}
+                            </button>
+                        )}
+                        {booking.status !== 'cancelled' && (
+                            <button
+                                onClick={() => onStatusChange(booking.id, 'cancelled')}
+                                className="px-4 py-3 bg-red-50 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
+                            >
+                                ✕
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

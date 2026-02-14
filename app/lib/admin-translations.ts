@@ -22,13 +22,13 @@ export type TranslationKey =
     | 'req_length' | 'req_number' | 'req_special' | 'req_uppercase' | 'security_priority' | 'create_user' | 'user_created_success'
     | 'status_new' | 'status_contacted' | 'status_scheduled' | 'status_proposal' | 'status_approved' | 'status_downpayment'
     | 'status_started' | 'status_testing' | 'status_finished' | 'status_delivered' | 'status_closed' | 'status_lost'
-    | 'security_integrity' | 'last_modified';
+    | 'security_integrity' | 'last_modified' | 'reactivate' | 'reschedule' | 'slot_unavailable';
 
 export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, string>>> = {
     en: {
         dashboard: 'Dashboard',
         prospectos: 'Leads',
-        reservations: 'Reservations',
+        reservations: 'Discovery Meets',
         services: 'Services',
         schedules: 'Schedules',
         users: 'Users',
@@ -72,7 +72,7 @@ export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, stri
         image_upload_success: 'Image uploaded',
         activate: 'Activate',
         deactivate: 'Deactivate',
-        manage_reservations: 'Track appointments',
+        manage_reservations: 'Strategic Meetings Tracker',
         all_status: 'All',
         today: 'Today',
         tomorrow: 'Tomorrow',
@@ -174,12 +174,15 @@ export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, stri
         status_closed: 'Closed',
         status_lost: 'Lost',
         security_integrity: 'Account Security Integrity',
-        last_modified: 'Last modified'
+        last_modified: 'Last modified',
+        reactivate: 'Reactivate',
+        reschedule: 'Reschedule Session',
+        slot_unavailable: 'Time slot no longer available. Please reschedule.'
     },
     es: {
         dashboard: 'Panel Control',
         prospectos: 'Prospectos',
-        reservations: 'Reservas',
+        reservations: 'Discovery Meets',
         services: 'Servicios',
         schedules: 'Horarios',
         users: 'Usuarios',
@@ -223,7 +226,7 @@ export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, stri
         image_upload_success: 'Imagen subida',
         activate: 'Activar',
         deactivate: 'Desactivar',
-        manage_reservations: 'Seguimiento de citas',
+        manage_reservations: 'Sesiones de Descubrimiento',
         all_status: 'Todos',
         today: 'Hoy',
         tomorrow: 'Mañana',
@@ -325,7 +328,10 @@ export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, stri
         status_closed: 'Cerrado',
         status_lost: 'Perdido',
         security_integrity: 'Integridad de Seguridad',
-        last_modified: 'Última modificación'
+        last_modified: 'Última modificación',
+        reactivate: 'Reactivar',
+        reschedule: 'Reagendar Sesión',
+        slot_unavailable: 'Horario ya no disponible. Por favor reagende.'
     },
     ru: {
         dashboard: 'Панель',
