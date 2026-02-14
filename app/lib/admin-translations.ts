@@ -22,7 +22,8 @@ export type TranslationKey =
     | 'req_length' | 'req_number' | 'req_special' | 'req_uppercase' | 'security_priority' | 'create_user' | 'user_created_success'
     | 'status_new' | 'status_contacted' | 'status_scheduled' | 'status_proposal' | 'status_approved' | 'status_downpayment'
     | 'status_started' | 'status_testing' | 'status_finished' | 'status_delivered' | 'status_closed' | 'status_lost'
-    | 'security_integrity' | 'last_modified' | 'reactivate' | 'reschedule' | 'slot_unavailable';
+    | 'security_integrity' | 'last_modified' | 'reactivate' | 'reschedule' | 'slot_unavailable'
+    | 'filter_date' | 'filter_range' | 'select_date' | 'select_range';
 
 export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, string>>> = {
     en: {
@@ -177,7 +178,11 @@ export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, stri
         last_modified: 'Last modified',
         reactivate: 'Reactivate',
         reschedule: 'Reschedule Session',
-        slot_unavailable: 'Time slot no longer available. Please reschedule.'
+        slot_unavailable: 'Time slot no longer available. Please reschedule.',
+        filter_date: 'By Date',
+        filter_range: 'By Range',
+        select_date: 'Select Date',
+        select_range: 'Select Range'
     },
     es: {
         dashboard: 'Panel Control',
@@ -331,7 +336,11 @@ export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, stri
         last_modified: 'Última modificación',
         reactivate: 'Reactivar',
         reschedule: 'Reagendar Sesión',
-        slot_unavailable: 'Horario ya no disponible. Por favor reagende.'
+        slot_unavailable: 'Horario ya no disponible. Por favor reagende.',
+        filter_date: 'Por Fecha',
+        filter_range: 'Por Rango',
+        select_date: 'Seleccionar Fecha',
+        select_range: 'Seleccionar Rango'
     },
     ru: {
         dashboard: 'Панель',

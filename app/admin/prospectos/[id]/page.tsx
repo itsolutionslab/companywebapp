@@ -19,38 +19,11 @@ export default function LeadDetailPage() {
     const [loading, setLoading] = useState(true);
     const [isUpdating, setIsUpdating] = useState(false);
     const [showScheduleModal, setShowScheduleModal] = useState(false);
-
-    // Scheduling State
-    const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
-    const [selectedTime, setSelectedTime] = useState<string | null>(null);
-    const [timeSlots, setTimeSlots] = useState<string[]>([]);
-    const [disabledSlots, setDisabledSlots] = useState<string[]>([]);
-    const [weeklySchedule, setWeeklySchedule] = useState<any>(null);
-    const [viewDate, setViewDate] = useState(new Date());
     const [isSavingSchedule, setIsSavingSchedule] = useState(false);
 
     useEffect(() => {
         if (id) fetchLead();
-
-        getBusinessSettings().then(settings => {
-            if (settings?.schedules) {
-                setWeeklySchedule(settings.schedules);
-            }
-        });
-
-        const unsubscribe = onAvailabilityUpdate((disabled: string[]) => {
-            setDisabledSlots(disabled);
-        });
-
-        return () => unsubscribe();
     }, [id]);
-
-    useEffect(() => {
-        if (selectedDate && weeklySchedule) {
-            const slots = getTimeSlotsForDate(selectedDate, weeklySchedule, 60); // Default to 60 min intervals for consultancy
-            setTimeSlots(slots);
-        }
-    }, [selectedDate, weeklySchedule]);
 
     async function fetchLead() {
         setLoading(true);
@@ -88,8 +61,8 @@ export default function LeadDetailPage() {
         return `${year}-${month}-${day}`;
     };
 
-    const handleSaveSchedule = async () => {
-        if (!lead || !selectedDate || !selectedTime) return;
+    const handleSaveSchedule = async (date: string, time: string) => {
+        if (!lead) return;
         setIsSavingSchedule(true);
         try {
             // 1. Create the booking document in Discovery Meets (bookings)
@@ -98,8 +71,8 @@ export default function LeadDetailPage() {
                 customerName: lead.data?.name || "Lead Sin Nombre",
                 customerEmail: lead.data?.email || "",
                 customerPhone: lead.data?.phone || "",
-                date: selectedDate,
-                time: selectedTime,
+                date: date,
+                time: time,
                 services: [{
                     id: 'discovery-meet',
                     name: 'Discovery Strategic Session',
