@@ -47,7 +47,7 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Service, BookingData, BusinessProfile } from "@/types/booking";
-import { Lead } from "@/types/tracking";
+import { Lead, LeadStatus, LeadEvent } from "@/types/tracking";
 
 // --- Admin & Support Functions ---
 
@@ -170,6 +170,20 @@ export const deleteUser = async (uid: string) => {
     await deleteDoc(doc(db, "users", uid));
 };
 
+const statusMapping: Record<string, LeadStatus> = {
+    'LEAD_NEW': 'NEW',
+    'SCHEDULED': 'DISCOVERY_SCHEDULED',
+    'IN_PROPOSAL': 'PROPOSAL_PREPARING',
+    'PROJ_APPROVED': 'QUALIFIED',
+    'DOWN_PAYMENT': 'PROPOSAL_PREPARING',
+    'PROJ_STARTED': 'QUALIFIED',
+    'IN_TESTING': 'QUALIFIED',
+    'PROJ_FINISHED': 'WON',
+    'DELIVERED': 'WON',
+    'CLOSED': 'WON',
+    'CLOSED_LOST': 'LOST'
+};
+
 // Leads (Prospectos)
 const normalizeLeadData = (raw: any): Lead => {
     const lead: any = { ...raw };
@@ -178,8 +192,16 @@ const normalizeLeadData = (raw: any): Lead => {
     if (!lead.data) lead.data = {};
     if (!lead.audit_logs) lead.audit_logs = {};
     if (!lead.kpis) lead.kpis = {};
-    if (!lead.status_flow) lead.status_flow = { current: 'LEAD_NEW', history: [] };
+    if (!lead.status_flow) lead.status_flow = { current: 'NEW', history: [] };
+    if (!lead.events) lead.events = [];
     if (!lead.source_attribution) lead.source_attribution = {};
+    if (!lead.owner_id) lead.owner_id = null;
+    if (!lead.value_estimate) lead.value_estimate = 0;
+
+    // Map old status to new if necessary
+    if (statusMapping[lead.status_flow.current]) {
+        lead.status_flow.current = statusMapping[lead.status_flow.current];
+    }
 
     // Process all keys to find literal dotted keys (e.g., "data.name")
     Object.keys(lead).forEach(key => {
@@ -238,13 +260,39 @@ export const getLeadById = async (id: string): Promise<Lead | null> => {
     return null;
 };
 
+export const addLeadEvent = async (leadId: string, event: Omit<LeadEvent, 'id'>) => {
+    const leadRef = doc(db, "leads", leadId);
+    const eventId = Math.random().toString(36).substr(2, 9);
+    const newEvent = { ...event, id: eventId, timestamp: event.timestamp || Timestamp.now() };
+
+    await updateDoc(leadRef, {
+        events: arrayUnion(newEvent),
+        "audit_logs.updated_at": Timestamp.now()
+    });
+    return newEvent;
+};
+
 export const updateLead = async (id: string, data: Partial<Lead>) => {
     const leadRef = doc(db, "leads", id);
-    const updateData = {
+    const updateData: any = {
         ...data,
         "audit_logs.updated_at": Timestamp.now()
     };
-    await updateDoc(leadRef, updateData as any);
+
+    // If status is being updated, log it as an event too
+    if (data.status_flow?.current) {
+        const eventId = Math.random().toString(36).substr(2, 9);
+        const statusEvent: LeadEvent = {
+            id: eventId,
+            type: 'STATUS_CHANGED',
+            description: `Estado cambiado a ${data.status_flow.current}`,
+            timestamp: Timestamp.now(),
+            metadata: { new_status: data.status_flow.current }
+        };
+        updateData.events = arrayUnion(statusEvent);
+    }
+
+    await updateDoc(leadRef, updateData);
 };
 
 export { app, db, storage, auth };
