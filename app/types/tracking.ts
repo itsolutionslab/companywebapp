@@ -1,16 +1,34 @@
 export type LeadStatus =
-    | 'LEAD_NEW'
+    | 'NEW'
+    | 'QUALIFIED'
     | 'CONTACTED'
-    | 'SCHEDULED'
-    | 'IN_PROPOSAL'
-    | 'PROJ_APPROVED'
-    | 'DOWN_PAYMENT'
-    | 'PROJ_STARTED'
-    | 'IN_TESTING'
-    | 'PROJ_FINISHED'
-    | 'DELIVERED'
-    | 'CLOSED'
-    | 'CLOSED_LOST';
+    | 'DISCOVERY_SCHEDULED'
+    | 'DISCOVERY_COMPLETED'
+    | 'PROPOSAL_PREPARING'
+    | 'PROPOSAL_SENT'
+    | 'NEGOTIATION'
+    | 'WON'
+    | 'LOST'
+    | 'ON_HOLD';
+
+export interface LeadEvent {
+    id: string;
+    type:
+    | 'LEAD_CREATED'
+    | 'QUALIFIED'
+    | 'CONTACTED'
+    | 'MEETING_SCHEDULED'
+    | 'MEETING_COMPLETED'
+    | 'PROPOSAL_SENT'
+    | 'STATUS_CHANGED'
+    | 'NOTE_ADDED'
+    | 'REQUIREMENTS_DEFINED'
+    | 'REJECTED';
+    description: string;
+    timestamp: any; // Firestore Timestamp
+    created_by?: string; // Admin user ID
+    metadata?: Record<string, any>;
+}
 
 export interface StatusHistory {
     status: LeadStatus;
@@ -51,6 +69,9 @@ export interface Lead {
         current: LeadStatus;
         history: StatusHistory[];
     };
+    events?: LeadEvent[]; // Chronological events
+    owner_id?: string; // Assigned admin UID
+    value_estimate?: number; // Estimated project value
     audit_logs: {
         created_at: any; // Firestore Timestamp
         updated_at: any;

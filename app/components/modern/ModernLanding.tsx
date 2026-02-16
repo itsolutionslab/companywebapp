@@ -53,8 +53,9 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
     }, [initialRegionCode]);
 
     const scrollToContact = () => {
+        const contactId = lang === 'en' ? 'contact' : 'contacto';
         trackingService.trackEvent('click_cta', { action: 'scroll_to_contact' });
-        document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById(contactId)?.scrollIntoView({ behavior: 'smooth' });
     };
 
     // Scroll-driven content transitions and tracking
@@ -155,31 +156,15 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                 <div className="absolute inset-0 bg-gradient-to-b from-[#0f172a]/80 via-[#0f172a]/70 to-[#0f172a] backdrop-blur-sm"></div>
             </div>
 
-            {/* Language Selector */}
-            <div className="fixed top-4 right-4 z-[60]">
-                <div className="flex gap-1.5 p-1.5 rounded-lg bg-white/5 border border-white/10 backdrop-blur-md">
-                    <button
-                        onClick={() => toggleLang('en')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${lang === 'en' ? 'bg-gradient-to-br from-cyan-500 to-cyan-500 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
-                    >
-                        EN
-                    </button>
-                    <button
-                        onClick={() => toggleLang('es')}
-                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${lang === 'es' ? 'bg-gradient-to-br from-cyan-500 to-cyan-500 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
-                    >
-                        ES
-                    </button>
-                </div>
-            </div>
+
 
             {/* Navigation */}
             <nav className="fixed top-0 left-0 right-0 z-50 nav-blur border-b border-white/5" aria-label="Global">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16 md:h-20">
                         {/* Logo */}
-                        <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 flex items-center justify-center">
+                        <div className="flex items-center gap-1 sm:gap-1.5">
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 flex items-center justify-center flex-shrink-0">
                                 <Image
                                     src={logoImage}
                                     alt="BRECOMPERU"
@@ -188,16 +173,16 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                     className="w-full h-full object-contain"
                                 />
                             </div>
-                            <span className="font-heading font-black text-xl md:text-2xl tracking-tighter text-white">BRECOM<span className="text-cyan-400">PERU</span></span>
+                            <span className="font-heading font-black text-base sm:text-lg md:text-xl lg:text-2xl tracking-tighter text-white whitespace-nowrap">BRECOM<span className="text-cyan-400">PERU</span></span>
                         </div>
 
-                        {/* Desktop Navigation */}
-                        <div className="hidden md:flex items-center gap-8">
-                            <ul className="flex items-center gap-8 list-none m-0 p-0">
+                        {/* Desktop Navigation - Middle (hidden on mobile) */}
+                        <div className="hidden md:flex items-center gap-4 lg:gap-6 xl:gap-8 overflow-hidden">
+                            <ul className="flex items-center gap-3 lg:gap-6 xl:gap-8 list-none m-0 p-0">
                                 <li>
                                     <Link
-                                        href="#industries"
-                                        className="text-slate-400 hover:text-cyan-400 transition-colors text-[10px] font-black tracking-[0.3em] uppercase"
+                                        href={lang === 'en' ? "#industries" : "#industrias"}
+                                        className="text-slate-400 hover:text-cyan-400 transition-colors text-[9px] lg:text-[10px] font-black tracking-[0.2em] xl:tracking-[0.3em] uppercase"
                                         title={t('nav-industries')}
                                     >
                                         {t('nav-industries')}
@@ -205,8 +190,8 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                 </li>
                                 <li>
                                     <Link
-                                        href="#servicios"
-                                        className="text-slate-400 hover:text-cyan-400 transition-colors text-[10px] font-black tracking-[0.3em] uppercase"
+                                        href={lang === 'en' ? "#services" : "#servicios"}
+                                        className="text-slate-400 hover:text-cyan-400 transition-colors text-[9px] lg:text-[10px] font-black tracking-[0.2em] xl:tracking-[0.3em] uppercase"
                                         title={t('nav-services')}
                                     >
                                         {t('nav-services')}
@@ -214,8 +199,8 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                 </li>
                                 <li>
                                     <Link
-                                        href="#nosotros"
-                                        className="text-slate-400 hover:text-cyan-400 transition-colors text-[10px] font-black tracking-[0.3em] uppercase"
+                                        href={lang === 'en' ? "#about" : "#nosotros"}
+                                        className="text-slate-400 hover:text-cyan-400 transition-colors text-[9px] lg:text-[10px] font-black tracking-[0.2em] xl:tracking-[0.3em] uppercase"
                                         title={t('nav-about')}
                                     >
                                         {t('nav-about')}
@@ -223,43 +208,101 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                 </li>
                                 <li>
                                     <Link
-                                        href="#contacto"
-                                        className="text-slate-400 hover:text-cyan-400 transition-colors text-[10px] font-black tracking-[0.3em] uppercase"
+                                        href={lang === 'en' ? "#contact" : "#contacto"}
+                                        className="text-slate-400 hover:text-cyan-400 transition-colors text-[9px] lg:text-[10px] font-black tracking-[0.2em] xl:tracking-[0.3em] uppercase"
                                         title={t('nav-contact')}
                                     >
                                         {t('nav-contact')}
                                     </Link>
                                 </li>
                             </ul>
-                            <ContactActions className="px-5 py-2.5 text-sm" lang={lang} />
                         </div>
 
-                        {/* Mobile Menu Button */}
-                        <button
-                            className="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-                        </button>
-                    </div>
-
-                    {/* Mobile Menu */}
-                    {mobileMenuOpen && (
-                        <div className="flex flex-col pb-4 md:hidden animate-fade-in bg-[#0f172a] absolute left-0 right-0 px-4 border-b border-white/5 shadow-2xl">
-                            <Link href="#industries" className="py-4 text-gray-300 hover:text-white transition-colors font-medium border-b border-white/5" onClick={() => setMobileMenuOpen(false)} title={t('nav-industries')}>{t('nav-industries')}</Link>
-                            <Link href="#servicios" className="py-4 text-gray-300 hover:text-white transition-colors font-medium border-b border-white/5" onClick={() => setMobileMenuOpen(false)} title={t('nav-services')}>{t('nav-services')}</Link>
-                            <Link href="#nosotros" className="py-4 text-gray-300 hover:text-white transition-colors font-medium border-b border-white/5" onClick={() => setMobileMenuOpen(false)} title={t('nav-about')}>{t('nav-about')}</Link>
-                            <Link href="#contacto" className="py-4 text-gray-300 hover:text-white transition-colors font-medium border-b border-white/5" onClick={() => setMobileMenuOpen(false)} title={t('nav-contact')}>{t('nav-contact')}</Link>
-                            <div className="pt-4">
-                                <ContactActions className="w-full py-3 rounded-xl text-sm" lang={lang} />
+                        {/* Actions Row (Right) */}
+                        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
+                            {/* Call Button - Hidden on mobile/tablet, shown on desktop (md+) */}
+                            <div className="hidden md:block">
+                                <ContactActions className="px-3 md:px-4 lg:px-5 py-1.5 md:py-2 lg:py-2.5 text-[9px] md:text-[10px] lg:text-xs xl:text-sm" lang={lang} />
                             </div>
+
+                            {/* Language Selector */}
+                            <div className="flex gap-0.5 p-0.5 rounded-lg bg-white/5 border border-white/10 backdrop-blur-md">
+                                <button
+                                    onClick={() => toggleLang('en')}
+                                    className={`px-1.5 py-0.5 md:px-2 md:py-1 rounded-md text-[9px] md:text-[10px] font-bold transition-all ${lang === 'en' ? 'bg-cyan-500 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                                >
+                                    EN
+                                </button>
+                                <button
+                                    onClick={() => toggleLang('es')}
+                                    className={`px-1.5 py-0.5 md:px-2 md:py-1 rounded-md text-[9px] md:text-[10px] font-bold transition-all ${lang === 'es' ? 'bg-cyan-500 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                                >
+                                    ES
+                                </button>
+                            </div>
+
+                            {/* Mobile Menu Button - MD:HIDDEN */}
+                            <button
+                                className="md:hidden p-2 rounded-lg bg-white/5 border border-white/10 text-white transition-colors hover:bg-white/10"
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                aria-label="Menu"
+                            >
+                                ☰
+                            </button>
                         </div>
-                    )}
+                    </div>
                 </div>
             </nav>
 
+            {/* Mobile Menu Popup */}
+            {mobileMenuOpen && (
+                <>
+                    {/* Backdrop */}
+                    <div className="fixed inset-0 z-[70] md:hidden" onClick={() => setMobileMenuOpen(false)}></div>
+
+                    {/* Elegant Popup Menu */}
+                    <div className="fixed top-16 bg-[#0a0c37]/55 right-4 z-[80] md:hidden animate-fade-in">
+                        <div className="card-glass bg-[#0f172a]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl w-64 overflow-hidden">
+                            {/* Navigation Links */}
+                            <nav className="p-4 space-y-1">
+                                <Link
+                                    href={lang === 'en' ? "#industries" : "#industrias"}
+                                    className="block px-4 py-3 text-white hover:bg-cyan-500/10 hover:text-cyan-400 rounded-xl transition-all font-medium text-sm border border-transparent hover:border-cyan-500/20"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    {t('nav-industries')}
+                                </Link>
+                                <Link
+                                    href={lang === 'en' ? "#services" : "#servicios"}
+                                    className="block px-4 py-3 text-white hover:bg-cyan-500/10 hover:text-cyan-400 rounded-xl transition-all font-medium text-sm border border-transparent hover:border-cyan-500/20"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    {t('nav-services')}
+                                </Link>
+                                <Link
+                                    href={lang === 'en' ? "#about" : "#nosotros"}
+                                    className="block px-4 py-3 text-white hover:bg-cyan-500/10 hover:text-cyan-400 rounded-xl transition-all font-medium text-sm border border-transparent hover:border-cyan-500/20"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    {t('nav-about')}
+                                </Link>
+                                <Link
+                                    href={lang === 'en' ? "#contact" : "#contacto"}
+                                    className="block px-4 py-3 text-white hover:bg-cyan-500/10 hover:text-cyan-400 rounded-xl transition-all font-medium text-sm border border-transparent hover:border-cyan-500/20"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    {t('nav-contact')}
+                                </Link>
+                            </nav>
+                        </div>
+                    </div>
+                </>
+            )}
+
+
+
             {/* Hero Section - Industrial-Tech Noir */}
-            <section className="relative min-h-screen flex items-center pt-24 overflow-hidden">
+            <section className="relative min-h-screen flex items-center pt-24 md:pt-24 lg:pt-0 overflow-hidden">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
                     <div className="grid lg:grid-cols-[1.5fr_1fr] gap-12 items-center">
                         <div className="animate-fade-in">
@@ -305,7 +348,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                     label={initialRegionCode === 'us' ? t('cta-primary-us') : initialRegionCode === 'pe' ? t('cta-primary-peru') : t('cta-primary-latam')}
                                 />
                                 <Link
-                                    href={initialRegionCode === 'us' ? '#casos' : '#servicios'}
+                                    href={lang === 'en' ? (initialRegionCode === 'us' ? '#casos' : '#services') : (initialRegionCode === 'us' ? '#casos' : '#servicios')}
                                     className="px-10 py-5 rounded-none font-bold text-xl border-2 border-slate-800 hover:bg-white hover:text-black transition-all inline-flex items-center justify-center gap-3 text-white tracking-widest uppercase min-w-[240px]"
                                 >
                                     {initialRegionCode === 'us' ? t('cta-secondary-us') : initialRegionCode === 'latam' ? t('cta-secondary-latam') : t('btn-secondary')}
@@ -350,7 +393,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
             </section>
 
             {/* Services Section */}
-            <section id="servicios" className="py-10 md:py-20 relative">
+            <section id={lang === 'en' ? "services" : "servicios"} className="py-10 md:py-20 relative">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16 md:mb-20">
                         <span className="inline-block px-4 py-1 rounded-none bg-cyan-500/10 border-l-2 border-cyan-500 text-cyan-400 text-[10px] font-black tracking-[0.3em] uppercase mb-4">{t('services-label')}</span>
@@ -427,7 +470,13 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                             </div>
                                             <span className="text-cyan-400 font-semibold">{t('service7-result')}</span>
                                         </div>
-                                        <Link href="#contacto" className="btn-primary px-10 py-4 rounded-full font-bold text-lg shadow-xl shadow-cyan-900/40 hover:scale-105 transition-all">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400">
+                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                            </div>
+                                            <span className="text-cyan-400 font-semibold">{t('service7-result')}</span>
+                                        </div>
+                                        <Link href={lang === 'en' ? "#contact" : "#contacto"} className="btn-primary px-10 py-4 rounded-full font-bold text-lg shadow-xl shadow-cyan-900/40 hover:scale-105 transition-all">
                                             {t('consult-btn')}
                                         </Link>
                                     </div>
@@ -440,7 +489,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
 
             {/* Industries Section */}
             {/* Industries Section */}
-            <section id="industries" className="py-8 md:py-12 relative">
+            <section id={lang === 'en' ? "industries" : "industrias"} className="py-8 md:py-12 relative">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16 md:mb-20">
                         <span className="inline-block px-4 py-1 rounded-none bg-lime-500/10 border-l-2 border-lime-500 text-lime-400 text-[10px] font-black tracking-[0.3em] uppercase mb-4">{t('industries-label')}</span>
@@ -570,7 +619,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                         </div>
                         <div className="card-glass rounded-2xl p-6 border-cyan-500/30">
                             <p className="text-gray-400 text-sm mb-4">{t('global-reach-text')}</p>
-                            <Link href="#contacto" className="text-cyan-400 font-medium text-sm hover:text-cyan-300 transition-colors inline-flex items-center gap-2">
+                            <Link href={lang === 'en' ? "#contact" : "#contacto"} className="text-cyan-400 font-medium text-sm hover:text-cyan-300 transition-colors inline-flex items-center gap-2">
                                 {t('contact-now')}
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                             </Link>
@@ -780,7 +829,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
 
 
             {/* Why Choose Us */}
-            < section id="nosotros" className="py-4 md:py-10 relative bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent" >
+            < section id={lang === 'en' ? "about" : "nosotros"} className="py-4 md:py-10 relative bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent" >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid lg:grid-cols-2 gap-16 items-center">
                         <div>
@@ -892,9 +941,9 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
             </section>
 
             {/* Contact Section */}
-            <section id="contacto" className="py-12 md:py-20 relative">
+            <section id={lang === 'en' ? "contact" : "contacto"} className="py-12 md:py-20 relative">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
+                    <div className="flex flex-col-reverse md:grid md:grid-cols-2 gap-12 lg:gap-20">
                         {/* Left Column: Contact Info */}
                         <div>
                             <span className="inline-block px-4 py-1 rounded-none bg-cyan-500/10 border-l-2 border-cyan-500 text-cyan-400 text-[10px] font-black tracking-[0.3em] uppercase mb-4">{t('contact-label')}</span>
@@ -960,15 +1009,15 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                         <div className="flex flex-col">
                             <h4 className="font-semibold mb-3">{t('footer-links-title')}</h4>
                             <div className="flex flex-col gap-2 text-sm">
-                                <Link href="#servicios" className="text-gray-400 hover:text-white transition-colors">{t('footer-services')}</Link>
-                                <Link href="#nosotros" className="text-gray-400 hover:text-white transition-colors">{t('footer-about')}</Link>
-                                <Link href="#contacto" className="text-gray-400 hover:text-white transition-colors">{t('footer-contact')}</Link>
+                                <Link href={lang === 'en' ? "#services" : "#servicios"} className="text-gray-400 hover:text-white transition-colors">{t('footer-services')}</Link>
+                                <Link href={lang === 'en' ? "#about" : "#nosotros"} className="text-gray-400 hover:text-white transition-colors">{t('footer-about')}</Link>
+                                <Link href={lang === 'en' ? "#contact" : "#contacto"} className="text-gray-400 hover:text-white transition-colors">{t('footer-contact')}</Link>
                             </div>
                         </div>
                     </div>
                 </div>
             </footer>
-        </div>
+        </div >
     );
 };
 

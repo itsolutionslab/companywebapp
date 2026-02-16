@@ -47,11 +47,17 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
     const [submitted, setSubmitted] = useState(false);
     const [turnstileToken, setTurnstileToken] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const formRef = useRef<HTMLDivElement>(null);
 
     // Initial setup
     useEffect(() => {
         trackingService.setRegion(region);
         trackingService.trackEvent('view_page', { step: `strategic_form_step_${step}` });
+
+        // Auto-scroll to top of form on step change (Mobile Optimization)
+        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+            formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }, [region, step]);
 
     const handleInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -167,7 +173,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
     }
 
     return (
-        <div className="card-glass border border-white/10 rounded-[2.5rem] p-1 shadow-2xl overflow-hidden">
+        <div ref={formRef} className="card-glass border border-white/10 rounded-[2.5rem] p-1 shadow-2xl overflow-hidden scroll-mt-24">
             <div className="p-6 md:p-10 space-y-8">
                 {/* Progress Bar */}
                 <div className="space-y-3">

@@ -20,6 +20,10 @@ export default function LeadDetailPage() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [showScheduleModal, setShowScheduleModal] = useState(false);
     const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+    const [isAddingNote, setIsAddingNote] = useState(false);
+    const [noteText, setNoteText] = useState('');
+    const [isUpdatingValue, setIsUpdatingValue] = useState(false);
+    const [newValue, setNewValue] = useState('');
 
     useEffect(() => {
         if (id) fetchLead();
@@ -39,17 +43,17 @@ export default function LeadDetailPage() {
     }
 
     const statusSequence: { key: LeadStatus; label: string; color: string }[] = [
-        { key: 'LEAD_NEW', label: t('status_new') || 'Nuevo', color: 'bg-blue-500' },
-        { key: 'CONTACTED', label: t('status_contacted') || 'Contactado', color: 'bg-indigo-500' },
-        { key: 'SCHEDULED', label: t('status_scheduled') || 'Agendado', color: 'bg-purple-500' },
-        { key: 'IN_PROPOSAL', label: t('status_proposal') || 'En Propuesta', color: 'bg-amber-500' },
-        { key: 'PROJ_APPROVED', label: t('status_approved') || 'Aprobado', color: 'bg-emerald-500' },
-        { key: 'DOWN_PAYMENT', label: t('status_downpayment') || 'Pago Inicial', color: 'bg-teal-500' },
-        { key: 'PROJ_STARTED', label: t('status_started') || 'Iniciado', color: 'bg-cyan-500' },
-        { key: 'IN_TESTING', label: t('status_testing') || 'En Pruebas', color: 'bg-orange-500' },
-        { key: 'PROJ_FINISHED', label: t('status_finished') || 'Terminado', color: 'bg-green-500' },
-        { key: 'DELIVERED', label: t('status_delivered') || 'Entregado', color: 'bg-sky-500' },
-        { key: 'CLOSED', label: t('status_closed') || 'Cerrado', color: 'bg-gray-700' },
+        { key: 'NEW', label: 'Nuevo', color: 'bg-blue-500' },
+        { key: 'QUALIFIED', label: 'Calificado', color: 'bg-cyan-500' },
+        { key: 'CONTACTED', label: 'Contactado', color: 'bg-indigo-500' },
+        { key: 'DISCOVERY_SCHEDULED', label: 'Sesión Agendada', color: 'bg-purple-500' },
+        { key: 'DISCOVERY_COMPLETED', label: 'Sesión Completada', color: 'bg-fuchsia-500' },
+        { key: 'PROPOSAL_PREPARING', label: 'Propuesta en Prep.', color: 'bg-amber-500' },
+        { key: 'PROPOSAL_SENT', label: 'Propuesta Enviada', color: 'bg-orange-500' },
+        { key: 'NEGOTIATION', label: 'Negociación', color: 'bg-rose-500' },
+        { key: 'WON', label: 'Ganado', color: 'bg-green-500' },
+        { key: 'LOST', label: 'Perdido', color: 'bg-gray-500' },
+        { key: 'ON_HOLD', label: 'En Espera', color: 'bg-slate-400' },
     ];
 
     const currentIdx = statusSequence.findIndex(s => s.key === lead?.status_flow.current);
@@ -94,8 +98,17 @@ export default function LeadDetailPage() {
 
             await addBooking(newBooking);
 
-            // 2. Update Lead status to SCHEDULED
-            await handleStatusUpdate('SCHEDULED');
+            // 1.5 Add meeting event
+            const { addLeadEvent } = await import("@/lib/firebase");
+            await addLeadEvent(lead.lead_id, {
+                type: 'MEETING_SCHEDULED',
+                description: `Cita de descubrimiento agendada para el ${date} a las ${time}`,
+                timestamp: new Date(),
+                metadata: { date, time }
+            });
+
+            // 2. Update Lead status to DISCOVERY_SCHEDULED
+            await handleStatusUpdate('DISCOVERY_SCHEDULED');
 
             setShowScheduleModal(false);
             showNotification("Sesión de descubrimiento agendada correctamente", "success");
@@ -107,27 +120,57 @@ export default function LeadDetailPage() {
         }
     };
 
+    const handleAddNote = async () => {
+        if (!lead || !noteText.trim() || isUpdating) return;
+        setIsAddingNote(true);
+        try {
+            const { addLeadEvent } = await import("@/lib/firebase");
+            await addLeadEvent(lead.lead_id, {
+                type: 'NOTE_ADDED',
+                description: noteText,
+                timestamp: new Date()
+            });
+            setNoteText('');
+            setIsAddingNote(false);
+            await fetchLead();
+            showNotification("Nota agregada correctamente", "success");
+        } catch (error) {
+            showNotification("Error al agregar nota", "error");
+        } finally {
+            setIsAddingNote(false);
+        }
+    };
+
+    const handleUpdateValue = async () => {
+        if (!lead || isUpdating) return;
+        const val = parseFloat(newValue);
+        if (isNaN(val)) return;
+
+        setIsUpdating(true);
+        try {
+            await updateLead(lead.lead_id, { value_estimate: val });
+            await fetchLead();
+            setIsUpdatingValue(false);
+            showNotification("Valor actualizado", "success");
+        } catch (error) {
+            showNotification("Error al actualizar valor", "error");
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
     const handleStatusUpdate = async (newStatus: LeadStatus) => {
         if (!lead || isUpdating) return;
         setIsUpdating(true);
         try {
-            const newHistory = [
-                ...lead.status_flow.history,
-                { status: newStatus, timestamp: new Date().toISOString(), notes: `Estado actualizado a ${newStatus}` }
-            ];
             await updateLead(lead.lead_id, {
                 status_flow: {
-                    current: newStatus,
-                    history: newHistory
+                    ...lead.status_flow,
+                    current: newStatus
                 }
             });
-            setLead({
-                ...lead,
-                status_flow: {
-                    current: newStatus,
-                    history: newHistory
-                }
-            });
+            // Refresh local state (auto-re-fetch would be cleaner but this is faster for UX)
+            await fetchLead();
             showNotification(t('service_saved_success') || "Estado actualizado con éxito", "success");
         } catch (error) {
             showNotification(t('error_updating') || "Error actualizando estado", "error");
@@ -155,17 +198,75 @@ export default function LeadDetailPage() {
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-700 pb-12">
-            {/* Header / Breadcrumb */}
-            <div className="flex items-center gap-4">
-                <button
-                    onClick={() => router.push('/admin/prospectos')}
-                    className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-blue-500 transition-all shadow-sm"
-                >
-                    ←
-                </button>
-                <div>
-                    <h1 className="text-2xl font-bold text-black tracking-tight">{lead.data?.name || 'Sin Nombre'}</h1>
-                    <p className="text-[#8E8E93] text-xs font-bold uppercase tracking-widest mt-0.5">ID: {lead.lead_id}</p>
+            {/* Header & Progress Tracker */}
+            <div className="flex flex-col gap-6">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => router.push('/admin/prospectos')}
+                            className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-blue-500 transition-all shadow-sm"
+                        >
+                            ←
+                        </button>
+                        <div>
+                            <h1 className="text-2xl font-black text-gray-900 tracking-tight uppercase">{lead.data?.name || 'Prospecto Sin Nombre'}</h1>
+                            <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mt-0.5">ID: {lead.lead_id}</p>
+                        </div>
+                    </div>
+
+                    <div className="hidden md:flex items-center gap-3">
+                        <div className="text-right">
+                            <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Valor Estimado</span>
+                            <span className="block text-lg font-black text-emerald-600">${lead.value_estimate?.toLocaleString() || '0'}</span>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 text-xl">
+                            💰
+                        </div>
+                    </div>
+                </div>
+
+                {/* Horizontal Progress Bar */}
+                <div className="bg-white rounded-3xl border border-gray-100 p-4 shadow-sm overflow-x-auto no-scrollbar">
+                    <div className="flex items-center justify-between min-w-[800px] px-4 h-12 relative">
+                        {/* Connecting Line */}
+                        <div className="absolute left-10 right-10 top-1/2 -translate-y-1/2 h-0.5 bg-gray-100 z-0"></div>
+                        <div
+                            className="absolute left-10 top-1/2 -translate-y-1/2 h-0.5 bg-blue-500 transition-all duration-1000 z-0"
+                            style={{ width: `${(currentIdx / (statusSequence.length - 1)) * 100}%` }}
+                        ></div>
+
+                        {statusSequence.map((stage, idx) => {
+                            const isCompleted = idx <= currentIdx;
+                            const isCurrent = idx === currentIdx;
+                            return (
+                                <div key={stage.key} className="relative z-10 flex flex-col items-center gap-2 group">
+                                    <div className={`
+                                        w-8 h-8 rounded-full border-4 flex items-center justify-center transition-all duration-500
+                                        ${isCurrent
+                                            ? 'bg-blue-600 border-blue-100 scale-125 shadow-xl shadow-blue-200'
+                                            : isCompleted
+                                                ? 'bg-blue-500 border-white'
+                                                : 'bg-white border-gray-100 group-hover:border-blue-200'
+                                        }
+                                    `}>
+                                        {isCompleted && !isCurrent ? (
+                                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        ) : (
+                                            <div className={`w-1.5 h-1.5 rounded-full ${isCurrent ? 'bg-white' : 'bg-gray-200'}`}></div>
+                                        )}
+                                    </div>
+                                    <span className={`
+                                        absolute top-10 whitespace-nowrap text-[9px] font-black uppercase tracking-tighter transition-all duration-300
+                                        ${isCurrent ? 'text-blue-600' : isCompleted ? 'text-gray-900' : 'text-gray-300'}
+                                    `}>
+                                        {stage.label}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 
@@ -389,79 +490,175 @@ export default function LeadDetailPage() {
                         </div>
                     </div>
 
-                    {/* Historial de Actividad / Traceability Log */}
+                    {/* Timeline Feed (Top Priority) */}
                     <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8">
-                        <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-8 flex items-center gap-2">
-                            <span className="w-1 h-3 bg-indigo-500 rounded-full"></span>
-                            Historial de Actividad
-                        </h3>
-                        <div className="space-y-6 relative ml-4">
+                        <div className="flex items-center justify-between mb-8">
+                            <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                                <span className="w-1 h-3 bg-blue-500 rounded-full"></span>
+                                Línea de Tiempo
+                            </h3>
+                        </div>
+
+                        {/* Add Note Input Area */}
+                        <div className="mb-10 bg-gray-50/50 rounded-2xl p-4 border border-gray-100">
+                            <textarea
+                                value={noteText}
+                                onChange={(e) => setNoteText(e.target.value)}
+                                placeholder="Escribe una actualización o nota interna..."
+                                className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500/10 outline-none transition-all resize-none min-h-[80px]"
+                            />
+                            <div className="flex justify-end mt-2">
+                                <button
+                                    onClick={handleAddNote}
+                                    disabled={!noteText.trim() || isAddingNote}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 disabled:opacity-50 transition-all"
+                                >
+                                    {isAddingNote ? 'Guardando...' : 'Postear Nota'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-8 relative ml-4">
                             {/* Vertical Line */}
                             <div className="absolute top-0 bottom-0 left-0 w-px bg-gray-100 -ml-4 z-0"></div>
 
-                            {(lead.status_flow?.history || []).slice().reverse().map((item, idx) => (
-                                <div key={idx} className="relative z-10 flex items-start gap-6 group">
-                                    <div className="w-8 h-8 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm text-gray-300 group-hover:text-blue-500 group-hover:border-blue-100 transition-all">
-                                        <div className="w-2 h-2 rounded-full bg-current"></div>
-                                    </div>
-                                    <div className="flex-1 pb-6 border-b border-gray-50 last:border-0">
-                                        <div className="flex justify-between items-start mb-1">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                                                {statusSequence.find(s => s.key === item.status)?.label || item.status}
-                                            </span>
-                                            <span className="text-[10px] font-bold text-gray-400">
-                                                {new Date(item.timestamp).toLocaleString()}
+                            {/* Merge old history and new events if both exist for safety */}
+                            {(lead?.events && (lead.events as any[]).length > 0) ? (
+                                (lead.events as any[]).slice().reverse().map((event: any, idx) => (
+                                    <div key={event.id || idx} className="relative z-10 flex items-start gap-6 group">
+                                        <div className={`
+                                            w-10 h-10 rounded-2xl bg-white border flex items-center justify-center shadow-sm transition-all duration-300
+                                            ${event.type === 'STATUS_CHANGED' ? 'border-blue-100 text-blue-500 bg-blue-50/20' :
+                                                event.type === 'MEETING_SCHEDULED' ? 'border-purple-100 text-purple-500 bg-purple-50/20' :
+                                                    event.type === 'NOTE_ADDED' ? 'border-amber-100 text-amber-500 bg-amber-50/20' :
+                                                        'border-gray-100 text-gray-300'}
+                                        `}>
+                                            <span className="text-xl">
+                                                {event.type === 'STATUS_CHANGED' ? '🚀' :
+                                                    event.type === 'MEETING_SCHEDULED' ? '🗓️' :
+                                                        event.type === 'MEETING_COMPLETED' ? '✅' :
+                                                            event.type === 'PROPOSAL_SENT' ? '📧' :
+                                                                event.type === 'NOTE_ADDED' ? '📝' : '●'}
                                             </span>
                                         </div>
-                                        <p className="text-sm font-medium text-gray-600">
-                                            {item.notes || 'Sin observaciones adicionales.'}
-                                        </p>
+                                        <div className="flex-1 pb-8 border-b border-gray-50 last:border-0">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-50 px-2 py-0.5 rounded">
+                                                    {event.type.replace(/_/g, ' ')}
+                                                </span>
+                                                <span className="text-[10px] font-bold text-gray-300">
+                                                    {new Date(event.timestamp?.toDate?.() || event.timestamp).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm font-bold text-gray-700 leading-relaxed">
+                                                {event.description}
+                                            </p>
+                                            {event.metadata?.new_status && (
+                                                <div className="mt-2 flex items-center gap-2">
+                                                    <div className={`w-2 h-2 rounded-full ${statusSequence.find(s => s.key === event.metadata?.new_status)?.color || 'bg-gray-400'}`}></div>
+                                                    <span className="text-[11px] font-black text-gray-500 uppercase">{statusSequence.find(s => s.key === event.metadata?.new_status)?.label}</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))
+                            ) : (
+                                // Fallback to old history for legacy data not yet migrated
+                                (lead.status_flow?.history || []).slice().reverse().map((item, idx) => (
+                                    <div key={idx} className="relative z-10 flex items-start gap-6 group">
+                                        <div className="w-8 h-8 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm text-gray-300">
+                                            <div className="w-2 h-2 rounded-full bg-current"></div>
+                                        </div>
+                                        <div className="flex-1 pb-6 border-b border-gray-50 last:border-0">
+                                            <p className="text-sm font-bold text-gray-700">{item.notes}</p>
+                                            <span className="text-[10px] font-bold text-gray-300 uppercase mt-1 block">{new Date(item.timestamp).toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>
 
                 {/* Status & Sidebar */}
                 <div className="space-y-8">
+                    {/* Quick Actions Card */}
+                    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8">
+                        <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-6 flex items-center gap-2">
+                            <span className="w-1 h-3 bg-amber-500 rounded-full"></span>
+                            Acciones Rápidas
+                        </h3>
+                        <div className="space-y-3">
+                            <button
+                                onClick={() => setShowScheduleModal(true)}
+                                className="w-full py-3.5 bg-blue-50 text-blue-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all flex items-center justify-center gap-2"
+                            >
+                                🗓️ Agendar Discovery
+                            </button>
+                            <button
+                                className="w-full py-3.5 bg-indigo-50 text-indigo-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-100 transition-all flex items-center justify-center gap-2"
+                                onClick={() => {/* Future logic */ }}
+                            >
+                                📧 Enviar Propuesta
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setNewValue(lead.value_estimate?.toString() || '0');
+                                    setIsUpdatingValue(!isUpdatingValue);
+                                }}
+                                className="w-full py-3.5 bg-emerald-50 text-emerald-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-100 transition-all flex items-center justify-center gap-2"
+                            >
+                                💰 {isUpdatingValue ? 'Cerrar' : 'Actualizar Valor'}
+                            </button>
+
+                            {isUpdatingValue && (
+                                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 animate-in fade-in duration-300">
+                                    <input
+                                        type="number"
+                                        value={newValue}
+                                        onChange={(e) => setNewValue(e.target.value)}
+                                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500/10 outline-none"
+                                        placeholder="Valor USD"
+                                    />
+                                    <button
+                                        onClick={handleUpdateValue}
+                                        className="w-full mt-2 bg-emerald-500 text-white py-2 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                                    >
+                                        Guardar Valor
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     {/* Status Update Card */}
                     <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] border border-gray-100 shadow-xl p-8 sticky top-8">
                         <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-6 flex items-center gap-2">
                             <span className="w-1 h-3 bg-rose-500 rounded-full"></span>
-                            Estado Comercial
+                            Pipeline Stage
                         </h3>
 
                         <div className="space-y-4">
                             <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-center mb-6">
                                 <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Estado Actual</span>
-                                <span className="text-xl font-black text-gray-900 uppercase">{lead.status_flow.current.replace('LEAD_', '')}</span>
+                                <div className="flex items-center justify-center gap-2">
+                                    <div className={`w-2.4 h-2.4 rounded-full ${statusSequence[currentIdx]?.color || 'bg-gray-400'}`}></div>
+                                    <span className="text-xl font-black text-gray-900 uppercase">{lead.status_flow.current.replace(/_/g, ' ')}</span>
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-2">
-                                <button
-                                    onClick={() => setShowScheduleModal(true)}
-                                    className="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 mb-4"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                    Agendar Cita
-                                </button>
-
-                                <div className="h-px bg-gray-50 my-2"></div>
-
-                                {(['LEAD_NEW', 'CONTACTED', 'IN_PROPOSAL', 'PROJ_APPROVED', 'CLOSED', 'CLOSED_LOST'] as LeadStatus[]).map((status) => (
+                            <div className="grid grid-cols-1 gap-2 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
+                                {(['NEW', 'QUALIFIED', 'CONTACTED', 'DISCOVERY_SCHEDULED', 'DISCOVERY_COMPLETED', 'PROPOSAL_PREPARING', 'PROPOSAL_SENT', 'NEGOTIATION', 'WON', 'LOST', 'ON_HOLD'] as LeadStatus[]).map((status) => (
                                     <button
                                         key={status}
                                         onClick={() => handleStatusUpdate(status)}
                                         disabled={lead.status_flow.current === status || isUpdating}
-                                        className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all border ${lead.status_flow.current === status
-                                            ? 'bg-blue-500 text-white border-blue-400 shadow-lg shadow-blue-100'
-                                            : 'bg-white text-gray-500 border-gray-100 hover:border-blue-200 hover:text-blue-600'
+                                        className={`w-full py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${lead.status_flow.current === status
+                                            ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-100'
+                                            : 'bg-white text-gray-400 border-gray-100 hover:border-blue-200 hover:text-blue-600'
                                             }`}
                                     >
-                                        {statusSequence.find(s => s.key === status)?.label || status.replace('LEAD_', '').replace('_', ' ')}
+                                        {statusSequence.find(s => s.key === status)?.label || status.replace(/_/g, ' ')}
                                     </button>
                                 ))}
                             </div>

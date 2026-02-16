@@ -44,29 +44,39 @@ test.describe('Admin Panel Synchronization & Functionality', () => {
         await expect(page.locator('h2:has-text("Select Date")')).not.toBeVisible();
     });
 
-    test('Lead scheduling and status update', async ({ page }) => {
+    test('Lead pipeline and status update', async ({ page }) => {
         // 1. Go to Leads
         await page.goto(`${BASE_URL}/admin/prospectos`);
 
-        // 2. Select first lead
-        const firstLead = page.locator('div[class*="cursor-pointer"]').first();
+        // 2. Verify Pipeline view is default
+        await expect(page.locator('h3:has-text("NUEVO")')).toBeVisible();
+
+        // 3. Select first lead card from Pipeline
+        const firstLead = page.locator('a[href*="/admin/prospectos/"]').first();
+        await expect(firstLead).toBeVisible();
         await firstLead.click();
 
-        // 3. Click "AGENDAR CITA"
-        await page.click('button:has-text("AGENDAR CITA")');
-        await expect(page.locator('h2:has-text("AGENDAR SESIÓN")')).toBeVisible();
+        // 4. Verify Progress Tracker
+        await expect(page.locator('h1:has-text("PROSPECTO SIN NOMBRE")').or(page.locator('h1'))).toBeVisible();
+        await expect(page.locator('text=NUEVO')).toBeVisible();
 
-        // 4. Select a date and time
-        // This is more complex depending on availability, but for smoke test we check visibility
+        // 5. Click "AGENDAR DISCOVERY" in Quick Actions
+        await page.click('button:has-text("Agendar Discovery")');
+        await expect(page.locator('h2:has-text("Agendar Sesión")')).toBeVisible();
+
+        // 6. Select a date and time
         await page.click('button[class*="h-14"]').first(); // Click a day
         const firstSlot = page.locator('button[class*="px-4"]:not([disabled])').first();
         if (await firstSlot.isVisible()) {
             await firstSlot.click();
             await page.click('button:has-text("SAVE CHANGES")');
 
-            // 5. Verify success notification and status
+            // 7. Verify success and status update
             await expect(page.locator('text=Sesión de descubrimiento agendada correctamente')).toBeVisible();
-            await expect(page.locator('text=AGENDADO')).toBeVisible();
+            await expect(page.locator('text=DISCOVERY SCHEDULED')).toBeVisible();
+
+            // 8. Verify Timeline Event
+            await expect(page.locator('text=MEETING SCHEDULED')).toBeVisible();
         }
     });
 

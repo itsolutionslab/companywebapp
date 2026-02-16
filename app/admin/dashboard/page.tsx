@@ -129,8 +129,8 @@ export default function DashboardPage() {
 
     // Calculations
     const totalLeads = filteredLeads.length;
-    const completedLeads = filteredLeads.filter(l => l.status_flow?.current === 'CLOSED' || l.status_flow?.current === 'PROJ_FINISHED').length;
-    const newLeadsCount = filteredLeads.filter(l => l.status_flow?.current === 'LEAD_NEW').length;
+    const completedLeads = filteredLeads.filter(l => l.status_flow?.current === 'WON').length;
+    const newLeadsCount = filteredLeads.filter(l => l.status_flow?.current === 'NEW').length;
     const conversionRate = totalLeads > 0 ? (completedLeads / totalLeads) * 100 : 0;
 
     // Average session duration from KPIs
