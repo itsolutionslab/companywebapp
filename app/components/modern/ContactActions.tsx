@@ -71,10 +71,10 @@ export const ContactActions: React.FC<ContactActionsProps> = ({ className = '', 
                 const eventName = region.primaryContact === 'WHATSAPP' ? 'click_contact_whatsapp_pe' : 'click_contact_call_us';
                 trackConversion(eventName, { variant, location: 'modern_landing', label: label || primaryAction.label });
             }}
-            className={`${baseClasses} ${variantClasses} ${className} shadow-cyan-500/10`}
+            className={`${baseClasses} ${variantClasses} ${className} shadow-cyan-500/10 text-center`}
         >
             {primaryAction.icon}
-            <span className="whitespace-nowrap">{label || primaryAction.label}</span>
+            <span className="whitespace-wrap">{label || primaryAction.label}</span>
         </a>
     );
 };
