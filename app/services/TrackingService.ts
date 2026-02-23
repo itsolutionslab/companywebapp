@@ -102,6 +102,14 @@ class TrackingService {
             leadId = localStorage.getItem(LEAD_ID_KEY);
         }
 
+        // Ensure we have a valid session ID for the storage path
+        if (!this.sessionId || this.sessionId === 'server-side') {
+            if (typeof window !== 'undefined') {
+                this.sessionId = localStorage.getItem(SESSION_KEY) || uuidv4();
+                localStorage.setItem(SESSION_KEY, this.sessionId);
+            }
+        }
+
         console.log("::105---------__TrackingService__saveLeadDraft__==>: leadId: ", leadId);
         const isNew = !leadId;
 
@@ -145,8 +153,8 @@ class TrackingService {
             if (isNew) {
                 updateObject.lead_id = leadId;
                 updateObject.status_flow = {
-                    current: 'LEAD_NEW',
-                    history: [{ status: 'LEAD_NEW', timestamp, notes: 'Initial capture' }]
+                    current: 'LEAD_DRAFT',
+                    history: [{ status: 'LEAD_DRAFT', timestamp, notes: 'Initial draft capture' }]
                 };
                 updateObject.audit_logs.created_at = serverTimestamp();
                 updateObject.source_attribution = {
@@ -162,8 +170,12 @@ class TrackingService {
 
             console.log("::162---------__TrackingService__saveLeadDraft__==>: Successfully saved lead: ", leadId);
             return leadId;
-        } catch (error) {
-            console.error("::165---------__TrackingService__saveLeadDraft__==>: ERROR saving lead:", error);
+        } catch (error: any) {
+            if (error.message?.includes('permissions')) {
+                console.warn("[Tracking] Draft save blocked by security rules (Expected if not valid LEAD_DRAFT structure)");
+            } else {
+                console.error("::165---------__TrackingService__saveLeadDraft__==>: ERROR saving lead:", error);
+            }
             return null;
         }
     }
@@ -186,12 +198,16 @@ class TrackingService {
             await addDoc(collection(db, 'interactions'), event);
 
             // If it's a significant event, update the lead's KPI
-            if (leadId) {
-                const leadRef = doc(db, 'leads', leadId);
-                await updateDoc(leadRef, {
-                    'kpis.clicks_count': this.clicksCount,
-                    'kpis.session_duration': (Date.now() - this.startTime) / 1000
-                });
+            try {
+                if (leadId) {
+                    const leadRef = doc(db, 'leads', leadId as string);
+                    await updateDoc(leadRef, {
+                        'kpis.clicks_count': this.clicksCount,
+                        'kpis.session_duration': (Date.now() - this.startTime) / 1000
+                    });
+                }
+            } catch (e) {
+                // Silently fail if doc doesn't exist yet (not yet saved as draft)
             }
 
         } catch (e: any) {
@@ -212,28 +228,22 @@ class TrackingService {
         const validTypes = [
             // Documents
             'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             // Images
             'image/jpeg',
             'image/jpg',
             'image/png',
             'image/gif',
-            'image/webp',
-            // Compressed files
-            'application/zip',
-            'application/x-rar-compressed',
-            'application/x-7z-compressed'
+            'image/webp'
         ];
 
         if (!validTypes.includes(file.type)) {
-            console.error("Invalid file type. Allowed: PDF, Word, Images (JPEG, PNG, GIF, WebP), ZIP, RAR, 7z");
+            console.error("Invalid file type. Allowed: PDF, Images (JPEG, PNG, GIF, WebP)");
             return null;
         }
 
-        // Updated size limit to match Storage rules (10MB)
-        if (file.size > 10 * 1024 * 1024) {
-            console.error("File too large. Maximum size: 10MB");
+        // Updated size limit to match Storage rules (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            console.error("File too large. Maximum size: 5MB");
             return null;
         }
 
@@ -247,7 +257,9 @@ class TrackingService {
         } catch (e: any) {
             // Enhanced error messaging
             if (e.code === 'storage/unauthorized') {
-                console.error("Storage PERMISSION ERROR: File upload denied. Check Firebase Storage Rules.");
+                console.error("Storage PERMISSION ERROR: File upload denied. Path: " + `leads/${this.sessionId}/...` + ". Check if Storage Rules allow creation in this path.");
+            } else if (e.code === 'storage/retry-limit-exceeded') {
+                console.error("Storage CONNECTION ERROR: Ad-blocker or network issue preventing upload.");
             } else {
                 console.error("Error uploading file:", e.message);
             }

@@ -86,8 +86,8 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.size > 10 * 1024 * 1024) {
-            alert("File is too large. Max 10MB.");
+        if (file.size > 5 * 1024 * 1024) {
+            alert("File is too large. Max 5MB.");
             return;
         }
 
@@ -131,8 +131,28 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
         trackingService.trackEvent('submit_form', { region });
 
         try {
-            const finalData = { ...formData, turnstile_token: turnstileToken };
-            await trackingService.saveLeadDraft(finalData);
+            const finalData = {
+                ...formData,
+                turnstile_token: turnstileToken,
+                lead_id: localStorage.getItem('current_lead_id'), // Send the draft ID if it exists
+                // Include telemetry/audit data
+                kpis: {
+                    session_duration: (Date.now() - (window as any).startTime || Date.now()) / 1000,
+                    clicks_count: (window as any).clicksCount || 0
+                }
+            };
+
+            const response = await fetch('/api/leads', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(finalData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to submit lead');
+            }
+
             setSubmitted(true);
             trackingService.resetLead();
             if (onComplete) {
@@ -140,6 +160,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
             }
         } catch (error) {
             console.error("Error submitting form:", error);
+            alert("Hubo un error al enviar el formulario. Por favor, inténtalo de nuevo.");
         } finally {
             setLoading(false);
         }
@@ -432,7 +453,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                                             )}
                                         </button>
                                     </div>
-                                    <input ref={fileInputRef} type="file" onChange={handleFileUpload} className="hidden" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.zip" />
+                                    <input ref={fileInputRef} type="file" onChange={handleFileUpload} className="hidden" accept=".pdf,.png,.jpg,.jpeg,.webp" />
                                 </div>
                             </div>
 
