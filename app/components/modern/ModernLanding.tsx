@@ -958,7 +958,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                             {/* Region Specific Info for PE */}
                             {initialRegionCode === 'PE' && (
                                 <div className="mt-8 bg-lime-900/20 p-6 rounded-xl border border-lime-500/30">
-                                    <h4 className="text-lime-400 font-bold mb-2">Soporte Local Perú</h4>
+                                    <h4 className="text-lime-400 font-bold mb-2">Soporte Local en Perú</h4>
                                     <p className="text-sm text-lime-100/80">Atención directa vía WhatsApp y reuniones presenciales en Lima.</p>
                                 </div>
                             )}
