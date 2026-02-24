@@ -1,4 +1,7 @@
 import * as admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
+import { getStorage } from 'firebase-admin/storage';
 
 const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
@@ -11,13 +14,16 @@ if (!projectId || !clientEmail || !privateKey) {
 const firebaseAdminConfig = {
     projectId,
     clientEmail,
-    // Robustly handle private key newlines and potential quoting issues
-    privateKey: privateKey ? privateKey.replace(/\\n/g, '\n').replace(/^"(.*)"$/, '$1') : undefined,
+    // Extremely robust key parsing for different production environments (Vercel, Netlify, etc.)
+    privateKey: privateKey
+        ? privateKey
+            .replace(/\\n/g, '\n')        // Convert literal \n to actual newlines
+            .replace(/\\\\n/g, '\n')      // Handle double-escaped backslashes
+            .replace(/^"(.*)"$/, '$1')    // Remove wrapping double quotes
+            .replace(/^'(.*)'$/, '$1')    // Remove wrapping single quotes
+            .trim()
+        : undefined,
 };
-
-import { getFirestore } from 'firebase-admin/firestore';
-import { getAuth } from 'firebase-admin/auth';
-import { getStorage } from 'firebase-admin/storage';
 
 const app = !admin.apps.length
     ? admin.initializeApp({
