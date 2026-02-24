@@ -22,10 +22,7 @@ export interface AnalyticsMetadata {
 }
 
 export const trackConversion = (eventName: string, metadata: object = {}) => {
-    // 1. Log to console in development mode
-    if (process.env.NODE_ENV === 'development') {
-        console.log(`%c[Analytics] Event: ${eventName}`, 'color: #10b981; font-weight: bold;', metadata);
-    }
+    // 1. Log to console in development mode (Removed for security)
 
     // 2. Track with GA4 if available
     if (typeof window !== 'undefined' && window.gtag) {
@@ -43,10 +40,7 @@ export const trackConversion = (eventName: string, metadata: object = {}) => {
  * Called when region is detected.
  */
 export const setUserProperties = (properties: AnalyticsMetadata) => {
-    if (process.env.NODE_ENV === 'development') {
-        console.log('.');
-        //console.log('%c[Analytics] User Properties Set:', 'color: #06b6d4; font-weight: bold;', properties);
-    }
+    // Removed for security
 
     if (typeof window !== 'undefined' && window.gtag) {
         window.gtag('set', 'user_properties', properties);

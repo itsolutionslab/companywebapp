@@ -38,7 +38,6 @@ export interface GTMEvent {
  */
 export function sendGTMEvent(eventData: GTMEvent): void {
     if (typeof window === 'undefined') {
-        console.warn('GTM: Cannot send event on server-side');
         return;
     }
 
@@ -49,9 +48,8 @@ export function sendGTMEvent(eventData: GTMEvent): void {
 
     try {
         window.dataLayer.push(eventData);
-        console.log('GTM Event sent:', eventData);
     } catch (error) {
-        console.error('GTM: Error sending event', error);
+        // Silent fail for security
     }
 }
 
