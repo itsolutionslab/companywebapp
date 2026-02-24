@@ -29,7 +29,6 @@ export default function ServicesPage() {
             const data = await getServices();
             setServices(data);
         } catch (error) {
-            console.error("Error fetching services:", error);
         } finally {
             setLoading(false);
         }
@@ -70,7 +69,6 @@ export default function ServicesPage() {
             await fetchServices();
             showNotification(t('service_saved_success'), 'success');
         } catch (error: any) {
-            console.error("Error saving service:", error);
             showNotification(`Error: ${error.message || "Unknown error"}`, 'error');
         } finally {
             setIsSaving(false);
@@ -88,7 +86,6 @@ export default function ServicesPage() {
             setEditingService({ ...editingService, image_url: url });
             showNotification(t('image_upload_success'), 'success');
         } catch (error: any) {
-            console.error("Error uploading image:", error);
             showNotification(`Error subiendo imagen: ${error.message || "Upload failed"}`, 'error');
         } finally {
             setIsUploading(false);

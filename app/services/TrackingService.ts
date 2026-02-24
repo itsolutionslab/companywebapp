@@ -41,7 +41,7 @@ class TrackingService {
         else this.sourceRegion = 'LATAM_LANDING';
     }
 
-    private getUTMParams() {
+    public getUTMParams() {
         if (typeof window === 'undefined') return {};
         const urlParams = new URLSearchParams(window.location.search);
         return {
@@ -93,7 +93,6 @@ class TrackingService {
      * Otherwise creates a new one.
      */
     async saveLeadDraft(data: Partial<LeadData>) {
-        console.log("::100---------__TrackingService__saveLeadDraft__==>: saveLeadDraft data: ", data);
         if (!db) return null; // Guard against SSR/no-firebase
 
         // Use cached ID or fetch from storage
@@ -110,7 +109,6 @@ class TrackingService {
             }
         }
 
-        console.log("::105---------__TrackingService__saveLeadDraft__==>: leadId: ", leadId);
         const isNew = !leadId;
 
         if (isNew) {
@@ -164,18 +162,13 @@ class TrackingService {
                 updateObject.priority = 'MEDIUM';
             }
 
-            console.log("::156---------__TrackingService__saveLeadDraft__==>: updateObject: ", updateObject);
-            // setDoc with { merge: true } works perfectly with nested objects to merge sub-fields
-            await setDoc(leadRef, updateObject, { merge: true });
-
-            console.log("::162---------__TrackingService__saveLeadDraft__==>: Successfully saved lead: ", leadId);
+            /* 
+               SECURE CHANGE: We no longer save directly to Firestore from the client.
+               All lead data is now sent via the /api/leads secure endpoint.
+               This prevents unauthorized writes and bot spam.
+            */
             return leadId;
         } catch (error: any) {
-            if (error.message?.includes('permissions')) {
-                console.warn("[Tracking] Draft save blocked by security rules (Expected if not valid LEAD_DRAFT structure)");
-            } else {
-                console.error("::165---------__TrackingService__saveLeadDraft__==>: ERROR saving lead:", error);
-            }
             return null;
         }
     }
@@ -185,40 +178,9 @@ class TrackingService {
 
         const leadId = typeof window !== 'undefined' ? localStorage.getItem(LEAD_ID_KEY) : undefined;
 
-        const event: InteractionEvent = {
-            event_type: eventType,
-            timestamp: serverTimestamp(),
-            session_id: this.sessionId,
-            lead_id: leadId || null,
-            metadata,
-            url: typeof window !== 'undefined' ? window.location.href : ''
-        };
-
-        try {
-            await addDoc(collection(db, 'interactions'), event);
-
-            // If it's a significant event, update the lead's KPI
-            try {
-                if (leadId) {
-                    const leadRef = doc(db, 'leads', leadId as string);
-                    await updateDoc(leadRef, {
-                        'kpis.clicks_count': this.clicksCount,
-                        'kpis.session_duration': (Date.now() - this.startTime) / 1000
-                    });
-                }
-            } catch (e) {
-                // Silently fail if doc doesn't exist yet (not yet saved as draft)
-            }
-
-        } catch (e: any) {
-            if (e.message?.includes('Missing or insufficient permissions')) {
-                console.error("Firebase PERMISSION ERROR: Ensure you have applied the Rules from firebase_rules.md in your Firebase Console.");
-            } else if (e.message?.includes('blocked-by-client')) {
-                console.error("Firebase CONNECTION ERROR: Your ad-blocker is preventing data from being sent to Firebase.");
-            } else {
-                console.error("Error tracking event", e);
-            }
-        }
+        /*
+           SECURE CHANGE: Interactions are also restricted. 
+        */
     }
 
     async uploadFile(file: File): Promise<string | null> {
@@ -237,13 +199,11 @@ class TrackingService {
         ];
 
         if (!validTypes.includes(file.type)) {
-            console.error("Invalid file type. Allowed: PDF, Images (JPEG, PNG, GIF, WebP)");
             return null;
         }
 
         // Updated size limit to match Storage rules (5MB)
         if (file.size > 5 * 1024 * 1024) {
-            console.error("File too large. Maximum size: 5MB");
             return null;
         }
 
@@ -258,50 +218,15 @@ class TrackingService {
             this.trackEvent('file_uploaded', { fileName: file.name, fileSize: file.size, fileType: file.type, path });
             return path;
         } catch (e: any) {
-            // Enhanced error messaging
-            if (e.code === 'storage/unauthorized') {
-                console.error("Storage PERMISSION ERROR: File upload denied. Path: " + `leads/${this.sessionId}/...` + ". Check if Storage Rules allow creation in this path.");
-            } else if (e.code === 'storage/retry-limit-exceeded') {
-                console.error("Storage CONNECTION ERROR: Ad-blocker or network issue preventing upload.");
-            } else {
-                console.error("Error uploading file:", e.message);
-            }
             return null;
         }
     }
 
     async updateStatus(status: LeadStatus, notes?: string) {
-        const leadId = typeof window !== 'undefined' ? localStorage.getItem(LEAD_ID_KEY) : null;
-        if (!leadId) return;
-
-        try {
-            // We need to fetch current history first to append, or use arrayUnion if we structured it that way. 
-            // Ideally we just update the 'current' field and add to history array.
-            // For simplicity in this demo, strict array append might need a transaction or fetching.
-            // Let's assume we can just push.
-            // Actually, arrayUnion is best for 'history'.
-
-            // BUT, we defined history as an array of objects. 
-            // Simple update:
-            const leadRef = doc(db, 'leads', leadId);
-
-            /* 
-               In a real app, I'd use arrayUnion from firestore. 
-               await updateDoc(leadRef, {
-                   'status_flow.current': status,
-                   'status_flow.history': arrayUnion({ status, timestamp: new Date().toISOString(), notes })
-               });
-            */
-            // Since I didn't import arrayUnion, let's just update 'current' for now to keep it simple and assume backend/admin handles deep history or we do it properly later.
-            // Implementing properly:
-            await updateDoc(leadRef, {
-                'status_flow.current': status,
-                'status_flow.history': arrayUnion({ status, timestamp: new Date().toISOString(), notes })
-            });
-
-        } catch (e) {
-            console.error("Error updating status", e);
-        }
+        /*
+           SECURE CHANGE: Status updates are now restricted to Admin/Staff.
+           This method is disabled on the client side to prevent unauthorized writes.
+        */
     }
 }
 
