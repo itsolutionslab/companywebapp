@@ -36,9 +36,13 @@ function repairPrivateKey(key: string | undefined): string | undefined {
     repaired = repaired
         .replace(/\\n/g, '\n')         // Convert literal \n to actual newlines
         .replace(/\\\\n/g, '\n')       // Handle double-escaped \n
-        .replace(/^"(.*)"$/, '$1')     // Remove wrapping double quotes
-        .replace(/^'(.*)'$/, '$1')     // Remove wrapping single quotes
         .trim();
+
+    // Remove wrapping quotes (very robustly for multiline)
+    while ((repaired.startsWith('"') && repaired.endsWith('"')) ||
+        (repaired.startsWith("'") && repaired.endsWith("'"))) {
+        repaired = repaired.slice(1, -1).trim();
+    }
 
     // 3. Handle cases where newlines were converted to spaces (common in some dashboards)
     // We only do this if the key doesn't have enough newlines
