@@ -46,7 +46,6 @@ export default function LoginPage() {
             router.push("/admin/dashboard");
         } catch (err: any) {
             setError("Incorrect credentials or connection error.");
-            console.error(err);
         } finally {
             setLoading(false);
         }

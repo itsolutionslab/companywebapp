@@ -174,7 +174,6 @@ export async function POST(request: Request) {
         // IMPORTANT: Admin SDK ignores Firestore rules, so this always works if credentials are correct.
         await adminDb.collection('leads').doc(leadId).set(leadDoc, { merge: true });
 
-        console.log(`[Success] Secure lead captured & sanitized: ${leadId} (IP: ${ip})`);
         return NextResponse.json({ success: true, leadId });
 
     } catch (error) {

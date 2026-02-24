@@ -15,9 +15,6 @@ export const firebaseConfig = {
 };
 
 // Initialize Firebase
-if (!firebaseConfig.storageBucket) {
-    console.warn("Firebase Storage Bucket is missing! Check your .env.local file.");
-}
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 
@@ -58,9 +55,7 @@ export const getServices = async (): Promise<Service[]> => {
 };
 
 export const onServicesUpdate = (callback: (data: Service[]) => void) => {
-    console.log("[Firestore] Starting onServicesUpdate listener...");
     return onSnapshot(collection(db, "services"), (snapshot) => {
-        console.log(`[Firestore] snapshot received for 'services'. size: ${snapshot.size}`);
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service));
         callback(data);
     }, (error) => {
@@ -248,10 +243,8 @@ export const getLeads = async (): Promise<Lead[]> => {
 };
 
 export const onLeadsUpdate = (callback: (data: Lead[]) => void) => {
-    console.log("[Firestore] Starting onLeadsUpdate listener...");
     const q = query(collection(db, "leads"));
     return onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
-        console.log(`[Firestore] snapshot received for 'leads'. empty: ${snapshot.empty}, size: ${snapshot.size}`);
         const data = snapshot.docs.map(doc => normalizeLeadData({
             ...doc.data(),
             lead_id: doc.id
@@ -260,8 +253,6 @@ export const onLeadsUpdate = (callback: (data: Lead[]) => void) => {
     }, (error) => {
         if (!error.message.includes('permission')) {
             console.error("[Firestore] Error in onLeadsUpdate listener:", error);
-        } else {
-            console.log("[Firestore] onLeadsUpdate blocked by security rules (anonymous user)");
         }
     });
 };

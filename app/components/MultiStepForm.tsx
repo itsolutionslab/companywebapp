@@ -109,7 +109,6 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                 await trackingService.saveLeadDraft({ file_url: url });
             }
         } catch (error) {
-            console.error(error);
             setFileName('');
         } finally {
             setIsUploading(false);
@@ -137,7 +136,6 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
         }
 
         setLoading(true);
-        trackingService.trackEvent('submit_form', { region });
 
         try {
             // Get tracking data from service
@@ -179,7 +177,6 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                 setTimeout(() => onComplete(), 5000);
             }
         } catch (error: any) {
-            console.error("Error submitting form:", error);
             alert(error.message || "Hubo un error al enviar el formulario. Por favor, inténtalo de nuevo.");
         } finally {
             setLoading(false);

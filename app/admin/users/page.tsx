@@ -117,7 +117,6 @@ export default function UsersPage() {
             // Close the temp app
             // Note: tempApp.delete() is not strictly necessary but good practice
         } catch (error: any) {
-            console.error("Error creating user:", error);
             showNotification(`Error: ${error.message}`, 'error');
         } finally {
             setCreateLoading(false);
@@ -147,7 +146,6 @@ export default function UsersPage() {
             setShowDeleteModal(false);
             setUserToDelete(null);
         } catch (error: any) {
-            console.error("Error deleting user:", error);
             setMessage(`❌ Error: ${error.message}`);
         } finally {
             setDeleteLoading(false);

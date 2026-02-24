@@ -11,7 +11,7 @@ service cloud.firestore {
     }
     
     function isAnonymous() {
-      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
+      return false; // TOTAL LOCKDOWN: Anonymous users are never allowed
     }
     
     function getUserData() {
@@ -164,16 +164,10 @@ service cloud.firestore {
       allow create: if isValidBooking();
       
       // Staff can read all bookings
-      // Clients can read their own bookings
-      allow read: if isStaff() 
-                  || (isClient() && isSignedIn() && request.auth.uid == resource.data.userId);
+      allow read: if isStaff();
       
       // Staff can update booking status and details
-      // Clients can update their own bookings (e.g., cancel)
-      allow update: if isStaff() || (
-        isClient() && isSignedIn() && request.auth.uid == resource.data.userId
-        && isValidBooking()
-      );
+      allow update: if isStaff();
       
       // Only admins can delete bookings
       allow delete: if isAdmin();
@@ -220,11 +214,8 @@ service cloud.firestore {
     // DISABLED_SLOTS - Availability Management
     // ========================================
     match /disabled_slots/{slotId} {
-      // Publicly readable (needed for calendar availability checks)
-      allow read: if true;
-      
-      // Only staff can manage disabled slots
-      allow write: if isStaff();
+      // Accessible to staff only for management
+      allow read, write: if isStaff();
     }
   }
 }

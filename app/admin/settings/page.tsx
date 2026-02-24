@@ -91,7 +91,6 @@ export default function SettingsPage() {
             setNewPassword("");
             setConfirmPassword("");
         } catch (error: any) {
-            console.error(error);
             showNotification(`Error: ${error.message}`, 'error');
         } finally {
             setLoading(false);
