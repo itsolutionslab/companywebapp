@@ -11,18 +11,52 @@ if (!projectId || !clientEmail || !privateKey) {
     console.error('❌ Missing Firebase Admin credentials in environment variables');
 }
 
+/**
+ * Robustly repairs a Firebase Private Key from environment variables.
+ * Handles \n escaping, double escaping, quoting, and Base64 encoding.
+ */
+function repairPrivateKey(key: string | undefined): string | undefined {
+    if (!key) return undefined;
+
+    let repaired = key.trim();
+
+    // Check if it looks like Base64 (no PEM headers, potentially long single block)
+    if (!repaired.includes('-----BEGIN PRIVATE KEY-----') && !repaired.includes('\n') && repaired.length > 500) {
+        try {
+            const decoded = Buffer.from(repaired, 'base64').toString('utf8');
+            if (decoded.includes('-----BEGIN PRIVATE KEY-----')) {
+                repaired = decoded;
+            }
+        } catch (e) {
+            // Not base64, continue with standard parsing
+        }
+    }
+
+    repaired = repaired
+        .replace(/\\n/g, '\n')         // Convert literal \n to actual newlines
+        .replace(/\\\\n/g, '\n')       // Handle double-escaped \n
+        .replace(/^"(.*)"$/, '$1')     // Remove wrapping double quotes
+        .replace(/^'(.*)'$/, '$1')     // Remove wrapping single quotes
+        .trim();
+
+    // Ensure PEM headers/footers are present
+    if (!repaired.includes('-----BEGIN PRIVATE KEY-----')) {
+        repaired = `-----BEGIN PRIVATE KEY-----\n${repaired}`;
+    }
+    if (!repaired.includes('-----END PRIVATE KEY-----')) {
+        repaired = `${repaired}\n-----END PRIVATE KEY-----`;
+    }
+
+    // Standardize newlines for OpenSSL/gRPC
+    if (!repaired.endsWith('\n')) repaired += '\n';
+
+    return repaired;
+}
+
 const firebaseAdminConfig = {
     projectId,
     clientEmail,
-    // Extremely robust key parsing for different production environments (Vercel, Netlify, etc.)
-    privateKey: privateKey
-        ? privateKey
-            .replace(/\\n/g, '\n')        // Convert literal \n to actual newlines
-            .replace(/\\\\n/g, '\n')      // Handle double-escaped backslashes
-            .replace(/^"(.*)"$/, '$1')    // Remove wrapping double quotes
-            .replace(/^'(.*)'$/, '$1')    // Remove wrapping single quotes
-            .trim()
-        : undefined,
+    privateKey: repairPrivateKey(privateKey),
 };
 
 const app = !admin.apps.length
