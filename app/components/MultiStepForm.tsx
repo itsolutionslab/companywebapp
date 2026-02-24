@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { trackingService } from '../services/TrackingService';
 import { LeadData } from '../types/tracking';
 import { translations } from '../data/translations';
+import { obfuscateData } from '../lib/obfuscation';
 import Turnstile from 'react-turnstile';
 
 interface MultiStepFormProps {
@@ -139,21 +140,32 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
         trackingService.trackEvent('submit_form', { region });
 
         try {
+            // Get tracking data from service
+            const utmParams = (trackingService as any).getUTMParams ? (trackingService as any).getUTMParams() : {};
+            const leadId = localStorage.getItem('current_lead_id');
+
             const finalData = {
                 ...formData,
                 turnstile_token: turnstileToken,
-                lead_id: localStorage.getItem('current_lead_id'), // Send the draft ID if it exists
+                lead_id: leadId,
+                ...utmParams,
+                source_attribution: {
+                    ...utmParams,
+                    landing_page: (trackingService as any).sourceRegion || 'UNKNOWN'
+                },
                 // Include telemetry/audit data
                 kpis: {
-                    session_duration: (Date.now() - (window as any).startTime || Date.now()) / 1000,
-                    clicks_count: (window as any).clicksCount || 0
+                    session_duration: (Date.now() - (trackingService as any).startTime || Date.now()) / 1000,
+                    clicks_count: (trackingService as any).clicksCount || 0
                 }
             };
+
+            const payload = obfuscateData(finalData);
 
             const response = await fetch('/api/leads', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(finalData)
+                body: JSON.stringify({ payload })
             });
 
             if (!response.ok) {

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { adminDb } from '../../lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { rateLimit } from '../../lib/rate-limiter';
+import { deobfuscateData } from '../../lib/obfuscation';
 
 // Define the validation schema for lead data
 const LeadSchema = z.object({
@@ -72,7 +73,17 @@ function sanitize(text: string): string {
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
+        const json = await request.json();
+        const body = deobfuscateData(json.payload);
+
+        if (!body) {
+            console.error('[Security] Missing or invalid obfuscated payload');
+            return NextResponse.json(
+                { success: false, error: 'Formato de datos inválido' },
+                { status: 400 }
+            );
+        }
+
         const ip = request.headers.get('x-forwarded-for') || 'unknown';
 
         // 1. Rate Limiting ...
@@ -152,14 +163,18 @@ export async function POST(request: Request) {
             },
             priority: body.priority || 'MEDIUM',
             source_attribution: body.source_attribution || {
-                landing_page: 'SECURE_CAPTURE'
+                landing_page: 'SECURE_CAPTURE',
+                utm_source: body.utm_source || null,
+                utm_medium: body.utm_medium || null,
+                utm_campaign: body.utm_campaign || null
             }
         };
 
         // 6. Save to Firestore using Admin SDK
+        // IMPORTANT: Admin SDK ignores Firestore rules, so this always works if credentials are correct.
         await adminDb.collection('leads').doc(leadId).set(leadDoc, { merge: true });
 
-        console.log(`[Success] Secure lead captured & sanitized: ${leadId}`);
+        console.log(`[Success] Secure lead captured & sanitized: ${leadId} (IP: ${ip})`);
         return NextResponse.json({ success: true, leadId });
 
     } catch (error) {

@@ -41,7 +41,7 @@ class TrackingService {
         else this.sourceRegion = 'LATAM_LANDING';
     }
 
-    private getUTMParams() {
+    public getUTMParams() {
         if (typeof window === 'undefined') return {};
         const urlParams = new URLSearchParams(window.location.search);
         return {
@@ -165,17 +165,15 @@ class TrackingService {
             }
 
             console.log("::156---------__TrackingService__saveLeadDraft__==>: updateObject: ", updateObject);
-            // setDoc with { merge: true } works perfectly with nested objects to merge sub-fields
-            await setDoc(leadRef, updateObject, { merge: true });
-
-            console.log("::162---------__TrackingService__saveLeadDraft__==>: Successfully saved lead: ", leadId);
+            /* 
+               SECURE CHANGE: We no longer save directly to Firestore from the client.
+               All lead data is now sent via the /api/leads secure endpoint.
+               This prevents unauthorized writes and bot spam.
+            */
+            console.log("::162---------__TrackingService__saveLeadDraft__==>: Client-side direct save skipped for security. LeadId: ", leadId);
             return leadId;
         } catch (error: any) {
-            if (error.message?.includes('permissions')) {
-                console.warn("[Tracking] Draft save blocked by security rules (Expected if not valid LEAD_DRAFT structure)");
-            } else {
-                console.error("::165---------__TrackingService__saveLeadDraft__==>: ERROR saving lead:", error);
-            }
+            console.error("::165---------__TrackingService__saveLeadDraft__==>: ERROR in saveLeadDraft:", error);
             return null;
         }
     }
@@ -185,40 +183,12 @@ class TrackingService {
 
         const leadId = typeof window !== 'undefined' ? localStorage.getItem(LEAD_ID_KEY) : undefined;
 
-        const event: InteractionEvent = {
-            event_type: eventType,
-            timestamp: serverTimestamp(),
-            session_id: this.sessionId,
-            lead_id: leadId || null,
-            metadata,
-            url: typeof window !== 'undefined' ? window.location.href : ''
-        };
-
-        try {
-            await addDoc(collection(db, 'interactions'), event);
-
-            // If it's a significant event, update the lead's KPI
-            try {
-                if (leadId) {
-                    const leadRef = doc(db, 'leads', leadId as string);
-                    await updateDoc(leadRef, {
-                        'kpis.clicks_count': this.clicksCount,
-                        'kpis.session_duration': (Date.now() - this.startTime) / 1000
-                    });
-                }
-            } catch (e) {
-                // Silently fail if doc doesn't exist yet (not yet saved as draft)
-            }
-
-        } catch (e: any) {
-            if (e.message?.includes('Missing or insufficient permissions')) {
-                console.error("Firebase PERMISSION ERROR: Ensure you have applied the Rules from firebase_rules.md in your Firebase Console.");
-            } else if (e.message?.includes('blocked-by-client')) {
-                console.error("Firebase CONNECTION ERROR: Your ad-blocker is preventing data from being sent to Firebase.");
-            } else {
-                console.error("Error tracking event", e);
-            }
-        }
+        /*
+           SECURE CHANGE: Interactions are also restricted. 
+           In a high-security environment, we avoid direct writes for any collection.
+           If we need analytics, we can move this to a secure tracking API.
+        */
+        console.log(`[Tracking] Event skipped (Secure rules): ${eventType}`);
     }
 
     async uploadFile(file: File): Promise<string | null> {

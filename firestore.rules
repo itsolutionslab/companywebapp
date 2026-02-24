@@ -40,20 +40,56 @@ service cloud.firestore {
     }
     
     // ========================================
+    // VALIDATION HELPER FUNCTIONS
+    // ========================================
+    
+    // Check if field exists and is a string up to max length
+    function isString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+    
+    // Check if field exists and is a list
+    function isList(val, maxItems) {
+      return val is list && val.size() <= maxItems;
+    }
+
+    // ========================================
     // LEADS (PROSPECTOS) - Public Lead Capture
     // ========================================
     match /leads/{leadId} {
-      // Allow public creation ONLY IF it's a draft.
-      allow create: if request.resource.data.status_flow.current == 'LEAD_DRAFT';
       
-      // Allow user to READ their own lead document (needed for client SDK to perform upserts/checks)
-      allow get: if true;
+      // Strict structural validation for tracking drafts
+      function isValidLeadDraft() {
+        let data = request.resource.data;
+        let isDraft = data.status_flow.current == 'LEAD_DRAFT';
+        
+        // Optional structural checking to prevent massive object injection
+        let hasValidBase = data.keys().hasOnly(['kpis', 'audit_logs', 'data', 'lead_id', 'status_flow', 'source_attribution', 'priority', 'turnstile_token', 'name', 'email', 'phone', 'company', 'role', 'website', 'objectives', 'stage', 'timeline', 'investment_level', 'impact', 'decision_maker', 'file_url']);
+        
+        // Prevent massive strings in tracking kpis
+        let validKpis = !('kpis' in data) || (data.kpis is map);
+        
+        // Ensure form data arrays and strings are not abused if present
+        let validData = !('data' in data) || (
+          data.data is map &&
+          (!('name' in data.data) || isString(data.data.name, 0, 100)) &&
+          (!('email' in data.data) || isString(data.data.email, 0, 100)) &&
+          (!('impact' in data.data) || isString(data.data.impact, 0, 3000))
+        );
+
+        return isDraft && hasValidBase && validKpis && validData;
+      }
+
+      // BLOCK PUBLIC ACCESS
+      // Leads must ONLY be created via the secure API (Admin SDK)
+      allow create: if false;
+      
+      // Prevent open scraping
+      allow get: if isStaff();
       allow list: if isStaff();
       
-      // Allow staff to update everything.
-      // Allow public update ONLY for tracking fields (kpis, audit_logs, data).
-      // This prevents anonymous users from changing the lead status.
-      allow update: if isStaff() || (request.resource.data.status_flow.current == resource.data.status_flow.current);
+      // Only staff can update leads.
+      allow update: if isStaff();
       
       // Only admins can delete leads
       allow delete: if isAdmin();
@@ -63,8 +99,25 @@ service cloud.firestore {
     // INTERACTIONS - Analytics & Tracking
     // ========================================
     match /interactions/{interactionId} {
-      // Anyone can log tracking events (including anonymous)
-      allow create: if true;
+      
+      // Strict structural validation for tracking events
+      function isValidInteraction() {
+        let data = request.resource.data;
+        let hasValidBase = data.keys().hasOnly(['event_type', 'timestamp', 'session_id', 'lead_id', 'metadata', 'url']);
+        let validFields = (
+          isString(data.event_type, 1, 50) &&
+          isString(data.session_id, 1, 100) &&
+          (data.lead_id == null || isString(data.lead_id, 1, 100)) &&
+          isString(data.url, 0, 1000) &&
+          (!('metadata' in data) || data.metadata is map)
+        );
+        return hasValidBase && validFields;
+      }
+
+      // Anyone can log strictly validated tracking events
+      // Only allow creation via Admin SDK if we want total lockdown
+      // Or keep it highly restricted if we want client-side non-critical events
+      allow create: if false; 
       
       // Only staff can read analytics data
       allow read: if isStaff();
@@ -88,8 +141,27 @@ service cloud.firestore {
     // BOOKINGS - Appointment Reservations
     // ========================================
     match /bookings/{bookingId} {
-      // Anyone can create bookings (public booking widget)
-      allow create: if true;
+      
+      function isValidBooking() {
+         let data = request.resource.data;
+         let hasValidBase = data.keys().hasOnly(['id', 'customerName', 'customerEmail', 'customerPhone', 'date', 'time', 'services', 'totalPrice', 'status', 'address', 'history', 'userId', 'createdAt', 'updatedAt']);
+         
+         let validFields = (
+           isString(data.customerName, 1, 100) &&
+           isString(data.customerEmail, 5, 100) &&
+           isString(data.customerPhone, 5, 20) &&
+           isString(data.date, 8, 20) &&
+           isString(data.time, 4, 20) &&
+           isList(data.services, 10) &&
+           data.totalPrice is number &&
+           data.status in ['pending', 'confirmed', 'attended', 'cancelled']
+         );
+         
+         return hasValidBase && validFields;
+      }
+
+      // Anyone can create strictly validated bookings
+      allow create: if isValidBooking();
       
       // Staff can read all bookings
       // Clients can read their own bookings
@@ -98,7 +170,10 @@ service cloud.firestore {
       
       // Staff can update booking status and details
       // Clients can update their own bookings (e.g., cancel)
-      allow update: if isStaff() || (isClient() && isSignedIn() && request.auth.uid == resource.data.userId);
+      allow update: if isStaff() || (
+        isClient() && isSignedIn() && request.auth.uid == resource.data.userId
+        && isValidBooking()
+      );
       
       // Only admins can delete bookings
       allow delete: if isAdmin();
