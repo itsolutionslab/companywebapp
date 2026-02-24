@@ -4,6 +4,7 @@ import { adminDb } from '../../lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { rateLimit } from '../../lib/rate-limiter';
 import { deobfuscateData } from '../../lib/obfuscation';
+import { v4 as uuidv4 } from 'uuid';
 
 // Define the validation schema for lead data
 const LeadSchema = z.object({
@@ -139,7 +140,7 @@ export async function POST(request: Request) {
         };
 
         // 5. Prepare lead document
-        const leadId = body.lead_id || crypto.randomUUID();
+        const leadId = body.lead_id || uuidv4();
         const timestamp = new Date().toISOString();
 
         // Build the lead document following the existing structure
@@ -176,10 +177,15 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ success: true, leadId });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Lead capture error:', error);
         return NextResponse.json(
-            { success: false, error: 'Error interno del servidor' },
+            {
+                success: false,
+                error: 'Error interno del servidor',
+                debug_message: error.message, // TEMPORARY: Remove after debugging
+                debug_stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            },
             { status: 500 }
         );
     }
