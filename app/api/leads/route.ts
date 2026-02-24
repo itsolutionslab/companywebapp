@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { adminDb } from '../../lib/firebase-admin';
+import { adminDb, getFirebaseKeyState } from '../../lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { rateLimit } from '../../lib/rate-limiter';
 import { deobfuscateData } from '../../lib/obfuscation';
@@ -190,7 +190,8 @@ export async function POST(request: Request) {
             {
                 success: false,
                 error: 'Error interno del servidor',
-                debug_message: error.message, // TEMPORARY: Remove after debugging
+                debug_message: error.message,
+                debug_key: getFirebaseKeyState(),
                 debug_stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
             },
             { status: 500 }
