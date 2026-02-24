@@ -25,17 +25,17 @@ const LeadSchema = z.object({
     turnstile_token: z.string().min(1, "Verificación de seguridad requerida")
 });
 
-async function verifyTurnstile(token: string, ip: string) {
+async function verifyTurnstile(token: string, ip: string): Promise<{ success: boolean; errorCodes?: string[]; error?: string }> {
     const secretKey = process.env.TURNSTILE_SECRET_KEY;
 
     // In development without secret key, we might allow dummy tokens if configured
     if (!secretKey && (token === 'dummy' || token.startsWith('1x'))) {
-        return true;
+        return { success: true };
     }
 
     if (!secretKey) {
         console.error('TURNSTILE_SECRET_KEY is missing');
-        return false;
+        return { success: false, error: 'TURNSTILE_SECRET_KEY is missing' };
     }
 
     const formData = new FormData();
@@ -50,10 +50,13 @@ async function verifyTurnstile(token: string, ip: string) {
         });
 
         const outcome = await result.json();
-        return outcome.success;
-    } catch (error) {
+        return {
+            success: outcome.success,
+            errorCodes: outcome['error-codes']
+        };
+    } catch (error: any) {
         console.error('Turnstile verification error:', error);
-        return false;
+        return { success: false, error: error.message };
     }
 }
 
@@ -113,11 +116,15 @@ export async function POST(request: Request) {
         const data = validation.data;
 
         // 3. Verify Cloudflare Turnstile ...
-        const isHuman = await verifyTurnstile(data.turnstile_token, ip);
-        if (!isHuman) {
-            console.warn('[Security] Turnstile verification failed');
+        const turnstileResult = await verifyTurnstile(data.turnstile_token, ip);
+        if (!turnstileResult.success) {
+            console.warn('[Security] Turnstile verification failed', turnstileResult.errorCodes);
             return NextResponse.json(
-                { success: false, error: 'Fallo en la verificación de seguridad' },
+                {
+                    success: false,
+                    error: 'Fallo en la verificación de seguridad',
+                    debug_turnstile: turnstileResult.errorCodes || turnstileResult.error || "Turnstile rejected token without specific codes."
+                },
                 { status: 403 }
             );
         }
