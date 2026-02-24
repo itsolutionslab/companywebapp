@@ -20,7 +20,7 @@ function repairPrivateKey(key: string | undefined): string | undefined {
 
     let repaired = key.trim();
 
-    // Check if it looks like Base64 (no PEM headers, potentially long single block)
+    // 1. Detect and decode Base64 if applicable
     if (!repaired.includes('-----BEGIN PRIVATE KEY-----') && !repaired.includes('\n') && repaired.length > 500) {
         try {
             const decoded = Buffer.from(repaired, 'base64').toString('utf8');
@@ -28,10 +28,11 @@ function repairPrivateKey(key: string | undefined): string | undefined {
                 repaired = decoded;
             }
         } catch (e) {
-            // Not base64, continue with standard parsing
+            // Not valid Base64 or doesn't contain the header after decoding
         }
     }
 
+    // 2. Initial cleanup of common formatting issues
     repaired = repaired
         .replace(/\\n/g, '\n')         // Convert literal \n to actual newlines
         .replace(/\\\\n/g, '\n')       // Handle double-escaped \n
@@ -39,7 +40,23 @@ function repairPrivateKey(key: string | undefined): string | undefined {
         .replace(/^'(.*)'$/, '$1')     // Remove wrapping single quotes
         .trim();
 
-    // Ensure PEM headers/footers are present
+    // 3. Handle cases where newlines were converted to spaces (common in some dashboards)
+    // We only do this if the key doesn't have enough newlines
+    if (repaired.includes('-----BEGIN PRIVATE KEY-----') && (repaired.match(/\n/g) || []).length < 20) {
+        // PEM keys have many newlines. If a long key has few, it's likely space-joined.
+        const body = repaired
+            .replace('-----BEGIN PRIVATE KEY-----', '')
+            .replace('-----END PRIVATE KEY-----', '')
+            .trim();
+
+        if (!body.includes('\n')) {
+            // Reconstruct with 64-char chunks
+            const chunks = body.replace(/\s/g, '').match(/.{1,64}/g) || [];
+            repaired = `-----BEGIN PRIVATE KEY-----\n${chunks.join('\n')}\n-----END PRIVATE KEY-----\n`;
+        }
+    }
+
+    // 4. Final safety check on headers/footers
     if (!repaired.includes('-----BEGIN PRIVATE KEY-----')) {
         repaired = `-----BEGIN PRIVATE KEY-----\n${repaired}`;
     }
@@ -47,8 +64,8 @@ function repairPrivateKey(key: string | undefined): string | undefined {
         repaired = `${repaired}\n-----END PRIVATE KEY-----`;
     }
 
-    // Standardize newlines for OpenSSL/gRPC
-    if (!repaired.endsWith('\n')) repaired += '\n';
+    // 5. Ensure exactly one trailing newline
+    repaired = repaired.replace(/\n+$/, '') + '\n';
 
     return repaired;
 }
@@ -71,3 +88,21 @@ const databaseId = process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID || '(d
 export const adminDb = getFirestore(app, databaseId);
 export const adminAuth = getAuth(app);
 export const adminStorage = getStorage(app);
+
+/**
+ * Returns a safe diagnostic string about the current private key state.
+ * NEVER returns the actual key.
+ */
+export function getFirebaseKeyState() {
+    const key = firebaseAdminConfig.privateKey;
+    if (!key) return "MISSING";
+    return {
+        length: key.length,
+        lines: key.split('\n').length,
+        starts_with: key.substring(0, 20),
+        ends_with: key.substring(key.length - 20),
+        has_new_lines: key.includes('\n'),
+        has_header: key.includes('-----BEGIN PRIVATE KEY-----'),
+        has_footer: key.includes('-----END PRIVATE KEY-----')
+    };
+}
