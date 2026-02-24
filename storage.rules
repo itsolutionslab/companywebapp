@@ -46,9 +46,9 @@ service firebase.storage {
     // ========================================
     // ADJUNTOS DE LEADS - Seguridad Máxima
     // ========================================
-    match /leads/{sessionId}/{fileName} {
-      // Ya NO son públicos. Solo el staff puede ver los documentos de prospectos.
-      allow read: if isStaff();
+    match /leads/{sessionId}/{allPaths=**} {
+      // Ya NO son públicos. Solo administradores autenticados pueden ver los documentos de prospectos.
+      allow read: if isSignedIn();
       
       // Subida pública permitida con validación estricta (Max 5MB)
       allow create: if isValidLeadAttachment() 

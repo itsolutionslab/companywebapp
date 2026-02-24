@@ -6,18 +6,20 @@ import { rateLimit } from '../../lib/rate-limiter';
 
 // Define the validation schema for lead data
 const LeadSchema = z.object({
-    name: z.string().min(2, "El nombre es demasiado corto").max(100),
-    email: z.string().email("Email inválido").max(100),
-    company: z.string().min(2, "La empresa es obligatoria").max(100),
-    website: z.string().optional().or(z.literal('')),
-    role: z.string().min(1, "El rol es obligatorio"),
+    name: z.string().min(2, "El nombre es demasiado corto").max(100, "El nombre no puede exceder los 100 caracteres"),
+    email: z.string().email("Email inválido").max(100, "El email no puede exceder los 100 caracteres"),
+    phone: z.string().min(7, "El teléfono es demasiado corto").max(20, "El teléfono no puede exceder los 20 caracteres"),
+    company: z.string().min(2, "La empresa es obligatoria").max(100, "La empresa no puede exceder los 100 caracteres"),
+    website: z.string().max(200, "El sitio web es demasiado largo").optional().or(z.literal('')),
+    role: z.string().min(1, "El rol es obligatorio").max(100, "El rol no puede exceder los 100 caracteres"),
     objectives: z.array(z.string()).min(1, "Selecciona al menos un objetivo"),
     stage: z.string().min(1, "La etapa es obligatoria"),
     timeline: z.string().min(1, "El cronograma es obligatorio"),
     investment_level: z.string().min(1, "El nivel de inversión es obligatorio"),
-    impact: z.string().min(1, "Por favor, danos más detalles sobre el impacto").max(5000),
+    impact: z.string().min(1, "Por favor, danos más detalles sobre el impacto").max(3000, "El impacto no puede exceder los 3000 caracteres"),
+    project_desc: z.string().optional().or(z.literal('')).transform(val => val || "").pipe(z.string().max(3000, "La descripción no puede exceder los 3000 caracteres")),
     decision_maker: z.string().min(1, "Campo obligatorio"),
-    file_url: z.string().url().optional().or(z.literal('')),
+    file_url: z.string().optional().or(z.literal('')),
     turnstile_token: z.string().min(1, "Verificación de seguridad requerida")
 });
 
@@ -73,8 +75,7 @@ export async function POST(request: Request) {
         const body = await request.json();
         const ip = request.headers.get('x-forwarded-for') || 'unknown';
 
-        // 1. Rate Limiting (5 requests per hour per IP)
-        // Bypass rate limit for localhost testing
+        // 1. Rate Limiting ...
         const isLocalhost = ip === '::1' || ip === '127.0.0.1' || ip.includes('127.0.0.1');
         const limiter = isLocalhost ? { success: true } : rateLimit(ip, 5, 60 * 60 * 1000);
 
@@ -89,16 +90,17 @@ export async function POST(request: Request) {
         // 2. Validate data schema (Zod)
         const validation = LeadSchema.safeParse(body);
         if (!validation.success) {
-            console.warn('[Security] Invalid lead data attempt:', validation.error.format());
+            console.error('[Security] Validation Error Details:', JSON.stringify(validation.error.format(), null, 2));
+            const firstError = Object.values(validation.error.flatten().fieldErrors)[0]?.[0] || 'Datos de formulario inválidos';
             return NextResponse.json(
-                { success: false, error: 'Datos de formulario inválidos', details: validation.error.format() },
+                { success: false, error: firstError, details: validation.error.format() },
                 { status: 400 }
             );
         }
 
         const data = validation.data;
 
-        // 3. Verify Cloudflare Turnstile
+        // 3. Verify Cloudflare Turnstile ...
         const isHuman = await verifyTurnstile(data.turnstile_token, ip);
         if (!isHuman) {
             console.warn('[Security] Turnstile verification failed');
@@ -111,7 +113,8 @@ export async function POST(request: Request) {
         // 4. Sanitize data before storing (Prevent Stored XSS)
         const sanitizedData = {
             name: sanitize(data.name),
-            email: data.email, // Email is already validated by Zod
+            email: data.email,
+            phone: sanitize(data.phone),
             company: sanitize(data.company),
             website: data.website || "",
             role: sanitize(data.role),

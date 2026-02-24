@@ -250,10 +250,13 @@ class TrackingService {
         try {
             const fileRef = ref(storage, `leads/${this.sessionId}/${Date.now()}_${file.name}`);
             const snapshot = await uploadBytes(fileRef, file);
-            const url = await getDownloadURL(snapshot.ref);
 
-            this.trackEvent('file_uploaded', { fileName: file.name, fileSize: file.size, fileType: file.type, url });
-            return url;
+            // We return fullPath instead of getDownloadURL because the public user 
+            // does NOT have 'read' permissions in Storage rules (only staff does).
+            const path = fileRef.fullPath;
+
+            this.trackEvent('file_uploaded', { fileName: file.name, fileSize: file.size, fileType: file.type, path });
+            return path;
         } catch (e: any) {
             // Enhanced error messaging
             if (e.code === 'storage/unauthorized') {
