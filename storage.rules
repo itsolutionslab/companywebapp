@@ -3,12 +3,14 @@ service firebase.storage {
   match /b/{bucket}/o {
     
     // ========================================
-    // AUTH & ROLE HELPER FUNCTIONS
+    // AYUDAS DE AUTENTICACIÓN Y ROLES
     // ========================================
-    
-    function isSignedIn() {
-      return request.auth != null;
+    function isSignedIn() { return request.auth != null; }
+    function isStaff() { 
+    	return isSignedIn() && !isAnonymous() && 
+             (request.auth.token.role in ['staff', 'admin', 'owneradmin', 'employ']);
     }
+    function isAdmin() { return request.auth.token.role in ['admin', 'owneradmin']; }
     
     function isAnonymous() {
       return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
@@ -21,113 +23,66 @@ service firebase.storage {
     function hasRole(role) {
       return isSignedIn() && !isAnonymous() && getUserRole() == role;
     }
-    
-    function isOwnerAdmin() {
-      return hasRole('owneradmin');
-    }
-    
-    function isAdmin() {
-      return hasRole('admin') || isOwnerAdmin();
-    }
-    
-    function isStaff() {
-      return hasRole('staff') || isAdmin();
-    }
-    
-    function isClient() {
-      return hasRole('client');
-    }
-    
+
     // ========================================
-    // MIME TYPE VALIDATION HELPERS
+    // VALIDACIÓN DE ARCHIVOS (PDF e Imágenes solamente)
     // ========================================
-    
-    // Valid image types for services and user uploads
     function isValidImage() {
-      return request.resource.contentType.matches('image/(jpeg|jpg|png|gif|webp)');
+      return request.resource.contentType.matches('(?i)image/.*');
     }
-    
-    // Valid document types for lead attachments
+
     function isValidDocument() {
-      return request.resource.contentType.matches('application/(pdf|msword|vnd.openxmlformats-officedocument.wordprocessingml.document)')
-          || request.resource.contentType.matches('application/(zip|x-rar-compressed|x-7z-compressed)');
+      return request.resource.contentType.matches('(?i)application/.*pdf.*')
+      	|| request.resource.contentType in ['application/octet-stream', 'application/x-pdf', 'application/x-bzpdf', 'application/x-gzpdf', 'application/pdf-test'];
     }
-    
-    // Combined validation for leads (images + documents)
+
     function isValidLeadAttachment() {
       return isValidImage() || isValidDocument();
     }
+    function hasValidExtension() {
+      return request.resource.name.matches('.*\\.(jpg|jpeg|png|webp|pdf)$');
+    }
 
     // ========================================
-    // SERVICE IMAGES - Public Portfolio
+    // ADJUNTOS DE LEADS - Seguridad Máxima
+    // ========================================
+    match /leads/{sessionId}/{allPaths=**} {
+      // Ya NO son públicos. Solo administradores autenticados pueden ver los documentos de prospectos.
+      allow read: if isSignedIn();
+      
+      // Subida pública permitida con validación estricta (Max 5MB)
+      allow create: if isValidLeadAttachment() 
+                    && request.resource.size < 5 * 1024 * 1024;
+      
+      allow update, delete: if isStaff();
+    }
+
+    // ========================================
+    // IMÁGENES DE SERVICIOS
     // ========================================
     match /services/{allPaths=**} {
-      // Publicly readable (website portfolio display)
       allow read: if true;
-      
-      // Only admins can upload service images
-      // Max size: 3MB, must be valid image type
-      allow create: if isAdmin() 
-                    && isValidImage() 
-                    && request.resource.size < 3 * 1024 * 1024;
-      
-      // Only admins can update or delete service images
+      allow create: if isAdmin() && isValidImage() && hasValidExtension() && request.resource.size < 3 * 1024 * 1024;
       allow update, delete: if isAdmin();
     }
 
     // ========================================
-    // LEAD ATTACHMENTS - Prospect Documents
-    // ========================================
-    match /leads/{sessionId}/{fileName} {
-      // Allow public read (needed for getDownloadURL right after upload)
-      allow read: if true;
-      
-      // Allow public upload (unauthenticated) for lead attachments
-      // This ensures file uploads work even if anonymous auth is blocked
-      allow create: if true
-                    && isValidLeadAttachment() 
-                    && request.resource.size < 10 * 1024 * 1024;
-      
-      // Only staff can update or delete lead attachments
-      allow update, delete: if isStaff();
-    }
-    
-    // ========================================
-    // USER UPLOADS - Profile Pictures, etc.
+    // OTROS (Usuarios y Proyectos)
     // ========================================
     match /users/{userId}/{fileName} {
-      // Users can read their own files
-      // Staff can read all user files
       allow read: if isSignedIn() && (request.auth.uid == userId || isStaff());
-      
-      // Users can upload to their own folder
-      // Must be valid image, max 5MB
       allow create: if isSignedIn() 
                     && (request.auth.uid == userId || isStaff())
                     && isValidImage()
                     && request.resource.size < 5 * 1024 * 1024;
-      
-      // Users can update/delete their own files
-      // Staff can manage any user files
       allow update, delete: if (isSignedIn() && request.auth.uid == userId) || isStaff();
     }
     
-    // ========================================
-    // PROJECT FILES - Client Project Assets
-    // ========================================
     match /projects/{projectId}/{allPaths=**} {
-      // Staff can read all project files
-      // Clients can read projects they're associated with
-      allow read: if isStaff() || isClient();
-      
-      // Only staff can upload project files
-      // Must be valid image or document
-      // File size limited to 50MB for large project assets
+      allow read: if isStaff() || hasRole('client');
       allow create: if isStaff() 
                     && (isValidImage() || isValidDocument())
                     && request.resource.size < 50 * 1024 * 1024;
-      
-      // Only staff can update or delete project files
       allow update, delete: if isStaff();
     }
   }

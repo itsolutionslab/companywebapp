@@ -24,10 +24,59 @@ export default function LeadDetailPage() {
     const [noteText, setNoteText] = useState('');
     const [isUpdatingValue, setIsUpdatingValue] = useState(false);
     const [newValue, setNewValue] = useState('');
+    const [resolvedFileUrl, setResolvedFileUrl] = useState<string | null>(null);
+    const [fileName, setFileName] = useState<string>('Documento de Proyecto');
 
     useEffect(() => {
         if (id) fetchLead();
     }, [id]);
+
+    useEffect(() => {
+        if (lead?.data?.file_url) {
+            resolveFileUrl(lead.data.file_url);
+        } else {
+            setResolvedFileUrl(null);
+        }
+    }, [lead?.data?.file_url]);
+
+    async function resolveFileUrl(urlOrPath: string) {
+        if (!urlOrPath) return;
+        if (urlOrPath.startsWith('http')) {
+            setResolvedFileUrl(urlOrPath);
+            return;
+        }
+
+        try {
+            // Extract filename from path if possible
+            const parts = urlOrPath.split('/');
+            const rawName = parts.pop() || 'Documento';
+            // Remove timestamp prefix if exists (e.g., 123456789_name.png)
+            const cleanName = rawName.includes('_') ? rawName.split('_').slice(1).join('_') : rawName;
+            setFileName(cleanName);
+
+            const { ref, getDownloadURL } = await import('firebase/storage');
+            const { storage } = await import('@/lib/firebase');
+            const fileRef = ref(storage, urlOrPath);
+            const resolved = await getDownloadURL(fileRef);
+            setResolvedFileUrl(resolved);
+        } catch (error: any) {
+            console.error("Error resolving file URL:", error);
+            if (error.code === 'storage/unauthorized') {
+                const { auth } = await import('@/lib/firebase');
+                const user = auth.currentUser;
+                if (user) {
+                    const token = await user.getIdTokenResult();
+                    console.warn("[Auth Details] User role:", token.claims.role, "Is Anonymous:", user.isAnonymous);
+                    if (!token.claims.role) {
+                        console.error("El usuario actual NO tiene un rol asignado. Los permisos de Storage fallarán.");
+                    }
+                } else {
+                    console.error("No hay un usuario autenticado para resolver el archivo.");
+                }
+            }
+            setResolvedFileUrl(null);
+        }
+    }
 
     async function fetchLead() {
         setLoading(true);
@@ -433,7 +482,7 @@ export default function LeadDetailPage() {
                                 Documentos Adjuntos
                             </h3>
                             <a
-                                href={lead.data.file_url}
+                                href={resolvedFileUrl || '#'}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/10 transition-all group"
@@ -444,7 +493,9 @@ export default function LeadDetailPage() {
                                     </svg>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold text-gray-900">Documento de Proyecto</p>
+                                    <p className="text-sm font-bold text-gray-900 truncate max-w-[200px] md:max-w-xs" title={fileName}>
+                                        {fileName}
+                                    </p>
                                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Haga clic para ver o descargar</p>
                                 </div>
                                 <div className="ml-auto text-gray-300 group-hover:text-blue-500 transition-all">

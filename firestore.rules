@@ -43,18 +43,17 @@ service cloud.firestore {
     // LEADS (PROSPECTOS) - Public Lead Capture
     // ========================================
     match /leads/{leadId} {
-      // Allow public creation (unauthenticated) to ensure leads are always captured
-      // This prevents "Missing or insufficient permissions" when anonymous auth fails
-      allow create: if true;
+      // Allow public creation ONLY IF it's a draft.
+      allow create: if request.resource.data.status_flow.current == 'LEAD_DRAFT';
       
-      // Anyone can 'get' a lead if they have the ID (UUID), needed for TrackingService verification.
+      // Allow user to READ their own lead document (needed for client SDK to perform upserts/checks)
       allow get: if true;
-      
-      // Only staff and admins can 'list' all leads
       allow list: if isStaff();
       
-      // Allow public update for drafts and KPI tracking
-      allow update: if true;
+      // Allow staff to update everything.
+      // Allow public update ONLY for tracking fields (kpis, audit_logs, data).
+      // This prevents anonymous users from changing the lead status.
+      allow update: if isStaff() || (request.resource.data.status_flow.current == resource.data.status_flow.current);
       
       // Only admins can delete leads
       allow delete: if isAdmin();
@@ -99,8 +98,7 @@ service cloud.firestore {
       
       // Staff can update booking status and details
       // Clients can update their own bookings (e.g., cancel)
-      allow update: if isStaff() 
-                    || (isClient() && isSignedIn() && request.auth.uid == resource.data.userId);
+      allow update: if isStaff() || (isClient() && isSignedIn() && request.auth.uid == resource.data.userId);
       
       // Only admins can delete bookings
       allow delete: if isAdmin();

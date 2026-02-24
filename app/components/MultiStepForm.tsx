@@ -39,7 +39,8 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
         investment_level: '',
         impact: '',
         decision_maker: '',
-        file_url: ''
+        file_url: '',
+        phone: ''
     });
     const [isUploading, setIsUploading] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -62,7 +63,14 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
 
     const handleInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+
+        let processedValue = value;
+        if (name === 'phone') {
+            // Numeric only filter
+            processedValue = value.replace(/\D/g, '');
+        }
+
+        setFormData(prev => ({ ...prev, [name]: processedValue }));
     };
 
     const handleBlur = async () => {
@@ -86,8 +94,8 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.size > 10 * 1024 * 1024) {
-            alert("File is too large. Max 10MB.");
+        if (file.size > 5 * 1024 * 1024) {
+            alert("File is too large. Max 5MB.");
             return;
         }
 
@@ -131,21 +139,44 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
         trackingService.trackEvent('submit_form', { region });
 
         try {
-            const finalData = { ...formData, turnstile_token: turnstileToken };
-            await trackingService.saveLeadDraft(finalData);
+            const finalData = {
+                ...formData,
+                turnstile_token: turnstileToken,
+                lead_id: localStorage.getItem('current_lead_id'), // Send the draft ID if it exists
+                // Include telemetry/audit data
+                kpis: {
+                    session_duration: (Date.now() - (window as any).startTime || Date.now()) / 1000,
+                    clicks_count: (window as any).clicksCount || 0
+                }
+            };
+
+            const response = await fetch('/api/leads', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(finalData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to submit lead');
+            }
+
             setSubmitted(true);
             trackingService.resetLead();
             if (onComplete) {
                 setTimeout(() => onComplete(), 5000);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error submitting form:", error);
+            alert(error.message || "Hubo un error al enviar el formulario. Por favor, inténtalo de nuevo.");
         } finally {
             setLoading(false);
         }
     };
 
-    const isStep1Valid = formData.name && formData.email && formData.company && formData.role;
+    const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+    const isStep1Valid = formData.name && isValidEmail(formData.email || '') && formData.company && formData.role && formData.phone;
     const isStep2Valid = (formData.objectives?.length || 0) > 0 && formData.stage && formData.timeline;
     const isStep3Valid = formData.investment_level && formData.impact && formData.decision_maker && turnstileToken;
 
@@ -217,7 +248,8 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                                         value={formData.name}
                                         onChange={handleInput}
                                         onBlur={handleBlur}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all placeholder:text-slate-600"
+                                        maxLength={100}
+                                        className={`w-full bg-white/5 border rounded-xl px-5 py-4 text-white focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all placeholder:text-slate-600 ${formData.name && formData.name.length > 2 ? 'border-cyan-500/40' : 'border-white/10'}`}
                                         required
                                     />
                                 </div>
@@ -229,7 +261,8 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                                         value={formData.email}
                                         onChange={handleInput}
                                         onBlur={handleBlur}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all placeholder:text-slate-600"
+                                        maxLength={100}
+                                        className={`w-full bg-white/5 border rounded-xl px-5 py-4 text-white focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all placeholder:text-slate-600 ${formData.email ? (isValidEmail(formData.email || '') ? 'border-emerald-500/50' : 'border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.1)]') : 'border-white/10'}`}
                                         required
                                     />
                                 </div>
@@ -240,11 +273,26 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                                         value={formData.company}
                                         onChange={handleInput}
                                         onBlur={handleBlur}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all placeholder:text-slate-600"
+                                        maxLength={100}
+                                        className={`w-full bg-white/5 border rounded-xl px-5 py-4 text-white focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all placeholder:text-slate-600 ${formData.company && formData.company.length > 2 ? 'border-cyan-500/40' : 'border-white/10'}`}
                                         required
                                     />
                                 </div>
                                 <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Teléfono</label>
+                                    <input
+                                        name="phone"
+                                        type="tel"
+                                        value={formData.phone}
+                                        onChange={handleInput}
+                                        onBlur={handleBlur}
+                                        placeholder="+51..."
+                                        maxLength={20}
+                                        className={`w-full bg-white/5 border rounded-xl px-5 py-4 text-white focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all placeholder:text-slate-600 ${formData.phone && formData.phone.length >= 7 ? 'border-emerald-500/50' : 'border-white/10'}`}
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('form-website-label')}</label>
                                     <input
                                         name="website"
@@ -252,6 +300,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                                         onChange={handleInput}
                                         onBlur={handleBlur}
                                         placeholder="https://..."
+                                        maxLength={200}
                                         className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all placeholder:text-slate-600"
                                     />
                                 </div>
@@ -399,7 +448,12 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                             </div>
 
                             <div className="space-y-4">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('form-impact-label')}</label>
+                                <div className="flex justify-between items-center ml-1">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('form-impact-label')}</label>
+                                    <span className={`text-[9px] font-bold ${(formData.impact || '').length > 2500 ? 'text-rose-400' : 'text-slate-500'}`}>
+                                        {(formData.impact || '').length}/3000
+                                    </span>
+                                </div>
                                 <div className="relative group">
                                     <textarea
                                         name="impact"
@@ -407,6 +461,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                                         onChange={handleInput}
                                         onBlur={handleBlur}
                                         placeholder={t('form-impact-placeholder')}
+                                        maxLength={3000}
                                         rows={4}
                                         className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 pb-12 text-white focus:ring-2 focus:ring-cyan-500/50 outline-none resize-none transition-all placeholder:text-slate-600 leading-relaxed"
                                         required
@@ -432,7 +487,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                                             )}
                                         </button>
                                     </div>
-                                    <input ref={fileInputRef} type="file" onChange={handleFileUpload} className="hidden" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.zip" />
+                                    <input ref={fileInputRef} type="file" onChange={handleFileUpload} className="hidden" accept=".pdf,.png,.jpg,.jpeg,.webp" />
                                 </div>
                             </div>
 

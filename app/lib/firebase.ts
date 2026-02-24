@@ -24,7 +24,7 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 const dbId = process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID;
 const db = dbId ? getFirestore(app, dbId) : getFirestore(app);
-const storage = getStorage(app);
+const storage = getStorage(app, firebaseConfig.storageBucket);
 const auth = getAuth(app);
 
 // --- Admin & Support Functions ---
@@ -64,7 +64,9 @@ export const onServicesUpdate = (callback: (data: Service[]) => void) => {
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service));
         callback(data);
     }, (error) => {
-        console.error("[Firestore] Error in onServicesUpdate listener:", error);
+        if (!error.message.includes('permission')) {
+            console.error("[Firestore] Error in onServicesUpdate listener:", error);
+        }
     });
 };
 
@@ -99,7 +101,9 @@ export const onBookingsUpdate = (callback: (data: BookingData[]) => void) => {
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BookingData));
         callback(data);
     }, (error) => {
-        console.error("[Firestore] Error in onBookingsUpdate listener:", error);
+        if (!error.message.includes('permission')) {
+            console.error("[Firestore] Error in onBookingsUpdate listener:", error);
+        }
     });
 };
 
@@ -143,7 +147,9 @@ export const onAvailabilityUpdate = (callback: (disabled: string[]) => void) => 
             callback([]);
         }
     }, (error) => {
-        console.error("[Firestore] Error in onAvailabilityUpdate listener:", error);
+        if (!error.message.includes('permission')) {
+            console.error("[Firestore] Error in onAvailabilityUpdate listener:", error);
+        }
     });
 };
 
@@ -229,11 +235,16 @@ const normalizeLeadData = (raw: any): Lead => {
 };
 
 export const getLeads = async (): Promise<Lead[]> => {
-    const querySnapshot = await getDocs(query(collection(db, "leads"), orderBy("audit_logs.created_at", "desc")));
-    return querySnapshot.docs.map(doc => normalizeLeadData({
-        ...doc.data(),
-        lead_id: doc.id
-    }));
+    try {
+        const querySnapshot = await getDocs(query(collection(db, "leads"), orderBy("audit_logs.created_at", "desc")));
+        return querySnapshot.docs.map(doc => normalizeLeadData({
+            ...doc.data(),
+            lead_id: doc.id
+        }));
+    } catch (e) {
+        console.warn("[Firestore] Could not load leads list (Expected for non-staff users)");
+        return [];
+    }
 };
 
 export const onLeadsUpdate = (callback: (data: Lead[]) => void) => {
@@ -247,7 +258,11 @@ export const onLeadsUpdate = (callback: (data: Lead[]) => void) => {
         }));
         callback(data);
     }, (error) => {
-        console.error("[Firestore] Error in onLeadsUpdate listener:", error);
+        if (!error.message.includes('permission')) {
+            console.error("[Firestore] Error in onLeadsUpdate listener:", error);
+        } else {
+            console.log("[Firestore] onLeadsUpdate blocked by security rules (anonymous user)");
+        }
     });
 };
 
