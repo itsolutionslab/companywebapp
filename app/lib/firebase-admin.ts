@@ -105,23 +105,3 @@ const databaseId = process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID || '(d
 export const adminDb = getFirestore(app, databaseId);
 export const adminAuth = getAuth(app);
 export const adminStorage = getStorage(app);
-
-/**
- * Returns a safe diagnostic string about the current private key state.
- * NEVER returns the actual key.
- */
-export function getFirebaseKeyState() {
-    const key = firebaseAdminConfig.privateKey;
-    if (!key) return "MISSING";
-    return {
-        project_id: cleanedProjectId,
-        client_email: cleanedClientEmail,
-        length: key.length,
-        lines: key.split('\n').length,
-        starts_with: key.substring(0, 20),
-        ends_with: key.substring(key.length - 20),
-        has_new_lines: key.includes('\n'),
-        has_header: key.includes('-----BEGIN PRIVATE KEY-----'),
-        has_footer: key.includes('-----END PRIVATE KEY-----')
-    };
-}

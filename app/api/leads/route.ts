@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { adminDb, getFirebaseKeyState } from '../../lib/firebase-admin';
+import { adminDb } from '../../lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { rateLimit } from '../../lib/rate-limiter';
 import { deobfuscateData } from '../../lib/obfuscation';
@@ -122,8 +122,7 @@ export async function POST(request: Request) {
             return NextResponse.json(
                 {
                     success: false,
-                    error: 'Fallo en la verificación de seguridad',
-                    debug_turnstile: turnstileResult.errorCodes || turnstileResult.error || "Turnstile rejected token without specific codes."
+                    error: 'Fallo en la verificación de seguridad'
                 },
                 { status: 403 }
             );
@@ -189,10 +188,7 @@ export async function POST(request: Request) {
         return NextResponse.json(
             {
                 success: false,
-                error: 'Error interno del servidor',
-                debug_message: error.message,
-                debug_key: getFirebaseKeyState(),
-                debug_stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+                error: 'Error interno del servidor'
             },
             { status: 500 }
         );
