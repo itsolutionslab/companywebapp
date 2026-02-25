@@ -74,9 +74,22 @@ function repairPrivateKey(key: string | undefined): string | undefined {
     return repaired;
 }
 
+function cleanEnvVar(val: string | undefined): string | undefined {
+    if (!val) return val;
+    let cleaned = val.trim();
+    while ((cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+        (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+        cleaned = cleaned.slice(1, -1).trim();
+    }
+    return cleaned;
+}
+
+const cleanedProjectId = cleanEnvVar(projectId);
+const cleanedClientEmail = cleanEnvVar(clientEmail);
+
 const firebaseAdminConfig = {
-    projectId,
-    clientEmail,
+    projectId: cleanedProjectId,
+    clientEmail: cleanedClientEmail,
     privateKey: repairPrivateKey(privateKey),
 };
 
@@ -101,6 +114,8 @@ export function getFirebaseKeyState() {
     const key = firebaseAdminConfig.privateKey;
     if (!key) return "MISSING";
     return {
+        project_id: cleanedProjectId,
+        client_email: cleanedClientEmail,
         length: key.length,
         lines: key.split('\n').length,
         starts_with: key.substring(0, 20),
