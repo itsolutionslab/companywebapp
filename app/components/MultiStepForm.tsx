@@ -50,15 +50,20 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
     const [turnstileToken, setTurnstileToken] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const formRef = useRef<HTMLDivElement>(null);
+    const isMounted = useRef(false);
 
     // Initial setup
     useEffect(() => {
         trackingService.setRegion(region);
         trackingService.trackEvent('view_page', { step: `strategic_form_step_${step}` });
 
-        // Auto-scroll to top of form on step change (Mobile Optimization)
-        if (typeof window !== 'undefined' && window.innerWidth < 768) {
-            formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Auto-scroll to top of form on step change (Mobile Optimization), but NOT on initial load
+        if (isMounted.current) {
+            if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        } else {
+            isMounted.current = true;
         }
     }, [region, step]);
 
