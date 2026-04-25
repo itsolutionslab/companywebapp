@@ -43,7 +43,7 @@ export default function LoginPage() {
             }
 
             await signInWithEmailAndPassword(auth, email, password);
-            router.push("/admin/dashboard");
+            router.push("/admin/panel");
         } catch (err: any) {
             setError("Incorrect credentials or connection error.");
         } finally {

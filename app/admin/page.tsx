@@ -11,9 +11,9 @@ export default function AdminPage() {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
-                router.push("/admin/dashboard");
+                router.push("/admin/panel");
             } else {
-                router.push("/admin/login");
+                router.push("/admin/ingreso");
             }
         });
 

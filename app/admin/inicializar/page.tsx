@@ -30,7 +30,7 @@ export default function AdminInitPage() {
             });
 
             setMessage("✅ Usuario inicial creado con éxito!");
-            setTimeout(() => router.push("/admin/login"), 2000);
+            setTimeout(() => router.push("/admin/ingreso"), 2000);
         } catch (error: any) {
             setMessage(`❌ Error: ${error.message}. Asegúrate de que 'Email/Password' esté habilitado en Firebase Console.`);
         } finally {

@@ -34,6 +34,20 @@ service cloud.firestore {
     function isStaff() {
       return hasRole('staff') || isAdmin();
     }
+
+    function isEmploy() {
+      return hasRole('employ');
+    }
+
+    function canAccessWahaInbox() {
+      return isAdmin() || hasRole('staff') || isEmploy();
+    }
+
+    function canReadWahaChatFields(data) {
+      return isAdmin()
+        || ((hasRole('staff') || isEmploy())
+            && (data.assignedTo == null || data.assignedTo == request.auth.uid));
+    }
     
     function isClient() {
       return hasRole('client');
@@ -216,6 +230,56 @@ service cloud.firestore {
     match /disabled_slots/{slotId} {
       // Accessible to staff only for management
       allow read, write: if isStaff();
+    }
+
+    // ========================================
+    // WAHA — sesiones multinúmero (metadatos)
+    // ========================================
+    match /waha_sessions/{sessionId} {
+      allow read: if isSignedIn() && canAccessWahaInbox();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ========================================
+    // WAHA — chats (WhatsApp)
+    // ========================================
+    match /waha_chats/{chatId} {
+      allow read: if isSignedIn() && canReadWahaChatFields(resource.data);
+
+      allow create: if false;
+
+      allow delete: if isAdmin();
+
+      function wahaAgentPatchKeys() {
+        return request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['assignedTo', 'ticketValue', 'updatedAt']);
+      }
+
+      function wahaAgentPatchValid() {
+        let before = resource.data;
+        let after = request.resource.data;
+        if (before.assignedTo == null) {
+          return after.assignedTo == null || after.assignedTo == request.auth.uid;
+        }
+        if (before.assignedTo == request.auth.uid) {
+          return after.assignedTo == request.auth.uid || after.assignedTo == null;
+        }
+        return false;
+      }
+
+      allow update: if isAdmin()
+        || (isSignedIn() && (hasRole('staff') || isEmploy())
+            && wahaAgentPatchKeys() && wahaAgentPatchValid());
+    }
+
+    match /waha_chats/{chatId}/messages/{messageId} {
+      function parentWahaChat() {
+        return get(/databases/$(database)/documents/waha_chats/$(chatId)).data;
+      }
+
+      allow read: if isSignedIn() && canReadWahaChatFields(parentWahaChat());
+
+      allow create, update, delete: if false;
     }
   }
 }

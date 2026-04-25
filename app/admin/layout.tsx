@@ -21,7 +21,7 @@ export default function AdminLayout({
     const router = useRouter();
     const pathname = usePathname();
     const currentAdminPath = pathname.startsWith('/admin') ? pathname : `/admin${pathname}`;
-    const isLoginPage = currentAdminPath === "/admin/login";
+    const isLoginPage = currentAdminPath === "/admin/ingreso";
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
@@ -49,7 +49,7 @@ export default function AdminLayout({
                 setUser(null);
                 setRole(null);
                 if (!isLoginPage) {
-                    router.push("/admin/login");
+                    router.push("/admin/ingreso");
                 }
             }
             setLoading(false);
@@ -60,7 +60,7 @@ export default function AdminLayout({
 
     const handleLogout = async () => {
         await signOut(auth);
-        router.push("/admin/login");
+        router.push("/admin/ingreso");
     };
 
     if (loading) {
@@ -80,17 +80,17 @@ export default function AdminLayout({
     }
 
     // Role-based protection for specific routes
-    const restrictedRoutes = ['/admin/users', '/admin/services'];
+    const restrictedRoutes = ['/admin/usuarios', '/admin/servicios'];
     if ((role === 'staff' || role === 'employ') && restrictedRoutes.some(route => currentAdminPath.startsWith(route))) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50 flex-col space-y-4">
                 <h1 className="text-2xl font-bold text-red-500">Access Denied</h1>
                 <p>Staff members cannot access this area.</p>
                 <button
-                    onClick={() => router.push('/admin/dashboard')}
+                    onClick={() => router.push('/admin/panel')}
                     className="px-4 py-2 bg-[#E6007E] text-white rounded-xl"
                 >
-                    Go to Dashboard
+                    Ir al Panel
                 </button>
             </div>
         );
@@ -114,12 +114,13 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath }: 
 
     // Temporarily permissive for debugging: show all items to anyone logged in
     const menuItems = [
-        { name: t('dashboard') || 'Dashboard', path: '/admin/dashboard', icon: '📊', roles: ['admin', 'staff', 'employ'] },
+        { name: t('dashboard') || 'Panel', path: '/admin/panel', icon: '📊', roles: ['admin', 'staff', 'employ'] },
         { name: t('prospectos') || 'Prospectos', path: '/admin/prospectos', icon: '🎯', roles: ['admin', 'staff', 'employ'] },
-        { name: t('reservations') || 'Discovery Meets', path: '/admin/reservations', icon: '🤝', roles: ['admin', 'staff', 'employ'] },
-        //{ name: t('services') || 'Services', path: '/admin/services', icon: '🛠️', roles: ['admin'] },
-        { name: t('schedules') || 'Schedules', path: '/admin/schedules', icon: '⏰', roles: ['admin', 'staff', 'employ'] },
-        { name: t('users') || 'Users', path: '/admin/users', icon: '👥', roles: ['admin'] },
+        { name: t('chats') || 'Mensajes', path: '/admin/mensajes', icon: '💬', roles: ['admin', 'staff', 'employ'] },
+        { name: t('reservations') || 'Reservas', path: '/admin/reservas', icon: '🤝', roles: ['admin', 'staff', 'employ'] },
+        //{ name: t('services') || 'Servicios', path: '/admin/servicios', icon: '🛠️', roles: ['admin'] },
+        { name: t('schedules') || 'Horarios', path: '/admin/horarios', icon: '⏰', roles: ['admin', 'staff', 'employ'] },
+        { name: t('users') || 'Usuarios', path: '/admin/usuarios', icon: '👥', roles: ['admin'] },
     ];
 
     const langOptions = ['en', 'ru', 'es'];
@@ -166,29 +167,29 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath }: 
                                 {(role === 'admin' || role === 'owneradmin') && (
                                     <>
                                         <Link
-                                            href={getCleanPath("/admin/users")}
+                                            href={getCleanPath("/admin/usuarios")}
                                             onClick={() => setShowSettings(false)}
-                                            className={`flex items-center justify-between p-3 rounded-[1rem] transition-all active:bg-gray-100/50 ${currentAdminPath === '/admin/users' ? "bg-[#E6007E] text-white shadow-md shadow-[#E6007E]/10 font-bold" : "text-gray-700 hover:bg-gray-50/50"}`}
+                                            className={`flex items-center justify-between p-3 rounded-[1rem] transition-all active:bg-gray-100/50 ${currentAdminPath === '/admin/usuarios' ? "bg-[#E6007E] text-white shadow-md shadow-[#E6007E]/10 font-bold" : "text-gray-700 hover:bg-gray-50/50"}`}
                                         >
                                             <div className="flex items-center space-x-2.5">
                                                 <span className="text-sm">👥</span>
                                                 <span className="text-[11px] font-bold tracking-tight">{t('users')}</span>
                                             </div>
-                                            {currentAdminPath === '/admin/users' && <span className="text-[8px]">●</span>}
+                                            {currentAdminPath === '/admin/usuarios' && <span className="text-[8px]">●</span>}
                                         </Link>
                                         <div className="h-[0.5px] bg-gray-200/20 mx-3 my-0.5"></div>
                                     </>
                                 )}
                                 <Link
-                                    href={getCleanPath("/admin/settings")}
+                                    href={getCleanPath("/admin/configuracion")}
                                     onClick={() => setShowSettings(false)}
-                                    className={`flex items-center justify-between p-3 rounded-[1rem] transition-all active:bg-gray-100/50 ${currentAdminPath === '/admin/settings' ? "bg-[#E6007E] text-white shadow-md shadow-[#E6007E]/10 font-bold" : "text-gray-700 hover:bg-gray-50/50"}`}
+                                    className={`flex items-center justify-between p-3 rounded-[1rem] transition-all active:bg-gray-100/50 ${currentAdminPath === '/admin/configuracion' ? "bg-[#E6007E] text-white shadow-md shadow-[#E6007E]/10 font-bold" : "text-gray-700 hover:bg-gray-50/50"}`}
                                 >
                                     <div className="flex items-center space-x-2.5">
                                         <span className="text-sm">⚙️</span>
                                         <span className="text-[11px] font-bold tracking-tight">{t('settings')}</span>
                                     </div>
-                                    {currentAdminPath === '/admin/settings' && <span className="text-[8px]">●</span>}
+                                    {currentAdminPath === '/admin/configuracion' && <span className="text-[8px]">●</span>}
                                 </Link>
                                 <div className="h-[0.5px] bg-gray-200/20 mx-3 my-0.5"></div>
                                 <button
@@ -245,8 +246,8 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath }: 
                         </div>
 
                         <Link
-                            href={getCleanPath("/admin/settings")}
-                            className={`w-full flex items-center space-x-3 p-4 rounded-2xl transition-all duration-300 group ${currentAdminPath === '/admin/settings' ? "bg-[#E6007E]/10 text-[#E6007E] font-bold" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}
+                            href={getCleanPath("/admin/configuracion")}
+                            className={`w-full flex items-center space-x-3 p-4 rounded-2xl transition-all duration-300 group ${currentAdminPath === '/admin/configuracion' ? "bg-[#E6007E]/10 text-[#E6007E] font-bold" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}
                         >
                             <span className="text-xl group-hover:rotate-90 transition-transform duration-500">⚙️</span>
                             <span className="font-semibold">{t('settings')}</span>
@@ -265,7 +266,7 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath }: 
 
             {/* Main Content */}
             <main className="flex-grow p-6 md:p-10 overflow-y-auto h-screen">
-                <div className="max-w-6xl mx-auto">
+                <div className="mx-auto w-full max-w-[1440px]">
                     {children}
                 </div>
             </main>

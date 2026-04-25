@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { translations } from '../../data/translations';
-import logoImage from '../../assets/bpLogo.png';
+import logoImage from '../../assets/bpLogoNameW.png';
 import WorldMap from '../WorldMap';
 import { ContactActions, ContactList } from './ContactActions';
 import { useContactRegion } from '../../context/RegionContext';
@@ -14,14 +14,16 @@ import { trackingService } from '../../services/TrackingService';
 
 type Props = {
     region?: string;
+    scrollTarget?: string;
     customHero?: {
         title: React.ReactNode;
         description: string;
     };
 };
 
-const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) => {
+const ModernLanding = ({ region: initialRegionCode = 'us', scrollTarget, customHero }: Props) => {
     const { region: regionConfig } = useContactRegion();
+
     // Default language based on region
     const defaultLang = initialRegionCode === 'us' ? 'en' : 'es';
     const [lang, setLang] = useState<'en' | 'es'>(defaultLang);
@@ -93,6 +95,18 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
             clearTimeout(timeoutId);
         };
     }, [heroImages.length]);
+
+    // Scroll to target section on mount if provided
+    useEffect(() => {
+        if (scrollTarget) {
+            const element = document.getElementById(scrollTarget);
+            if (element) {
+                setTimeout(() => {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }, 500); // Give some time for the page to render
+            }
+        }
+    }, [scrollTarget]);
 
     // Scroll-reveal Intersection Observer
     useEffect(() => {
@@ -173,7 +187,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                     className="w-full h-full object-contain"
                                 />
                             </div>
-                            <span className="font-heading font-black text-base sm:text-lg md:text-xl lg:text-2xl tracking-tighter text-white whitespace-nowrap">BRECOM<span className="text-cyan-400">PERU</span></span>
+                            <span className="font-heading font-black text-base sm:text-lg md:text-xl lg:text-2xl tracking-tighter text-white whitespace-nowrap">BRECOMPERU</span>
                         </div>
 
                         {/* Desktop Navigation - Middle (hidden on mobile) */}
@@ -181,7 +195,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                             <ul className="flex items-center gap-3 lg:gap-6 xl:gap-8 list-none m-0 p-0">
                                 <li>
                                     <Link
-                                        href={lang === 'en' ? "#industries" : "#industrias"}
+                                        href={`/${initialRegionCode}/${lang === 'en' ? 'industries' : 'industrias'}`}
                                         className="text-slate-400 hover:text-cyan-400 transition-colors text-[9px] lg:text-[10px] font-black tracking-[0.2em] xl:tracking-[0.3em] uppercase"
                                         title={t('nav-industries')}
                                     >
@@ -190,7 +204,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                 </li>
                                 <li>
                                     <Link
-                                        href={lang === 'en' ? "#services" : "#servicios"}
+                                        href={`/${initialRegionCode}/${lang === 'en' ? 'services' : 'servicios'}`}
                                         className="text-slate-400 hover:text-cyan-400 transition-colors text-[9px] lg:text-[10px] font-black tracking-[0.2em] xl:tracking-[0.3em] uppercase"
                                         title={t('nav-services')}
                                     >
@@ -199,7 +213,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                 </li>
                                 <li>
                                     <Link
-                                        href={lang === 'en' ? "#about" : "#nosotros"}
+                                        href={`/${initialRegionCode}/${lang === 'en' ? 'about' : 'nosotros'}`}
                                         className="text-slate-400 hover:text-cyan-400 transition-colors text-[9px] lg:text-[10px] font-black tracking-[0.2em] xl:tracking-[0.3em] uppercase"
                                         title={t('nav-about')}
                                     >
@@ -208,7 +222,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                 </li>
                                 <li>
                                     <Link
-                                        href={lang === 'en' ? "#contact" : "#contacto"}
+                                        href={`/${initialRegionCode}/${lang === 'en' ? 'contact' : 'contacto'}`}
                                         className="text-slate-400 hover:text-cyan-400 transition-colors text-[9px] lg:text-[10px] font-black tracking-[0.2em] xl:tracking-[0.3em] uppercase"
                                         title={t('nav-contact')}
                                     >
@@ -266,28 +280,28 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                             {/* Navigation Links */}
                             <nav className="p-4 space-y-1">
                                 <Link
-                                    href={lang === 'en' ? "#industries" : "#industrias"}
+                                    href={`/${initialRegionCode}/${lang === 'en' ? 'industries' : 'industrias'}`}
                                     className="block px-4 py-3 text-white hover:bg-cyan-500/10 hover:text-cyan-400 rounded-xl transition-all font-medium text-sm border border-transparent hover:border-cyan-500/20"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     {t('nav-industries')}
                                 </Link>
                                 <Link
-                                    href={lang === 'en' ? "#services" : "#servicios"}
+                                    href={`/${initialRegionCode}/${lang === 'en' ? 'services' : 'servicios'}`}
                                     className="block px-4 py-3 text-white hover:bg-cyan-500/10 hover:text-cyan-400 rounded-xl transition-all font-medium text-sm border border-transparent hover:border-cyan-500/20"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     {t('nav-services')}
                                 </Link>
                                 <Link
-                                    href={lang === 'en' ? "#about" : "#nosotros"}
+                                    href={`/${initialRegionCode}/${lang === 'en' ? 'about' : 'nosotros'}`}
                                     className="block px-4 py-3 text-white hover:bg-cyan-500/10 hover:text-cyan-400 rounded-xl transition-all font-medium text-sm border border-transparent hover:border-cyan-500/20"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     {t('nav-about')}
                                 </Link>
                                 <Link
-                                    href={lang === 'en' ? "#contact" : "#contacto"}
+                                    href={`/${initialRegionCode}/${lang === 'en' ? 'contact' : 'contacto'}`}
                                     className="block px-4 py-3 text-white hover:bg-cyan-500/10 hover:text-cyan-400 rounded-xl transition-all font-medium text-sm border border-transparent hover:border-cyan-500/20"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
@@ -327,7 +341,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                             __html: initialRegionCode === 'us'
                                                 ? t('hero_title_us')
                                                 : initialRegionCode === 'pe'
-                                                    ? t('hero_title_peru')
+                                                    ? t('hero_title_pe')
                                                     : t('hero_title_latam')
                                         }}
                                     ></h1>
@@ -335,7 +349,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                         {initialRegionCode === 'us'
                                             ? t('hero_subtitle_us')
                                             : initialRegionCode === 'pe'
-                                                ? t('hero_subtitle_peru')
+                                                ? t('hero_subtitle_pe')
                                                 : t('hero_subtitle_latam')}
                                     </p>
                                 </>
@@ -345,10 +359,10 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                 <ContactActions
                                     className="px-10 py-5 text-xl font-bold rounded-none uppercase tracking-widest min-w-[240px]"
                                     lang={lang}
-                                    label={initialRegionCode === 'us' ? t('cta-primary-us') : initialRegionCode === 'pe' ? t('cta-primary-peru') : t('cta-primary-latam')}
+                                    label={initialRegionCode === 'us' ? t('cta-primary-us') : initialRegionCode === 'pe' ? t('cta-primary-pe') : t('cta-primary-latam')}
                                 />
                                 <Link
-                                    href={lang === 'en' ? (initialRegionCode === 'us' ? '#casos' : '#services') : (initialRegionCode === 'us' ? '#casos' : '#servicios')}
+                                    href={lang === 'en' ? `/${initialRegionCode}/services` : `/${initialRegionCode}/servicios`}
                                     className="px-10 py-5 rounded-none font-bold text-xl border-2 border-slate-800 hover:bg-white hover:text-black transition-all inline-flex items-center justify-center gap-3 text-white tracking-widest uppercase min-w-[240px]"
                                 >
                                     {initialRegionCode === 'us' ? t('cta-secondary-us') : initialRegionCode === 'latam' ? t('cta-secondary-latam') : t('btn-secondary')}
@@ -476,7 +490,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                             </div>
                                             <span className="text-cyan-400 font-semibold">{t('service7-result')}</span>
                                         </div>
-                                        <Link href={lang === 'en' ? "#contact" : "#contacto"} className="btn-primary px-10 py-4 rounded-full font-bold text-lg shadow-xl shadow-cyan-900/40 hover:scale-105 transition-all">
+                                        <Link href={`/${initialRegionCode}/${lang === 'en' ? 'contact' : 'contacto'}`} className="btn-primary px-10 py-4 rounded-full font-bold text-lg shadow-xl shadow-cyan-900/40 hover:scale-105 transition-all">
                                             {t('consult-btn')}
                                         </Link>
                                     </div>
@@ -619,7 +633,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                         </div>
                         <div className="card-glass rounded-2xl p-6 border-cyan-500/30">
                             <p className="text-gray-400 text-sm mb-4">{t('global-reach-text')}</p>
-                            <Link href={lang === 'en' ? "#contact" : "#contacto"} className="text-cyan-400 font-medium text-sm hover:text-cyan-300 transition-colors inline-flex items-center gap-2">
+                            <Link href={`/${initialRegionCode}/${lang === 'en' ? 'contact' : 'contacto'}`} className="text-cyan-400 font-medium text-sm hover:text-cyan-300 transition-colors inline-flex items-center gap-2">
                                 {t('contact-now')}
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                             </Link>
@@ -757,14 +771,14 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-20 animate-reveal">
                         <span className="inline-block px-4 py-1 rounded-none bg-cyan-500/10 border-l-2 border-cyan-500 text-cyan-400 text-[10px] font-black tracking-[0.3em] uppercase mb-4">
-                            {initialRegionCode === 'us' ? t('filter-label') : initialRegionCode === 'pe' ? t('filter-label-peru') : t('filter-label-latam')}
+                            {initialRegionCode === 'us' ? t('filter-label') : initialRegionCode === 'pe' ? t('filter-label-pe') : t('filter-label-latam')}
                         </span>
                         <h2 className="font-heading text-4xl md:text-6xl font-black mb-6 tracking-tighter uppercase italic leading-none">
                             {t('filter-title').replace('?', '')}
                             <span className="stroke-text">?</span>
                         </h2>
                         <p className="text-slate-400 text-lg max-w-2xl mx-auto font-light border-l-2 border-white/10 pl-6">
-                            {initialRegionCode === 'us' ? t('filter-subtitle') : initialRegionCode === 'pe' ? t('filter-subtitle-peru') : t('filter-subtitle-latam')}
+                            {initialRegionCode === 'us' ? t('filter-subtitle') : initialRegionCode === 'pe' ? t('filter-subtitle-pe') : t('filter-subtitle-latam')}
                         </p>
                     </div>
 
@@ -783,7 +797,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                 </h3>
                                 <ul className="space-y-5">
                                     {[1, 2, 3, 4, 5].map(i => {
-                                        const key = initialRegionCode === 'us' ? `filter-yes-${i}` : initialRegionCode === 'pe' ? `filter-yes-${i}-peru` : `filter-yes-${i}-latam`;
+                                        const key = initialRegionCode === 'us' ? `filter-yes-${i}` : initialRegionCode === 'pe' ? `filter-yes-${i}-pe` : `filter-yes-${i}-latam`;
                                         const text = t(key);
                                         if (text === key) return null;
                                         return (
@@ -808,7 +822,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                                 </h3>
                                 <ul className="space-y-5">
                                     {[1, 2, 3, 4].map(i => {
-                                        const key = initialRegionCode === 'us' ? `filter-no-${i}` : initialRegionCode === 'pe' ? `filter-no-${i}-peru` : `filter-no-${i}-latam`;
+                                        const key = initialRegionCode === 'us' ? `filter-no-${i}` : initialRegionCode === 'pe' ? `filter-no-${i}-pe` : `filter-no-${i}-latam`;
                                         const text = t(key);
                                         if (text === key) return null;
                                         return (
@@ -956,7 +970,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                             <ContactList lang={lang} />
 
                             {/* Region Specific Info for PE */}
-                            {initialRegionCode === 'PE' && (
+                            {initialRegionCode === 'pe' && (
                                 <div className="mt-8 bg-lime-900/20 p-6 rounded-xl border border-lime-500/30">
                                     <h4 className="text-lime-400 font-bold mb-2">Soporte Local en Perú</h4>
                                     <p className="text-sm text-lime-100/80">Atención directa vía WhatsApp y reuniones presenciales en Lima.</p>
@@ -973,46 +987,153 @@ const ModernLanding = ({ region: initialRegionCode = 'us', customHero }: Props) 
                 </div>
             </section>
 
-            {/* Footer */}
-            <footer className="py-12 border-t border-white/10 bg-[#0f172a]">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid md:grid-cols-3 gap-8 mb-8">
-                        <div className="flex flex-col">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 flex items-center justify-center">
-                                    <Image
-                                        src={logoImage}
-                                        alt="BRECOMPERU"
-                                        width={40}
-                                        height={40}
-                                        className="w-full h-full object-contain"
-                                    />
-                                </div>
-                                <div className="font-heading font-bold text-xl">BRECOMPERU</div>
+            {/* Footer - Enterprise Minimalist Tech Design */}
+            <footer className="relative bg-[#030712] pt-8 pb-4 border-t border-cyan-900/20 overflow-hidden">
+
+                {/* SVG Animated Binary Waves Background */}
+                <div className="absolute inset-0 pointer-events-none opacity-30 mix-blend-screen overflow-hidden">
+                    <svg className="w-full h-full absolute inset-0" preserveAspectRatio="none" viewBox="0 0 1000 300" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            {/* Wave paths */}
+                            <path id="wave1" d="M -500 80 Q 250 200 1000 80 T 2500 80" fill="none" />
+                            <path id="wave2" d="M -500 150 Q 250 -50 1000 150 T 2500 150" fill="none" />
+                            <path id="wave3" d="M -500 220 Q 250 350 1000 220 T 2500 220" fill="none" />
+
+                            <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#06b6d4" stopOpacity="0" />
+                                <stop offset="50%" stopColor="#06b6d4" stopOpacity="0.8" />
+                                <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
+                            </linearGradient>
+                            <linearGradient id="waveGradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#3b82f6" stopOpacity="0" />
+                                <stop offset="50%" stopColor="#3b82f6" stopOpacity="0.6" />
+                                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+                            </linearGradient>
+                        </defs>
+
+                        {/* The binary texts following the waves */}
+                        <text className="font-mono text-[14px] md:text-[18px] tracking-[8px] font-bold" fill="url(#waveGradient)">
+                            <textPath href="#wave1" startOffset="0%">
+                                <animate attributeName="startOffset" from="-50%" to="0%" dur="15s" repeatCount="indefinite" />
+                                {"01011001010110100101001010101101001010100101010100101101011010110100101010".repeat(5)}
+                            </textPath>
+                        </text>
+
+                        <text className="font-mono text-[10px] md:text-[14px] tracking-[12px] font-bold" fill="url(#waveGradient2)">
+                            <textPath href="#wave2" startOffset="0%">
+                                <animate attributeName="startOffset" from="0%" to="-50%" dur="25s" repeatCount="indefinite" />
+                                {"11001010111100101001010100111010100101011100101010010100101010101110010101".repeat(5)}
+                            </textPath>
+                        </text>
+
+                        <text className="font-mono text-[12px] md:text-[16px] tracking-[6px] font-bold" fill="url(#waveGradient)">
+                            <textPath href="#wave3" startOffset="0%">
+                                <animate attributeName="startOffset" from="-30%" to="0%" dur="20s" repeatCount="indefinite" />
+                                {"10101001010100101011001010101010111010101001010100101011001010101010101011".repeat(5)}
+                            </textPath>
+                        </text>
+                    </svg>
+                    {/* Fade out edges */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#030712] via-transparent to-[#030712]"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#030712] via-transparent to-[#030712]"></div>
+                </div>
+
+                <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8">
+
+                    {/* Massive Call to Action Header */}
+                    <div className="mb-4 md:mb-8">
+                        <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-white tracking-tighter uppercase mb-6 leading-[1.1]">
+                            Ready to <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">Innovate</span>?
+                        </h2>
+                        <div className="h-px w-full bg-gradient-to-r from-cyan-500/50 via-cyan-900/20 to-transparent"></div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-8">
+                        {/* Column 1: Brand & Direct Contact */}
+                        <div className="md:col-span-12 lg:col-span-5">
+                            <div className="flex items-center gap-3 mb-8">
+                                <Image src={logoImage} alt="BRECOMPERU" width={32} height={32} className="opacity-90" />
+                                <span className="font-heading font-black text-2xl text-white tracking-tight">BRECOMPERU</span>
                             </div>
-                            <div className="text-xs text-gray-500">© 2026 {t('all-rights')}</div>
+                            <p className="text-slate-400 text-sm leading-relaxed mb-10 max-w-md">
+                                {lang === 'en'
+                                    ? 'Enterprise-grade software architecture, AI integration, and digital transformation for global industry leaders.'
+                                    : 'Arquitectura de software empresarial, integración de IA y transformación digital para líderes de la industria.'}
+                            </p>
+
+                            {/* Big Email CTA */}
+                            <a
+                                href="mailto:solutions@brecomperu.com"
+                                className="group flex items-center justify-between p-5 md:p-6 border border-cyan-900/40 rounded-2xl bg-slate-900/30 hover:bg-cyan-950/40 hover:border-cyan-500/50 backdrop-blur-sm transition-all duration-300 w-full max-w-md"
+                            >
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] text-cyan-500 uppercase font-bold tracking-[0.2em] mb-1.5 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                                        Direct Contact
+                                    </span>
+                                    <span className="text-white font-mono text-base md:text-lg group-hover:text-cyan-300 transition-colors tracking-tight break-all">
+                                        solutions@brecomperu.com
+                                    </span>
+                                </div>
+                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-cyan-900/40 flex items-center justify-center text-cyan-400 group-hover:scale-110 group-hover:bg-cyan-500 group-hover:text-white transition-all duration-300 flex-shrink-0 ml-4">
+                                    <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                </div>
+                            </a>
                         </div>
-                        <div className="flex flex-col">
-                            <h4 className="font-semibold mb-3">{t('footer-contact-title')}</h4>
-                            <div className="space-y-2">
-                                <a href={`mailto:${regionConfig.email}`} className="text-gray-400 hover:text-cyan-400 transition-colors text-sm block">{regionConfig.email}</a>
-                                <a
-                                    href={regionConfig.primaryContact === 'WHATSAPP' ? `https://wa.me/${regionConfig.whatsapp}` : `tel:${regionConfig.phone}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-gray-400 hover:text-lime-500 transition-colors text-sm block"
-                                >
-                                    {regionConfig.phoneFormatted}
+
+                        {/* Column 2: Global Phones */}
+                        <div className="md:col-span-6 lg:col-span-4 lg:pl-10 flex flex-col justify-center">
+                            <h4 className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-black mb-8">Global Support</h4>
+                            <div className="space-y-8 md:space-y-10">
+                                <a href="tel:+14697564476" className="group block">
+                                    <span className="text-[10px] text-cyan-500 uppercase font-bold tracking-[0.15em] mb-2 block group-hover:text-cyan-400 transition-colors">US Sales & Tech</span>
+                                    <span className="text-2xl md:text-3xl text-slate-300 font-mono font-medium tracking-tight group-hover:text-white transition-colors">+1 (469) 756-4476</span>
+                                </a>
+                                <a href="tel:+51900828470" className="group block">
+                                    <span className="text-[10px] text-cyan-500 uppercase font-bold tracking-[0.15em] mb-2 block group-hover:text-cyan-400 transition-colors">Soporte Local Perú</span>
+                                    <span className="text-2xl md:text-3xl text-slate-300 font-mono font-medium tracking-tight group-hover:text-white transition-colors">+51 900 828 470</span>
                                 </a>
                             </div>
                         </div>
-                        <div className="flex flex-col">
-                            <h4 className="font-semibold mb-3">{t('footer-links-title')}</h4>
-                            <div className="flex flex-col gap-2 text-sm">
-                                <Link href={lang === 'en' ? "#services" : "#servicios"} className="text-gray-400 hover:text-white transition-colors">{t('footer-services')}</Link>
-                                <Link href={lang === 'en' ? "#about" : "#nosotros"} className="text-gray-400 hover:text-white transition-colors">{t('footer-about')}</Link>
-                                <Link href={lang === 'en' ? "#contact" : "#contacto"} className="text-gray-400 hover:text-white transition-colors">{t('footer-contact')}</Link>
-                            </div>
+
+                        {/* Column 3: Navigation */}
+                        <div className="md:col-span-6 lg:col-span-3 lg:pl-10 flex flex-col justify-center">
+                            <h4 className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-black mb-8">{t('footer-links-title')}</h4>
+                            <ul className="space-y-4 md:space-y-5">
+                                <li>
+                                    <Link href={`/${initialRegionCode}/${lang === 'en' ? 'services' : 'servicios'}`} className="text-slate-400 hover:text-cyan-400 transition-colors text-sm font-medium tracking-wide flex items-center gap-3 group">
+                                        <span className="w-4 h-[1px] bg-cyan-900 group-hover:bg-cyan-400 group-hover:w-6 transition-all"></span>
+                                        {t('footer-services')}
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link href={`/${initialRegionCode}/${lang === 'en' ? 'industries' : 'industrias'}`} className="text-slate-400 hover:text-cyan-400 transition-colors text-sm font-medium tracking-wide flex items-center gap-3 group">
+                                        <span className="w-4 h-[1px] bg-cyan-900 group-hover:bg-cyan-400 group-hover:w-6 transition-all"></span>
+                                        {t('nav-industries')}
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link href={`/${initialRegionCode}/${lang === 'en' ? 'about' : 'nosotros'}`} className="text-slate-400 hover:text-cyan-400 transition-colors text-sm font-medium tracking-wide flex items-center gap-3 group">
+                                        <span className="w-4 h-[1px] bg-cyan-900 group-hover:bg-cyan-400 group-hover:w-6 transition-all"></span>
+                                        {t('footer-about')}
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link href={`/${initialRegionCode}/casos`} className="text-slate-400 hover:text-cyan-400 transition-colors text-sm font-medium tracking-wide flex items-center gap-3 group">
+                                        <span className="w-4 h-[1px] bg-cyan-900 group-hover:bg-cyan-400 group-hover:w-6 transition-all"></span>
+                                        {lang === 'en' ? 'Case Studies' : 'Casos de Éxito'}
+                                    </Link>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {/* Bottom Bar */}
+                    <div className="mt-8 pt-2 border-t border-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div className="text-slate-500 text-xs font-mono tracking-widest">© 2026 BRECOMPERU SOLUTIONS LLC.</div>
+                        <div className="flex gap-6">
+                            <span className="text-slate-600 text-xs font-mono">ENCRYPTED CONNECTION</span>
+                            <span className="text-cyan-900 text-xs font-mono uppercase">{regionConfig.countryCode} NODE</span>
                         </div>
                     </div>
                 </div>

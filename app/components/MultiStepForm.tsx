@@ -23,7 +23,7 @@ const SERVICES = [
 
 const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete }) => {
     const t = (key: string) => {
-        const regionalKey = region === 'pe' ? `${key}-peru` : key;
+        const regionalKey = region === 'pe' ? `${key}-pe` : key;
         return (translations as any)[region === 'us' ? 'en' : 'es'][regionalKey] || (translations as any)[region === 'us' ? 'en' : 'es'][key] || key;
     };
 

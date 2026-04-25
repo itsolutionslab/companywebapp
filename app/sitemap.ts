@@ -20,6 +20,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: 1.0,
     }));
 
+    // Add core sections for each region
+    const sectionRoutes: any[] = [];
+    Object.keys(REGIONS).forEach((region) => {
+        const sections = region === 'us' 
+            ? ['industries', 'services', 'about', 'contact', 'casos']
+            : ['industrias', 'servicios', 'nosotros', 'contacto', 'casos'];
+        
+        sections.forEach(section => {
+            sectionRoutes.push({
+                url: `${BASE_URL}/${region}/${section}`,
+                lastModified: new Date(),
+                changeFrequency: 'weekly' as const,
+                priority: 0.9,
+            });
+        });
+    });
+
     return [
         {
             url: BASE_URL,
@@ -28,6 +45,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
             priority: 1.0,
         },
         ...regionRoutes,
+        ...sectionRoutes,
         ...dynamicRoutes,
     ]
 }
