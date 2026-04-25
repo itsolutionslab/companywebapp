@@ -90,6 +90,8 @@ const ModernLanding = ({ region: initialRegionCode = 'us', scrollTarget, customH
         };
 
         window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll(); // Initialize correctly on mount to prevent double refresh/flicker
+        
         return () => {
             window.removeEventListener('scroll', handleScroll);
             clearTimeout(timeoutId);
@@ -981,7 +983,7 @@ const ModernLanding = ({ region: initialRegionCode = 'us', scrollTarget, customH
                         {/* Right Column: Multi-Step Form */}
                         <div className="relative">
                             <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl blur opacity-20"></div>
-                            <MultiStepForm region={initialRegionCode} />
+                            <MultiStepForm region={initialRegionCode} lang={lang} />
                         </div>
                     </div>
                 </div>

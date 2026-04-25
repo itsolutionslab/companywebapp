@@ -9,6 +9,7 @@ import Turnstile from 'react-turnstile';
 
 interface MultiStepFormProps {
     region?: string;
+    lang?: string;
     onComplete?: () => void;
 }
 
@@ -21,10 +22,10 @@ const SERVICES = [
     { id: 'other', label: 'Otros', icon: '✨' }
 ];
 
-const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete }) => {
+const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', lang = 'en', onComplete }) => {
     const t = (key: string) => {
         const regionalKey = region === 'pe' ? `${key}-pe` : key;
-        return (translations as any)[region === 'us' ? 'en' : 'es'][regionalKey] || (translations as any)[region === 'us' ? 'en' : 'es'][key] || key;
+        return (translations as any)[lang]?.[regionalKey] || (translations as any)[lang]?.[key] || key;
     };
 
     const [step, setStep] = useState(1);
@@ -50,20 +51,19 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
     const [turnstileToken, setTurnstileToken] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const formRef = useRef<HTMLDivElement>(null);
-    const isMounted = useRef(false);
+    const prevStepRef = useRef(step);
 
     // Initial setup
     useEffect(() => {
         trackingService.setRegion(region);
         trackingService.trackEvent('view_page', { step: `strategic_form_step_${step}` });
 
-        // Auto-scroll to top of form on step change (Mobile Optimization), but NOT on initial load
-        if (isMounted.current) {
+        // Auto-scroll to top of form ONLY when the step ACTUALLY changes
+        if (prevStepRef.current !== step) {
             if (typeof window !== 'undefined' && window.innerWidth < 768) {
                 formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
-        } else {
-            isMounted.current = true;
+            prevStepRef.current = step;
         }
     }, [region, step]);
 
@@ -224,10 +224,10 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                 <div className="space-y-3">
                     <div className="flex justify-between items-end px-1">
                         <span className="text-[10px] font-black uppercase tracking-widest text-cyan-500">
-                            Assessment Progress
+                            {lang === 'en' ? 'Assessment Progress' : 'Progreso de Evaluación'}
                         </span>
                         <span className="text-[10px] font-black text-slate-500">
-                            STEP {step} OF 3
+                            {lang === 'en' ? `STEP ${step} OF 3` : `PASO ${step} DE 3`}
                         </span>
                     </div>
                     <div className="flex gap-2 h-1.5">
@@ -244,7 +244,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                 <form onSubmit={submitForm} className="space-y-8">
                     {/* Step 1: Identity & Role */}
                     {step === 1 && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
+                        <div className={`space-y-6 ${prevStepRef.current !== 1 ? 'animate-in fade-in slide-in-from-left-8 duration-500' : ''}`}>
                             <div className="space-y-2">
                                 <h3 className="text-2xl font-heading font-black text-white leading-tight">
                                     {t('form-step1-title')}
@@ -293,7 +293,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Teléfono</label>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{lang === 'en' ? 'Phone' : 'Teléfono'}</label>
                                     <input
                                         name="phone"
                                         type="tel"
@@ -419,7 +419,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
 
                             <div className="flex gap-4 pt-4">
                                 <button type="button" onClick={() => setStep(1)} className="flex-1 bg-white/5 border border-white/10 text-slate-300 font-black py-5 rounded-2xl hover:bg-white/10 transition-all uppercase text-[11px] tracking-widest">
-                                    Atrás
+                                    {lang === 'en' ? 'Back' : 'Atrás'}
                                 </button>
                                 <button
                                     type="button"
@@ -427,7 +427,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
                                     disabled={!isStep2Valid}
                                     className="flex-[2] bg-gradient-to-r from-cyan-600 to-cyan-500 text-white font-black py-5 rounded-2xl shadow-xl shadow-cyan-900/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase text-[11px] tracking-widest"
                                 >
-                                    Siguiente paso
+                                    {lang === 'en' ? 'Next step' : 'Siguiente paso'}
                                 </button>
                             </div>
                         </div>
@@ -533,7 +533,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', onComplete
 
                                 <div className="flex gap-4">
                                     <button type="button" onClick={() => setStep(2)} className="flex-1 bg-white/5 border border-white/10 text-slate-300 font-black py-5 rounded-2xl hover:bg-white/10 transition-all uppercase text-[11px] tracking-widest">
-                                        {region === 'es' || region === 'latam' || region === 'pe' ? 'Atrás' : 'Back'}
+                                        {lang === 'en' ? 'Back' : 'Atrás'}
                                     </button>
                                     <button
                                         type="submit"
