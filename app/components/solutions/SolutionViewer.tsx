@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { SolutionDemo } from '@/app/data/solutions';
-import { Monitor, Smartphone, Tablet, ExternalLink, ChevronLeft, Send } from 'lucide-react';
+import { Monitor, Smartphone, Tablet, ExternalLink, ChevronLeft, Send, Layout } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import ContactModal from './ContactModal';
 
 interface SolutionViewerProps {
@@ -11,11 +12,24 @@ interface SolutionViewerProps {
     region: string;
 }
 
-export default function SolutionViewer({ solution, region }: SolutionViewerProps) {
+function ViewerContent({ solution, region }: SolutionViewerProps) {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+    
     const [viewMode, setViewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
     const [isContactOpen, setIsContactOpen] = useState(false);
     
-    const iframeSrc = `/soluciones/${solution.path}/${solution.entryFile}`;
+    // Get demo from URL or fallback to entryFile
+    const currentDemo = searchParams.get('demo') || solution.entryFile;
+    
+    const iframeSrc = `/soluciones/${solution.path}/${currentDemo}`;
+
+    const handleDemoChange = (demoFile: string) => {
+        const params = new URLSearchParams(searchParams);
+        params.set('demo', demoFile);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    };
 
     const viewWidths = {
         desktop: '100%',
@@ -88,6 +102,27 @@ export default function SolutionViewer({ solution, region }: SolutionViewerProps
                 </div>
             </header>
 
+            {/* Sub-menu for multiple demos */}
+            {solution.demos && solution.demos.length > 0 && (
+                <div className="bg-white border-b border-slate-200 px-4 md:px-8 py-2 overflow-x-auto no-scrollbar flex items-center gap-2">
+                    <div className="flex items-center gap-1 min-w-max">
+                        {solution.demos.map((demo) => (
+                            <button
+                                key={demo.file}
+                                onClick={() => handleDemoChange(demo.file)}
+                                className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+                                    currentDemo === demo.file 
+                                    ? 'bg-[#00ff88]/10 text-[#006633] border border-[#006633]/20 shadow-sm' 
+                                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50 border border-transparent'
+                                }`}
+                            >
+                                {demo.name}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Viewer Area - Adaptive Container */}
             <main className="flex-1 overflow-hidden relative flex items-center justify-center p-2 md:p-12 bg-slate-50">
                 {/* Tech Background Pattern */}
@@ -112,6 +147,7 @@ export default function SolutionViewer({ solution, region }: SolutionViewerProps
                         src={iframeSrc}
                         className="w-full h-full border-none"
                         title={solution.title}
+                        key={currentDemo} // Key forces iframe reload when switching demos
                     />
                 </div>
 
@@ -154,5 +190,13 @@ export default function SolutionViewer({ solution, region }: SolutionViewerProps
                 }
             `}</style>
         </div>
+    );
+}
+
+export default function SolutionViewer(props: SolutionViewerProps) {
+    return (
+        <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center bg-[#f8fafc]"><div className="w-8 h-8 border-4 border-[#006633] border-t-transparent rounded-full animate-spin"></div></div>}>
+            <ViewerContent {...props} />
+        </Suspense>
     );
 }

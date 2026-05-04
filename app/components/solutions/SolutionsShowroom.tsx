@@ -98,7 +98,7 @@ export default function SolutionsShowroom({ region }: SolutionsShowroomProps) {
                                                     {solution.description}
                                                 </p>
                                                 <div className="flex items-center gap-4 text-[#006633] font-black text-xl uppercase tracking-tighter group-hover:gap-8 transition-all">
-                                                    Explorar Demo Interactivo
+                                                    Explorar {solution.demos && solution.demos.length > 1 ? `${solution.demos.length} Demos Interactivas` : 'Demo Interactivo'}
                                                     <ArrowRight className="w-8 h-8" />
                                                 </div>
                                             </div>
@@ -133,9 +133,16 @@ export default function SolutionsShowroom({ region }: SolutionsShowroomProps) {
                                         <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-[#006633] group-hover:bg-[#006633] group-hover:text-white transition-all duration-500 shadow-sm">
                                             {index % 3 === 0 ? <Code className="w-6 h-6" /> : index % 3 === 1 ? <Layers className="w-6 h-6" /> : <Zap className="w-6 h-6" />}
                                         </div>
-                                        <span className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase">
-                                            {solution.industry}
-                                        </span>
+                                        <div className="flex flex-col items-end gap-1">
+                                            <span className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase">
+                                                {solution.industry}
+                                            </span>
+                                            {solution.demos && solution.demos.length > 1 && (
+                                                <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-100 text-[8px] font-black text-[#006633] uppercase tracking-tighter">
+                                                    {solution.demos.length} Versiones
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                     
                                     <h3 className="text-2xl font-black font-outfit mb-4 text-slate-800 group-hover:text-[#006633] transition-colors leading-tight">
