@@ -1,0 +1,3 @@
+[submodule "public/soluciones"]
+	path = public/soluciones
+	url = https://github.com/itsolutionslab/solutions.git

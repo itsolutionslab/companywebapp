@@ -215,6 +215,16 @@ const ModernLanding = ({ region: initialRegionCode = 'us', scrollTarget, customH
                                 </li>
                                 <li>
                                     <Link
+                                        href={`/${initialRegionCode}/soluciones`}
+                                        className="text-cyan-400 hover:text-white transition-colors text-[9px] lg:text-[10px] font-black tracking-[0.2em] xl:tracking-[0.3em] uppercase flex items-center gap-1"
+                                        title={t('nav-solutions')}
+                                    >
+                                        {t('nav-solutions')}
+                                        <span className="px-1 py-0.5 bg-cyan-500 text-[8px] text-white rounded">NEW</span>
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link
                                         href={`/${initialRegionCode}/${lang === 'en' ? 'about' : 'nosotros'}`}
                                         className="text-slate-400 hover:text-cyan-400 transition-colors text-[9px] lg:text-[10px] font-black tracking-[0.2em] xl:tracking-[0.3em] uppercase"
                                         title={t('nav-about')}
@@ -294,6 +304,13 @@ const ModernLanding = ({ region: initialRegionCode = 'us', scrollTarget, customH
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     {t('nav-services')}
+                                </Link>
+                                <Link
+                                    href={`/${initialRegionCode}/soluciones`}
+                                    className="block px-4 py-3 text-cyan-400 hover:bg-cyan-500/10 rounded-xl transition-all font-bold text-sm border border-cyan-500/20"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    {t('nav-solutions')} (NUEVO)
                                 </Link>
                                 <Link
                                     href={`/${initialRegionCode}/${lang === 'en' ? 'about' : 'nosotros'}`}
