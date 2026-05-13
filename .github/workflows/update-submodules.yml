@@ -1,0 +1,65 @@
+name: '🚀 Auto-Update Solutions Submodule'
+
+on:
+  # Permite que el repositorio de soluciones avise a este repo cuando hay cambios
+  repository_dispatch:
+    types: [update_solutions]
+  
+  # Permite ejecutarlo manualmente desde la pestaña "Actions" de GitHub
+  workflow_dispatch:
+
+  # Opcional: Ejecutar una vez al día para asegurar sincronización total
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  update-submodule:
+    name: 'Update Submodule and Re-sync'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@v4
+        with:
+          # Se requiere un Personal Access Token (PAT) para que el push dispare el despliegue de Vercel
+          token: ${{ secrets.SUBMODULE_UPDATE_TOKEN }}
+          submodules: 'recursive'
+          fetch-depth: 0
+
+      - name: 'Configure Git'
+        run: |
+          git config --global user.name 'GitHub Action Bot'
+          git config --global user.email 'actions@github.com'
+
+      - name: 'Update Submodules to Latest'
+        run: |
+          git submodule update --init --recursive --remote --merge
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 'Install Dependencies'
+        run: npm ci --prefer-offline
+
+      - name: 'Re-sync Solutions Data File'
+        run: npm run sync
+
+      - name: 'Verify Changes'
+        id: check_changes
+        run: |
+          # Verificar si el puntero del submódulo cambió
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 'Commit and Push Changes'
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git add .
+          git commit -m "chore(submodule): sync solutions to latest version [skip ci]"
+          git push origin main

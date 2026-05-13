@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
+    "sync": "node scripts/sync-solutions.mjs",
+    "dev": "npm run sync && next dev --turbopack",
+    "build": "npm run sync && next build",
     "start": "next start",
     "lint": "next lint"
   },
