@@ -1,0 +1,175 @@
+.editorContainer {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 2rem;
+    min-height: calc(100vh - 200px);
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.mainSection {
+    background: white;
+    border-radius: 3rem;
+    padding: 3rem;
+    box-shadow: 0 50px 100px rgba(5, 17, 242, 0.03);
+    border: 1px solid #f0f0f0;
+}
+
+.tiptapWrapper {
+    min-height: 500px;
+    font-family: 'Inter', sans-serif;
+    color: #333;
+    line-height: 1.6;
+}
+
+.tiptapWrapper :focus {
+    outline: none;
+}
+
+.toolbar {
+    display: flex;
+    gap: 0.5rem;
+    padding-bottom: 2rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #f5f5f5;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+}
+
+.toolbarButton {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid #eee;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.toolbarButton:hover {
+    background: #f8f9fa;
+    border-color: #ddd;
+}
+
+.toolbarButtonActive {
+    background: #0511F2;
+    color: white;
+    border-color: #0511F2;
+}
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.sidebarCard {
+    background: white;
+    border-radius: 2rem;
+    padding: 2rem;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.02);
+}
+
+.sidebarCard h3 {
+    font-size: 0.8rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #999;
+    margin-bottom: 1.5rem;
+}
+
+.inputGroup {
+    margin-bottom: 1.5rem;
+}
+
+.inputGroup label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.input {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    border: 1px solid #eee;
+    background: #fafafa;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.input:focus {
+    outline: none;
+    border-color: #0511F2;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(5, 17, 242, 0.05);
+}
+
+.saveButton {
+    background: #0511F2;
+    color: white;
+    border: none;
+    padding: 1.25rem;
+    border-radius: 1.25rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.saveButton:hover {
+    background: #040ed6;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(5, 17, 242, 0.2);
+}
+
+.totalDisplay {
+    background: linear-gradient(135deg, #0511F2 0%, #1a237e 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 2rem;
+    text-align: center;
+}
+
+.totalDisplay .label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 0.5rem;
+}
+
+.totalDisplay .amount {
+    font-size: 2.5rem;
+    font-weight: 900;
+}
+
+@media (max-width: 1024px) {
+    .editorContainer {
+        grid-template-columns: 1fr;
+    }
+    
+    .sidebar {
+        order: -1;
+    }
+}

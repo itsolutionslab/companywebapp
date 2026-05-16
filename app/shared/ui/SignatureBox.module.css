@@ -1,0 +1,84 @@
+.container {
+    width: 100%;
+    background: var(--color-bg-alt);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md);
+    border: 2px dashed var(--color-border);
+}
+
+.canvasWrapper {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    background: white;
+    border-radius: var(--radius-md);
+    cursor: crosshair;
+    overflow: hidden;
+}
+
+.canvas {
+    width: 100%;
+    height: 100%;
+}
+
+.placeholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.controls {
+    display: flex;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+}
+
+.clearBtn {
+    flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: white;
+    font-weight: 700;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.clearBtn:hover {
+    background: #fdfdfd;
+    border-color: var(--color-text-muted);
+}
+
+.saveBtn {
+    flex: 2;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    border: none;
+    background: var(--color-primary);
+    color: white;
+    font-weight: 900;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.saveBtn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.saveBtn:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}

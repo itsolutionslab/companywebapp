@@ -198,6 +198,7 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath, dy
     const allMenuItems = [
         { name: t('dashboard') || 'Panel', path: '/admin/panel', icon: '📊' },
         { name: t('prospectos') || 'Pipeline Maestro', path: '/admin/prospectos', icon: '🎯' },
+        { name: t('cotizaciones') || 'Cotizaciones', path: '/admin/cotizaciones', icon: '📄' },
         { name: t('chats') || 'Mensajes', path: '/admin/mensajes', icon: '💬' },
         { name: t('reservations') || 'Reservas', path: '/admin/reservas', icon: '🤝' },
         { name: t('schedules') || 'Horarios', path: '/admin/horarios', icon: '⏰' },

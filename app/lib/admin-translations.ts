@@ -27,7 +27,8 @@ export type TranslationKey =
     | 'status_new' | 'status_contacted' | 'status_scheduled' | 'status_proposal' | 'status_approved' | 'status_downpayment'
     | 'status_started' | 'status_testing' | 'status_finished' | 'status_delivered' | 'status_closed' | 'status_lost'
     | 'security_integrity' | 'last_modified' | 'reactivate' | 'reschedule' | 'slot_unavailable'
-    | 'filter_date' | 'filter_range' | 'select_date' | 'select_range';
+    | 'filter_date' | 'filter_range' | 'select_date' | 'select_range'
+    | 'cotizaciones' | 'new_quotation' | 'quotation_id' | 'client' | 'total' | 'status_draft' | 'status_sent' | 'status_signed' | 'status_expired';
 
 export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, string>>> = {
     en: {
@@ -210,7 +211,16 @@ export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, stri
         filter_date: 'By Date',
         filter_range: 'By Range',
         select_date: 'Select Date',
-        select_range: 'Select Range'
+        select_range: 'Select Range',
+        cotizaciones: 'Quotations',
+        new_quotation: 'New Quotation',
+        quotation_id: 'Quotation ID',
+        client: 'Client',
+        total: 'Total',
+        status_draft: 'Draft',
+        status_sent: 'Sent',
+        status_signed: 'Signed',
+        status_expired: 'Expired'
     },
     es: {
         dashboard: 'Panel Control',
@@ -392,7 +402,16 @@ export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, stri
         filter_date: 'Por Fecha',
         filter_range: 'Por Rango',
         select_date: 'Seleccionar Fecha',
-        select_range: 'Seleccionar Rango'
+        select_range: 'Seleccionar Rango',
+        cotizaciones: 'Cotizaciones',
+        new_quotation: 'Nueva Cotización',
+        quotation_id: 'ID Cotización',
+        client: 'Cliente',
+        total: 'Total',
+        status_draft: 'Borrador',
+        status_sent: 'Enviada',
+        status_signed: 'Firmada',
+        status_expired: 'Expirada'
     },
     ru: {
         dashboard: 'Панель',

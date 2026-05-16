@@ -1,0 +1,209 @@
+.container {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.titleSection h1 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--primary-color, #0511F2);
+    letter-spacing: -0.05em;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.titleSection p {
+    color: #666;
+    margin-top: 0.5rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.75rem;
+}
+
+.newButton {
+    background: linear-gradient(135deg, #0511F2 0%, #EE05F2 100%);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 1.5rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 20px rgba(5, 17, 242, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.newButton:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 15px 30px rgba(5, 17, 242, 0.3);
+}
+
+.newButton:active {
+    transform: translateY(0);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.card {
+    background: white;
+    border-radius: 2.5rem;
+    padding: 2rem;
+    border: 1px solid #f0f0f0;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.05);
+    border-color: #eee;
+}
+
+.card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, transparent 50%, rgba(5, 17, 242, 0.03) 50%);
+    border-radius: 0 0 0 100%;
+}
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.id {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0511F2;
+    font-size: 0.9rem;
+    background: rgba(5, 17, 242, 0.05);
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.8rem;
+}
+
+.status {
+    font-size: 0.7rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.4rem 1rem;
+    border-radius: 2rem;
+}
+
+.statusDraft { background: #f0f0f0; color: #666; }
+.statusSent { background: #e0f2ff; color: #007aff; }
+.statusSigned { background: #e6fffa; color: #38b2ac; }
+.statusExpired { background: #fff5f5; color: #e53e3e; }
+
+.clientName {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+}
+
+.date {
+    font-size: 0.8rem;
+    color: #999;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.footer {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.totalLabel {
+    font-size: 0.7rem;
+    color: #999;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+}
+
+.totalValue {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #1a1a1a;
+}
+
+.currency {
+    font-size: 0.8rem;
+    color: #999;
+    margin-left: 0.25rem;
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+    .container { padding: 1.5rem; }
+    .titleSection h1 { font-size: 2rem; }
+    .newButton { width: 100%; justify-content: center; }
+}
+
+/* Empty state */
+.emptyState {
+    text-align: center;
+    padding: 5rem 2rem;
+    background: #fafafa;
+    border-radius: 3rem;
+    border: 2px dashed #eee;
+}
+
+.emptyState icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    display: block;
+}
+
+.emptyState h2 {
+    font-weight: 800;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.emptyState p {
+    color: #888;
+    max-width: 400px;
+    margin: 0 auto 2rem;
+}
