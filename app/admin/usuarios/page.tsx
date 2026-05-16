@@ -236,15 +236,22 @@ export default function UsersPage() {
     }
 
     // Check if user is allowed to be on this page at all (client-side)
-    const isAuthorized = getRoleLevel(currentUserRole) >= 1 || currentUserRole === 'admin' || currentUserRole === 'owneradmin';
+    const isAuthorized = currentUserRole === 'owneradmin' || currentUserRole === 'admin' || getRoleLevel(currentUserRole) >= 5;
     
     if (!isAuthorized) {
         return (
-            <div className="flex flex-col items-center justify-center h-96 gap-6 text-center px-4">
-                <div className="w-20 h-20 bg-rose-50 rounded-[2rem] flex items-center justify-center text-4xl shadow-inner border border-rose-100">🚫</div>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 animate-in fade-in zoom-in duration-700">
+                <div className="w-24 h-24 bg-rose-50 rounded-[2.5rem] flex items-center justify-center text-4xl shadow-xl shadow-rose-900/5 border border-rose-100 mb-8 relative">
+                    🚫
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center text-white text-[10px] font-black">!</div>
+                </div>
                 <div>
-                    <h2 className="text-2xl font-black text-[#0511F2] uppercase tracking-tighter mb-2">Acceso Restringido</h2>
-                    <p className="text-gray-400 text-xs font-bold max-w-xs mx-auto uppercase tracking-wide">No tienes los privilegios necesarios para gestionar la estructura de usuarios.</p>
+                    <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter mb-4 font-heading">Protocolo de Seguridad</h2>
+                    <div className="bg-gray-50 rounded-[2rem] p-6 border border-gray-100 max-w-sm mx-auto mb-8">
+                        <p className="text-gray-500 text-[11px] font-bold uppercase tracking-[0.1em] leading-relaxed">
+                            Tu nivel de acceso actual (<span className="text-[#0511F2]">{getRoleLabel(currentUserRole)}</span>) no cumple con los requisitos del protocolo para gestionar la estructura de usuarios de la organización.
+                        </p>
+                    </div>
                 </div>
             </div>
         );

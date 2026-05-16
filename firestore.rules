@@ -25,19 +25,23 @@ service cloud.firestore {
     
     // Role Hierarchy
     function isOwnerAdmin() {
-      return hasRole('owneradmin');
+      return hasRole('owneradmin') || hasRole('OWNERADMIN');
     }
     
     function isAdmin() {
-      return hasRole('admin') || isOwnerAdmin();
+      return isSignedIn() && !isAnonymous() && (
+        getUserData().role in ['admin', 'ADMIN', 'owneradmin', 'OWNERADMIN']
+      );
     }
     
     function isStaff() {
-      return hasRole('staff') || isAdmin();
+      return hasRole('staff') || hasRole('STAFF') || isAdmin();
     }
 
     function isEmploy() {
-      return hasRole('employ');
+      return isSignedIn() && !isAnonymous() && (
+        getUserData().role in ['employ', 'EMPLOY', 'staff', 'STAFF']
+      );
     }
     
     // New pillar roles with lead-access (GROW, OPERATIONS, SUPPORT) + Legacy Support
