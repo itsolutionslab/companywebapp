@@ -10,6 +10,8 @@ import { useNotification } from "@/components/admin/NotificationContext";
 import { getTimeSlotsForDate } from "@/lib/timeSlots";
 import ScheduleModal from "@/components/admin/ScheduleModal";
 
+import styles from "./ProspectoDetail.module.css";
+
 export default function LeadDetailPage() {
     const { id } = useParams();
     const router = useRouter();
@@ -47,10 +49,8 @@ export default function LeadDetailPage() {
         }
 
         try {
-            // Extract filename from path if possible
             const parts = urlOrPath.split('/');
             const rawName = parts.pop() || 'Documento';
-            // Remove timestamp prefix if exists (e.g., 123456789_name.png)
             const cleanName = rawName.includes('_') ? rawName.split('_').slice(1).join('_') : rawName;
             setFileName(cleanName);
 
@@ -61,19 +61,6 @@ export default function LeadDetailPage() {
             setResolvedFileUrl(resolved);
         } catch (error: any) {
             console.error("Error resolving file URL:", error);
-            if (error.code === 'storage/unauthorized') {
-                const { auth } = await import('@/lib/firebase');
-                const user = auth.currentUser;
-                if (user) {
-                    const token = await user.getIdTokenResult();
-                    console.warn("[Auth Details] User role:", token.claims.role, "Is Anonymous:", user.isAnonymous);
-                    if (!token.claims.role) {
-                        console.error("El usuario actual NO tiene un rol asignado. Los permisos de Storage fallarán.");
-                    }
-                } else {
-                    console.error("No hay un usuario autenticado para resolver el archivo.");
-                }
-            }
             setResolvedFileUrl(null);
         }
     }
@@ -91,54 +78,46 @@ export default function LeadDetailPage() {
         }
     }
 
-    const statusSequence: { key: LeadStatus; label: string; color: string }[] = [
+    const statusSequence: { key: LeadStatus; label: string; color: string; domain: 'GROW' | 'OPERATIONS' | 'SUPPORT' }[] = [
         // GROW
-        { key: 'LEAD_NEW', label: '🚀 Nuevo Lead', color: 'bg-[#0511F2]' },
-        { key: 'QUALIFICATION', label: '⚖️ Calificación', color: 'bg-[#26A3BF]' },
-        { key: 'CONTACTED', label: '📞 Contactado', color: 'bg-[#0511F2]/80' },
-        { key: 'DISCOVERY_SCHEDULED', label: '📅 Discovery Agendado', color: 'bg-[#EE05F2]/70' },
-        { key: 'DISCOVERY_COMPLETED', label: '✅ Discovery Completado', color: 'bg-[#EE05F2]/90' },
-        { key: 'PROPOSAL_PREPARING', label: '📝 Propuesta en Prep.', color: 'bg-[#EAF207]' },
-        { key: 'PROPOSAL_SENT', label: '📧 Propuesta Enviada', color: 'bg-[#26A3BF]/80' },
-        { key: 'NEGOTIATION', label: '🤝 Negociación', color: 'bg-[#EE05F2]/50' },
-        { key: 'WIN_CLOSED', label: '🏆 Venta Cerrada', color: 'bg-[#6FD904]' },
-        { key: 'LOST', label: '❌ Perdido', color: 'bg-gray-400' },
-        { key: 'ON_HOLD', label: '⏳ En Espera', color: 'bg-gray-200' },
+        { key: 'LEAD_NEW', label: 'Nuevo', color: '#0511F2', domain: 'GROW' },
+        { key: 'QUALIFICATION', label: 'Calificación', color: '#26A3BF', domain: 'GROW' },
+        { key: 'CONTACTED', label: 'Contactado', color: 'rgba(5, 17, 242, 0.8)', domain: 'GROW' },
+        { key: 'DISCOVERY_SCHEDULED', label: 'D. Agendado', color: 'rgba(238, 5, 242, 0.7)', domain: 'GROW' },
+        { key: 'DISCOVERY_COMPLETED', label: 'D. Completado', color: 'rgba(238, 5, 242, 0.9)', domain: 'GROW' },
+        { key: 'PROPOSAL_PREPARING', label: 'Prep. Propuesta', color: '#EAF207', domain: 'GROW' },
+        { key: 'PROPOSAL_SENT', label: 'Enviada', color: 'rgba(38, 163, 191, 0.8)', domain: 'GROW' },
+        { key: 'NEGOTIATION', label: 'Negociación', color: 'rgba(238, 5, 242, 0.5)', domain: 'GROW' },
+        { key: 'WIN_CLOSED', label: 'Ganado', color: '#6FD904', domain: 'GROW' },
+        { key: 'LOST', label: 'Perdido', color: '#9CA3AF', domain: 'GROW' },
+        { key: 'ON_HOLD', label: 'Espera', color: '#E5E7EB', domain: 'GROW' },
         // OPERATIONS
-        { key: 'HANDOFF', label: '🤝 Handoff', color: 'bg-[#0511F2]/60' },
-        { key: 'PROJECT_CREATED', label: '🏗️ Proyecto Creado', color: 'bg-[#26A3BF]/60' },
-        { key: 'KICK_OFF', label: '🚀 Kick-off', color: 'bg-[#EE05F2]' },
-        { key: 'INCEPTION_SPRINT_0', label: '🏁 Inception / S0', color: 'bg-[#0511F2]/40' },
-        { key: 'IN_EXECUTION', label: '⚡ En Ejecución', color: 'bg-[#0511F2]' },
-        { key: 'QA_UAT', label: '🧪 QA / UAT', color: 'bg-[#EE05F2]/60' },
-        { key: 'DELIVERY', label: '📦 Entrega', color: 'bg-[#26A3BF]' },
-        { key: 'CLIENT_ACCEPTANCE', label: '✅ Aceptación Cliente', color: 'bg-[#6FD904]' },
-        { key: 'TECHNICAL_CLOSURE', label: '🔧 Cierre Técnico', color: 'bg-gray-400' },
-        { key: 'ADMIN_CLOSURE', label: '📑 Cierre Admin.', color: 'bg-gray-300' },
-        { key: 'CLOSED', label: '🔒 Cerrado', color: 'bg-gray-500' },
+        { key: 'HANDOFF', label: 'Handoff', color: 'rgba(5, 17, 242, 0.6)', domain: 'OPERATIONS' },
+        { key: 'PROJECT_CREATED', label: 'Setup', color: 'rgba(38, 163, 191, 0.6)', domain: 'OPERATIONS' },
+        { key: 'KICK_OFF', label: 'Kick-off', color: '#EE05F2', domain: 'OPERATIONS' },
+        { key: 'INCEPTION_SPRINT_0', label: 'Inception', color: 'rgba(5, 17, 242, 0.4)', domain: 'OPERATIONS' },
+        { key: 'IN_EXECUTION', label: 'Ejecución', color: '#0511F2', domain: 'OPERATIONS' },
+        { key: 'QA_UAT', label: 'QA / UAT', color: 'rgba(238, 5, 242, 0.6)', domain: 'OPERATIONS' },
+        { key: 'DELIVERY', label: 'Entrega', color: '#26A3BF', domain: 'OPERATIONS' },
+        { key: 'CLIENT_ACCEPTANCE', label: 'Aceptación', color: '#6FD904', domain: 'OPERATIONS' },
+        { key: 'TECHNICAL_CLOSURE', label: 'Cierre Téc.', color: '#9CA3AF', domain: 'OPERATIONS' },
+        { key: 'ADMIN_CLOSURE', label: 'Cierre Adm.', color: '#D1D5DB', domain: 'OPERATIONS' },
+        { key: 'CLOSED', label: 'Cerrado', color: '#6B7280', domain: 'OPERATIONS' },
         // SUPPORT
-        { key: 'HYPERCARE', label: '🏥 Hypercare', color: 'bg-[#EE05F2]/80' },
-        { key: 'ACTIVE_SUPPORT', label: '🛠️ Soporte Activo', color: 'bg-[#0511F2]' },
-        { key: 'EVOLUTIVE', label: '📈 Evolutivos', color: 'bg-[#26A3BF]' },
-        { key: 'RENEWAL', label: '🔄 Renovación', color: 'bg-[#EAF207]' },
-        { key: 'ACCOUNT_EXPANDED', label: '💰 Cuenta Expandida', color: 'bg-[#6FD904]' },
-        { key: 'ACCOUNT_CLOSED', label: '🚫 Cuenta Cerrada', color: 'bg-gray-500' },
+        { key: 'HYPERCARE', label: 'Hypercare', color: 'rgba(238, 5, 242, 0.8)', domain: 'SUPPORT' },
+        { key: 'ACTIVE_SUPPORT', label: 'Soporte', color: '#0511F2', domain: 'SUPPORT' },
+        { key: 'EVOLUTIVE', label: 'Evolutivo', color: '#26A3BF', domain: 'SUPPORT' },
+        { key: 'RENEWAL', label: 'Renovación', color: '#EAF207', domain: 'SUPPORT' },
+        { key: 'ACCOUNT_EXPANDED', label: 'Expansión', color: '#6FD904', domain: 'SUPPORT' },
+        { key: 'ACCOUNT_CLOSED', label: 'Finalizado', color: '#6B7280', domain: 'SUPPORT' },
     ];
 
     const currentIdx = statusSequence.findIndex(s => s.key === lead?.status_flow.current);
-
-    const getLocalDateString = (date: Date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
 
     const handleSaveSchedule = async (date: string, time: string) => {
         if (!lead) return;
         setIsSavingSchedule(true);
         try {
-            // 1. Create the booking document in Discovery Meets (bookings)
             const { addBooking } = await import("@/lib/firebase");
             const newBooking = {
                 customerName: lead.data?.name || "Lead Sin Nombre",
@@ -166,8 +145,6 @@ export default function LeadDetailPage() {
             };
 
             await addBooking(newBooking);
-
-            // 1.5 Add meeting event
             const { addLeadEvent } = await import("@/lib/firebase");
             await addLeadEvent(lead.lead_id, {
                 type: 'MEETING_SCHEDULED',
@@ -176,9 +153,7 @@ export default function LeadDetailPage() {
                 metadata: { date, time }
             });
 
-            // 2. Update Lead status to DISCOVERY_SCHEDULED
             await handleStatusUpdate('DISCOVERY_SCHEDULED');
-
             setShowScheduleModal(false);
             showNotification("Sesión de descubrimiento agendada correctamente", "success");
         } catch (error) {
@@ -238,7 +213,6 @@ export default function LeadDetailPage() {
                     current: newStatus
                 }
             });
-            // Refresh local state (auto-re-fetch would be cleaner but this is faster for UX)
             await fetchLead();
             showNotification(t('service_saved_success') || "Estado actualizado con éxito", "success");
         } catch (error) {
@@ -250,90 +224,105 @@ export default function LeadDetailPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0511F2]"></div>
+            <div className={styles.loadingBox}>
+                <div className={styles.spinner}></div>
             </div>
         );
     }
 
     if (!lead) {
         return (
-            <div className="text-center py-20">
-                <p className="text-gray-500">No se encontró el prospecto.</p>
-                <button onClick={() => router.push('/admin/prospectos')} className="mt-4 text-blue-500 font-bold">Volver</button>
+            <div style={{ textAlign: 'center', padding: '5rem 0' }}>
+                <p style={{ color: 'var(--admin-text-light)' }}>No se encontró el prospecto.</p>
+                <button onClick={() => router.push('/admin/prospectos')} style={{ marginTop: '1rem', color: 'var(--admin-primary)', fontWeight: 'bold', background: 'none', border: 'none', cursor: 'pointer' }}>Volver</button>
             </div>
         );
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-700 pb-12">
+        <div className={styles.detailContainer}>
             {/* Header & Progress Tracker */}
-            <div className="flex flex-col gap-6 relative">
-                <div className="diagonal-accent !opacity-10"></div>
-                <div className="flex items-center justify-between gap-4 relative z-10">
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => router.push('/admin/prospectos')}
-                            className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-[#0511F2] transition-all shadow-sm"
-                        >
+            <div className={styles.headerSection}>
+                <div className={styles.headerTop}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <button onClick={() => router.push('/admin/prospectos')} className={styles.backBtn}>
                             ←
                         </button>
                         <div>
-                            <div className="admin-decorator-line mb-2"></div>
-                            <h1 className="text-2xl font-black text-[#0511F2] tracking-tighter uppercase font-heading">{lead.data?.name || 'Prospecto Sin Nombre'}</h1>
-                            <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mt-0.5">ID: {lead.lead_id}</p>
+                            <div className="admin-decorator-line" style={{ marginBottom: '0.5rem' }}></div>
+                            <h1 className="admin-h1">{lead.data?.name || 'Prospecto Sin Nombre'}</h1>
+                            <p className="admin-subtitle">ID: {lead.lead_id}</p>
                         </div>
                     </div>
 
-                    <div className="hidden md:flex items-center gap-3">
-                        <div className="text-right">
-                            <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Valor Estimado</span>
-                            <span className="block text-lg font-black text-[#6FD904]">${lead.value_estimate?.toLocaleString() || '0'}</span>
+                    <div className={styles.valueEstimateBox}>
+                        <div style={{ textAlign: 'right' }}>
+                            <span className={styles.valueLabel}>Valor Estimado</span>
+                            <span className={styles.valueAmount}>${lead.value_estimate?.toLocaleString() || '0'}</span>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-[#6FD904]/10 flex items-center justify-center text-[#6FD904] text-xl">
+                        <div className={styles.valueIcon}>
                             💰
                         </div>
                     </div>
                 </div>
 
-                {/* Horizontal Progress Bar */}
-                <div className="bg-white rounded-[2rem] border border-gray-100 p-4 shadow-sm overflow-x-auto no-scrollbar relative z-10">
-                    <div className="flex items-center justify-between min-w-[800px] px-4 h-12 relative">
-                        {/* Connecting Line */}
-                        <div className="absolute left-10 right-10 top-1/2 -translate-y-1/2 h-0.5 bg-gray-100 z-0"></div>
+                {/* Segmented Smart Stepper */}
+                <div className={styles.stepperContainer}>
+                    <div className={styles.stepperDomains}>
+                        {(['GROW', 'OPERATIONS', 'SUPPORT'] as const).map((domain) => {
+                            const isCurrentDomain = statusSequence[currentIdx]?.domain === domain;
+                            const isPastDomain = (domain === 'GROW' && statusSequence[currentIdx]?.domain !== 'GROW') ||
+                                (domain === 'OPERATIONS' && statusSequence[currentIdx]?.domain === 'SUPPORT');
+
+                            return (
+                                <div key={domain} className={styles.domainBox}>
+                                    <span className={`${styles.domainLabel} ${isCurrentDomain ? styles.active : isPastDomain ? styles.past : ''}`}>
+                                        {domain === 'GROW' ? '📈 Grow' : domain === 'OPERATIONS' ? '⚙️ Operations' : '🤝 Support'}
+                                    </span>
+                                    <div className={`${styles.domainBar} ${isCurrentDomain ? styles.active : isPastDomain ? styles.past : ''}`}></div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className={styles.stepperTrack}>
+                        <div className={styles.lineBg}></div>
                         <div
-                            className="absolute left-10 top-1/2 -translate-y-1/2 h-0.5 bg-[#0511F2] transition-all duration-1000 z-0"
+                            className={styles.lineFill}
                             style={{ width: `${(currentIdx / (statusSequence.length - 1)) * 100}%` }}
                         ></div>
 
                         {statusSequence.map((stage, idx) => {
                             const isCompleted = idx <= currentIdx;
                             const isCurrent = idx === currentIdx;
+                            const activeDomain = statusSequence[currentIdx]?.domain;
+                            const shouldShowLabel = stage.domain === activeDomain || isCurrent;
+
                             return (
-                                <div key={stage.key} className="relative z-10 flex flex-col items-center gap-2 group">
-                                    <div className={`
-                                        w-8 h-8 rounded-full border-4 flex items-center justify-center transition-all duration-500
-                                        ${isCurrent
-                                            ? 'bg-[#0511F2] border-blue-100 scale-125 shadow-xl shadow-blue-200'
-                                            : isCompleted
-                                                ? 'bg-[#0511F2] border-white'
-                                                : 'bg-white border-gray-100 group-hover:border-blue-200'
-                                        }
-                                    `}>
+                                <div key={stage.key} className={styles.step}>
+                                    <div className={`${styles.node} ${isCurrent ? styles.active : isCompleted ? styles.completed : ''}`}>
                                         {isCompleted && !isCurrent ? (
-                                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg style={{ width: '12px', height: '12px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
                                             </svg>
                                         ) : (
-                                            <div className={`w-1.5 h-1.5 rounded-full ${isCurrent ? 'bg-white' : 'bg-gray-200'}`}></div>
+                                            <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: isCurrent ? 'white' : '#E5E7EB' }}></div>
                                         )}
                                     </div>
-                                    <span className={`
-                                        absolute top-10 whitespace-nowrap text-[9px] font-black uppercase tracking-tighter transition-all duration-300
-                                        ${isCurrent ? 'text-[#0511F2]' : isCompleted ? 'text-gray-900' : 'text-gray-300'}
-                                    `}>
-                                        {stage.label}
-                                    </span>
+
+                                    {shouldShowLabel && (
+                                        <span className={`${styles.label} ${isCurrent ? styles.active : ''}`}
+                                            style={{
+                                                transform: `translateY(${idx % 2 === 0 ? '0' : '6px'})`
+                                            }}>
+                                            {stage.label}
+                                        </span>
+                                    )}
+
+                                    <div className={styles.tooltip}>
+                                        <div className={styles.tooltipContent}>{stage.label}</div>
+                                        <div className={styles.tooltipArrow}></div>
+                                    </div>
                                 </div>
                             );
                         })}
@@ -341,423 +330,211 @@ export default function LeadDetailPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className={styles.mainGrid}>
                 {/* Main Info Card */}
-                <div className="lg:col-span-2 space-y-8">
-                    {/* Contact Stats */}
-                    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <section className="space-y-4">
-                            <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
-                                <span className="w-1 h-3 bg-[#0511F2] rounded-full"></span>
+                <div className={styles.infoSection}>
+                    <div className={styles.sectionCard} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
+                        <section>
+                            <h3 className="admin-h3" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-primary)' }}></span>
                                 Datos de Contacto
                             </h3>
-                            <div className="space-y-3">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                 <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Email</label>
-                                    <p className="font-bold text-gray-900">{lead.data?.email || 'N/A'}</p>
+                                    <label className="admin-label">Email</label>
+                                    <p style={{ fontWeight: 'bold', color: 'var(--admin-text-main)' }}>{lead.data?.email || 'N/A'}</p>
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Teléfono</label>
-                                    <p className="font-bold text-gray-900">{lead.data?.phone || 'N/A'}</p>
+                                    <label className="admin-label">Teléfono</label>
+                                    <p style={{ fontWeight: 'bold', color: 'var(--admin-text-main)' }}>{lead.data?.phone || 'N/A'}</p>
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Empresa</label>
-                                    <p className="font-bold text-gray-900">{lead.data?.company || 'N/A'}</p>
+                                    <label className="admin-label">Empresa</label>
+                                    <p style={{ fontWeight: 'bold', color: 'var(--admin-text-main)' }}>{lead.data?.company || 'N/A'}</p>
                                 </div>
                                 {lead.data?.website && (
                                     <div>
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase">Website</label>
-                                        <p className="font-bold text-blue-600 truncate">
+                                        <label className="admin-label">Website</label>
+                                        <p style={{ fontWeight: 'bold', color: 'var(--admin-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                             <a href={lead.data.website.startsWith('http') ? lead.data.website : `https://${lead.data.website}`} target="_blank" rel="noopener noreferrer">
                                                 {lead.data.website}
                                             </a>
                                         </p>
                                     </div>
                                 )}
-                                <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Rol / Cargo</label>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-[9px] font-black uppercase border border-gray-200">
-                                            {lead.data?.role || 'N/A'}
-                                        </span>
-                                    </div>
-                                </div>
-                                {lead.data?.objectives && lead.data.objectives.length > 0 && (
-                                    <div className="pt-2">
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Objetivos Estratégicos</label>
-                                        <div className="flex flex-wrap gap-1">
-                                            {lead.data.objectives.map((obj: string, idx: number) => (
-                                                <span key={idx} className="px-2 py-0.5 bg-cyan-50 text-cyan-600 rounded-md text-[9px] font-black border border-cyan-100 uppercase">
-                                                    {obj.replace(/-/g, ' ')}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                {lead.data?.service_interests && lead.data.service_interests.length > 0 && (
-                                    <div className="pt-2">
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Servicios (Legacy)</label>
-                                        <div className="flex flex-wrap gap-1">
-                                            {lead.data.service_interests.map((s: string, idx: number) => (
-                                                <span key={idx} className="px-2 py-0.5 bg-gray-50 text-gray-400 rounded-md text-[9px] font-black border border-gray-100 uppercase italic">
-                                                    {s.replace(/-/g, ' ')}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         </section>
 
-                        <section className="space-y-4">
-                            <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
-                                <span className="w-1 h-3 bg-[#EAF207] rounded-full"></span>
-                                Modelo Operativo (LEGO)
+                        <section>
+                            <h3 className="admin-h3" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-warning)' }}></span>
+                                Modelo Operativo
                             </h3>
-                            <div className="space-y-3">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Delivery Model</label>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <span className="px-3 py-1 bg-[#0511F2]/5 text-[#0511F2] rounded-xl text-[10px] font-black uppercase border border-[#0511F2]/10 flex items-center gap-2">
-                                            {lead.data?.delivery_model === 'ADVISORY' && '🧠'}
-                                            {lead.data?.delivery_model === 'IMPLEMENTATION' && '⚙️'}
-                                            {lead.data?.delivery_model === 'MANAGED_SERVICES' && '🛠️'}
-                                            {lead.data?.delivery_model === 'STAFF_AUGMENTATION' && '👥'}
+                                    <label className={styles.valueLabel} style={{ textAlign: 'left' }}>Delivery Model</label>
+                                    <div style={{ marginTop: '0.25rem' }}>
+                                        <span className="admin-badge admin-badge-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                                             {lead.data?.delivery_model || 'ADVISORY'}
                                         </span>
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Capability / Práctica</label>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <span className="px-3 py-1 bg-[#EE05F2]/5 text-[#EE05F2] rounded-xl text-[10px] font-black uppercase border border-[#EE05F2]/10 flex items-center gap-2">
-                                            {lead.data?.capability === 'SOFTWARE' && '💻'}
-                                            {lead.data?.capability === 'AI' && '🤖'}
-                                            {lead.data?.capability === 'MARKETING' && '📣'}
-                                            {lead.data?.capability === 'CLOUD' && '☁️'}
-                                            {lead.data?.capability === 'ERP' && '🏢'}
-                                            {lead.data?.capability === 'DATA' && '📊'}
-                                            {lead.data?.capability === 'PMO' && '📋'}
-                                            {lead.data?.capability === 'AUTOMATION' && '⚡'}
+                                    <label className={styles.valueLabel} style={{ textAlign: 'left' }}>Capability</label>
+                                    <div style={{ marginTop: '0.25rem' }}>
+                                        <span className="admin-badge admin-badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                                             {lead.data?.capability || 'SOFTWARE'}
                                         </span>
                                     </div>
                                 </div>
                             </div>
                         </section>
-
-                        <section className="space-y-4">
-                            <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
-                                <span className="w-1 h-3 bg-[#EE05F2] rounded-full"></span>
-                                Fuente / Origen
-                            </h3>
-                            <div className="space-y-3">
-                                <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Landing Page</label>
-                                    {/* Protegemos source_attribution */}
-                                    <p className="font-bold text-gray-900">{lead?.source_attribution?.landing_page || 'N/A'}</p>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Fuente (UTM)</label>
-                                    {/* Protegemos source_attribution */}
-                                    <p className="font-bold text-gray-900">{lead?.source_attribution?.utm_source || 'Directo'}</p>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Fecha Registro</label>
-                                    <p className="font-bold text-gray-900">
-                                        {lead?.audit_logs?.created_at
-                                            ? new Date(lead.audit_logs.created_at?.toDate?.() || lead.audit_logs.created_at).toLocaleString()
-                                            : 'Fecha no disponible'
-                                        }
-                                    </p>
-                                </div>
-                            </div>
-                        </section>
                     </div>
 
-                    {/* Strategic Insights */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-3">Etapa Actual</label>
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#6FD904]/10 text-[#6FD904] rounded-xl border border-[#6FD904]/20 text-xs font-black uppercase">
-                                <span className="w-2 h-2 rounded-full bg-[#6FD904] animate-pulse"></span>
-                                {lead.data?.stage || 'No definida'}
-                            </div>
+                    {/* Insights */}
+                    <div className={styles.kpiGrid}>
+                        <div className={styles.kpiCard}>
+                            <span className={styles.kpiLabel}>Etapa Actual</span>
+                            <span className={styles.kpiValue} style={{ color: 'var(--admin-success)' }}>{lead.data?.stage || 'No definida'}</span>
                         </div>
-                        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-3">Urgencia / Timeline</label>
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#26A3BF]/10 text-[#26A3BF] rounded-xl border border-[#26A3BF]/20 text-xs font-black uppercase">
-                                📅 {lead.data?.timeline || 'No definida'}
-                            </div>
+                        <div className={styles.kpiCard}>
+                            <span className={styles.kpiLabel}>Urgencia</span>
+                            <span className={styles.kpiValue} style={{ color: 'var(--admin-secondary)' }}>{lead.data?.timeline || 'N/A'}</span>
                         </div>
-                        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-3">Inversión Estimada</label>
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#6FD904]/10 text-[#6FD904] rounded-xl border border-[#6FD904]/20 text-xs font-black uppercase">
-                                💰 {lead.data?.investment_level || 'No definida'}
-                            </div>
+                        <div className={styles.kpiCard}>
+                            <span className={styles.kpiLabel}>Inversión</span>
+                            <span className={styles.kpiValue} style={{ color: 'var(--admin-primary)' }}>{lead.data?.investment_level || 'N/A'}</span>
+                        </div>
+                        <div className={styles.kpiCard}>
+                            <span className={styles.kpiLabel}>Clics</span>
+                            <span className={styles.kpiValue}>{lead.kpis?.clicks_count || 0}</span>
                         </div>
                     </div>
 
                     {/* Impact & Project Description */}
-                    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8 space-y-8">
-                        <section>
-                            <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
-                                <span className="w-1 h-3 bg-[#6FD904] rounded-full"></span>
-                                Resultados de Negocio Esperados (Impacto)
+                    <div className={styles.sectionCard}>
+                        <section style={{ marginBottom: '2rem' }}>
+                            <h3 className="admin-h3" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-success)' }}></span>
+                                Impacto de Negocio
                             </h3>
-                            <p className="text-gray-900 font-bold leading-relaxed bg-[#6FD904]/5 rounded-2xl p-6 border border-[#6FD904]/10">
+                            <p style={{ padding: '1.5rem', background: 'var(--admin-surface)', borderRadius: '1.25rem', fontWeight: 'bold', lineHeight: '1.6' }}>
                                 {lead.data?.impact || 'No se especificó el impacto esperado.'}
                             </p>
                         </section>
 
                         <section>
-                            <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
-                                <span className="w-1 h-3 bg-[#0511F2] rounded-full"></span>
-                                Toma de Decisión
+                            <h3 className="admin-h3" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-primary)' }}></span>
+                                Descripción del Proyecto
                             </h3>
-                            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                                <p className="text-xs font-bold text-gray-700 uppercase tracking-tight">
-                                    ¿Es el tomador de decisión final?: <span className="text-[#0511F2] ml-2">{lead.data?.decision_maker || 'N/A'}</span>
-                                </p>
-                            </div>
-                        </section>
-
-                        <section>
-                            <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
-                                <span className="w-1 h-3 bg-gray-300 rounded-full"></span>
-                                Notas del Proyecto / Descripción Original
-                            </h3>
-                            <p className="text-gray-600 font-medium leading-relaxed whitespace-pre-wrap">
+                            <p style={{ color: 'var(--admin-text-muted)', fontWeight: '500', lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>
                                 {lead.data?.project_desc || 'No se proporcionó descripción detallada.'}
                             </p>
                         </section>
                     </div>
 
-                    {/* Documentos Adjuntos */}
-                    {lead.data?.file_url && (
-                        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8">
-                            <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-6 flex items-center gap-2">
-                                <span className="w-1 h-3 bg-[#EE05F2] rounded-full"></span>
-                                Documentos Adjuntos
-                            </h3>
-                            <a
-                                href={resolvedFileUrl || '#'}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/10 transition-all group"
-                            >
-                                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-rose-500 shadow-sm transition-all group-hover:scale-110">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <p className="text-sm font-bold text-gray-900 truncate max-w-[200px] md:max-w-xs" title={fileName}>
-                                        {fileName}
-                                    </p>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Haga clic para ver o descargar</p>
-                                </div>
-                                <div className="ml-auto text-gray-300 group-hover:text-blue-500 transition-all">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                    </svg>
-                                </div>
-                            </a>
-                        </div>
-                    )}
-
-                    {/* Technical KPIs / Activity */}
-                    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8">
-                        <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-6 flex items-center gap-2">
-                            <span className="w-1 h-3 bg-amber-500 rounded-full"></span>
-                            Actividad de Usuario
-                        </h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
-                            <div className="p-4 bg-[#EAF207]/10 rounded-2xl border border-[#EAF207]/20">
-                                <span className="block text-xl mb-1">🖱️</span>
-                                <span className="block text-lg font-black text-[#121212]">{lead.kpis?.clicks_count || 0}</span>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Clics</span>
-                            </div>
-                            <div className="p-4 bg-[#0511F2]/10 rounded-2xl border border-[#0511F2]/20">
-                                <span className="block text-xl mb-1">⏱️</span>
-                                <span className="block text-lg font-black text-[#0511F2]">{Math.round((lead.kpis?.session_duration || 0) / 60)}m</span>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-[#0511F2]/60">Duración</span>
-                            </div>
-                            <div className="p-4 bg-[#6FD904]/10 rounded-2xl border border-[#6FD904]/20">
-                                <span className="block text-xl mb-1">🌍</span>
-                                <span className="block text-md font-black text-[#6FD904] truncate px-1">
-                                    {lead.audit_logs?.geo_location?.city || 'Local'}
-                                </span>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-[#6FD904]/60">Ubicación</span>
-                            </div>
-                            <div className="p-4 bg-[#EE05F2]/10 rounded-2xl border border-[#EE05F2]/20 opacity-80">
-                                <span className="block text-xl mb-1">📄</span>
-                                <span className="block text-lg font-black text-[#EE05F2]">
-                                    {lead.data?.file_url ? 'SÍ' : 'NO'}
-                                </span>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-[#EE05F2]/60">Archivo</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Timeline Feed (Top Priority) */}
-                    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8">
-                        <div className="flex items-center justify-between mb-8">
-                            <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
-                                <span className="w-1 h-3 bg-blue-500 rounded-full"></span>
-                                Línea de Tiempo
-                            </h3>
-                        </div>
-
-                        {/* Add Note Input Area */}
-                        <div className="mb-10 bg-gray-50/50 rounded-2xl p-4 border border-gray-100">
+                    {/* Timeline Feed */}
+                    <div className={styles.sectionCard}>
+                        <h3 className="admin-h3" style={{ marginBottom: '2rem' }}>Línea de Tiempo</h3>
+                        
+                        <div style={{ marginBottom: '2.5rem', background: 'var(--admin-surface)', padding: '1rem', borderRadius: '1.25rem' }}>
                             <textarea
                                 value={noteText}
                                 onChange={(e) => setNoteText(e.target.value)}
-                                placeholder="Escribe una actualización o nota interna..."
-                                className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#0511F2]/10 outline-none transition-all resize-none min-h-[80px]"
+                                placeholder="Escribe una actualización..."
+                                className="admin-input"
+                                style={{ minHeight: '100px', resize: 'none', marginBottom: '1rem' }}
                             />
-                            <div className="flex justify-end mt-2">
+                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                                 <button
                                     onClick={handleAddNote}
                                     disabled={!noteText.trim() || isAddingNote}
-                                    className="bg-[#0511F2] text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#040ed1] disabled:opacity-50 transition-all shadow-lg shadow-blue-200"
+                                    className="admin-btn admin-btn-primary"
+                                    style={{ padding: '0.75rem 1.5rem' }}
                                 >
-                                    {isAddingNote ? 'Guardando...' : 'Postear Nota'}
+                                    {isAddingNote ? '...' : 'Postear Nota'}
                                 </button>
                             </div>
                         </div>
 
-                        <div className="space-y-8 relative ml-4">
-                            {/* Vertical Line */}
-                            <div className="absolute top-0 bottom-0 left-0 w-px bg-gray-100 -ml-4 z-0"></div>
-
-                            {/* Merge old history and new events if both exist for safety */}
-                            {(lead?.events && (lead.events as any[]).length > 0) ? (
-                                (lead.events as any[]).slice().reverse().map((event: any, idx) => (
-                                    <div key={event.id || idx} className="relative z-10 flex items-start gap-6 group">
-                                        <div className={`
-                                            w-10 h-10 rounded-2xl bg-white border flex items-center justify-center shadow-sm transition-all duration-300
-                                            ${event.type === 'STATUS_CHANGED' ? 'border-blue-100 text-blue-500 bg-blue-50/20' :
-                                                event.type === 'MEETING_SCHEDULED' ? 'border-purple-100 text-purple-500 bg-purple-50/20' :
-                                                    event.type === 'NOTE_ADDED' ? 'border-amber-100 text-amber-500 bg-amber-50/20' :
-                                                        'border-gray-100 text-gray-300'}
-                                        `}>
-                                            <span className="text-xl">
-                                                {event.type === 'STATUS_CHANGED' ? '🚀' :
-                                                    event.type === 'MEETING_SCHEDULED' ? '🗓️' :
-                                                        event.type === 'MEETING_COMPLETED' ? '✅' :
-                                                            event.type === 'PROPOSAL_SENT' ? '📧' :
-                                                                event.type === 'NOTE_ADDED' ? '📝' : '●'}
+                        <div className={styles.timelineContainer}>
+                            <div className={styles.timelineLine}></div>
+                            {(lead.events || []).slice().reverse().map((event: any, idx: number) => (
+                                <div key={idx} className={styles.timelineEvent}>
+                                    <div className={styles.eventIcon}>
+                                        {event.type === 'STATUS_CHANGED' ? '🚀' : '📝'}
+                                    </div>
+                                    <div className={styles.eventContent}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                            <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--admin-text-light)', textTransform: 'uppercase' }}>
+                                                {event.type.replace(/_/g, ' ')}
+                                            </span>
+                                            <span style={{ fontSize: '9px', fontWeight: 'bold', color: 'var(--admin-text-light)' }}>
+                                                {new Date(event.timestamp?.toDate?.() || event.timestamp).toLocaleDateString()}
                                             </span>
                                         </div>
-                                        <div className="flex-1 pb-8 border-b border-gray-50 last:border-0">
-                                            <div className="flex justify-between items-center mb-1">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-50 px-2 py-0.5 rounded">
-                                                    {event.type.replace(/_/g, ' ')}
-                                                </span>
-                                                <span className="text-[10px] font-bold text-gray-300">
-                                                    {new Date(event.timestamp?.toDate?.() || event.timestamp).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                                                </span>
-                                            </div>
-                                            <p className="text-sm font-bold text-gray-700 leading-relaxed">
-                                                {event.description}
-                                            </p>
-                                            {event.metadata?.new_status && (
-                                                <div className="mt-2 flex items-center gap-2">
-                                                    <div className={`w-2 h-2 rounded-full ${statusSequence.find(s => s.key === event.metadata?.new_status)?.color || 'bg-gray-400'}`}></div>
-                                                    <span className="text-[11px] font-black text-gray-500 uppercase">{statusSequence.find(s => s.key === event.metadata?.new_status)?.label}</span>
-                                                </div>
-                                            )}
-                                        </div>
+                                        <p style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--admin-text-main)' }}>
+                                            {event.description}
+                                        </p>
                                     </div>
-                                ))
-                            ) : (
-                                // Fallback to old history for legacy data not yet migrated
-                                (lead.status_flow?.history || []).slice().reverse().map((item, idx) => (
-                                    <div key={idx} className="relative z-10 flex items-start gap-6 group">
-                                        <div className="w-8 h-8 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm text-gray-300">
-                                            <div className="w-2 h-2 rounded-full bg-current"></div>
-                                        </div>
-                                        <div className="flex-1 pb-6 border-b border-gray-50 last:border-0">
-                                            <p className="text-sm font-bold text-gray-700">{item.notes}</p>
-                                            <span className="text-[10px] font-bold text-gray-300 uppercase mt-1 block">{new Date(item.timestamp).toLocaleString()}</span>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
 
-                {/* Status & Sidebar */}
-                <div className="space-y-8">
-                    {/* Quick Actions Card */}
-                    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8">
-                        <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-6 flex items-center gap-2">
-                            <span className="w-1 h-3 bg-[#EAF207] rounded-full"></span>
-                            Acciones Rápidas
-                        </h3>
-                        <div className="space-y-3">
-                            <button
-                                onClick={() => setShowScheduleModal(true)}
-                                className="w-full py-3.5 bg-[#0511F2]/5 text-[#0511F2] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#0511F2]/10 transition-all flex items-center justify-center gap-2 border border-[#0511F2]/5"
-                            >
+                {/* Sidebar */}
+                <div className={styles.sidebar}>
+                    <div className={`${styles.sectionCard} ${styles.stickySidebar}`}>
+                        <h3 className="admin-h3" style={{ marginBottom: '1.5rem' }}>Estado Actual</h3>
+                        <div style={{ padding: '1.5rem', background: 'var(--admin-surface)', borderRadius: '1.5rem', textAlign: 'center', marginBottom: '2rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                                <div className="admin-status-dot admin-status-dot-active"></div>
+                                <span style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--admin-text-main)' }}>
+                                    {lead.status_flow.current.replace(/_/g, ' ')}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <button onClick={() => setShowScheduleModal(true)} className={styles.actionBtn} style={{ background: 'rgba(5, 17, 242, 0.05)', color: 'var(--admin-primary)' }}>
                                 🗓️ Agendar Discovery
                             </button>
-                            <button
-                                className="w-full py-3.5 bg-[#EE05F2]/5 text-[#EE05F2] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#EE05F2]/10 transition-all flex items-center justify-center gap-2 border border-[#EE05F2]/5"
-                                onClick={() => {/* Future logic */ }}
-                            >
+                            <button className={styles.actionBtn} style={{ background: 'rgba(238, 5, 242, 0.05)', color: 'var(--admin-accent)' }}>
                                 📧 Enviar Propuesta
                             </button>
-                            <button
+                            <button 
                                 onClick={() => {
                                     setNewValue(lead.value_estimate?.toString() || '0');
                                     setIsUpdatingValue(!isUpdatingValue);
                                 }}
-                                className="w-full py-3.5 bg-[#6FD904]/5 text-[#6FD904] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#6FD904]/10 transition-all flex items-center justify-center gap-2 border border-[#6FD904]/5"
+                                className={styles.actionBtn} 
+                                style={{ background: 'rgba(111, 217, 4, 0.05)', color: 'var(--admin-success)' }}
                             >
                                 💰 {isUpdatingValue ? 'Cerrar' : 'Actualizar Valor'}
                             </button>
 
                             {isUpdatingValue && (
-                                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 animate-in fade-in duration-300">
+                                <div className="animate-slide-up" style={{ marginTop: '0.5rem' }}>
                                     <input
                                         type="number"
                                         value={newValue}
                                         onChange={(e) => setNewValue(e.target.value)}
-                                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-[#6FD904]/10 outline-none"
-                                        placeholder="Valor USD"
+                                        className="admin-input"
+                                        style={{ marginBottom: '0.5rem' }}
                                     />
-                                    <button
-                                        onClick={handleUpdateValue}
-                                        className="w-full mt-2 bg-[#6FD904] text-white py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-lime-100"
-                                    >
-                                        Guardar Valor
+                                    <button onClick={handleUpdateValue} className="admin-btn admin-btn-primary" style={{ width: '100%', padding: '0.75rem' }}>
+                                        Guardar
                                     </button>
                                 </div>
                             )}
                         </div>
-                    </div>
 
-                    {/* Status Update Card */}
-                    <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] border border-gray-100 shadow-xl p-8 sticky top-8">
-                        <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-6 flex items-center gap-2">
-                            <span className="w-1 h-3 bg-rose-500 rounded-full"></span>
-                            Pipeline Stage
-                        </h3>
-
-                        <div className="space-y-4">
-                            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-center mb-6">
-                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Estado Actual</span>
-                                <div className="flex items-center justify-center gap-2">
-                                    <div className={`w-2.4 h-2.4 rounded-full ${statusSequence[currentIdx]?.color || 'bg-gray-400'}`}></div>
-                                    <span className="text-xl font-black text-gray-900 uppercase">{lead.status_flow.current.replace(/_/g, ' ')}</span>
-                                </div>
-                            </div>
-
-                            <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 no-scrollbar">
+                        <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <label className={styles.kpiLabel}>Actualizar Pipeline</label>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxHeight: '500px', overflowY: 'auto', paddingRight: '0.25rem' }} className="admin-scrollbar">
+                                {/* GROW Domain */}
                                 <div>
                                     <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Dominio GROW</h4>
                                     <div className="grid grid-cols-1 gap-2">
@@ -769,7 +546,7 @@ export default function LeadDetailPage() {
                                                 className={`w-full py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${lead.status_flow.current === status
                                                     ? 'bg-[#0511F2] text-white border-[#0511F2] shadow-lg shadow-blue-100'
                                                     : 'bg-white text-gray-400 border-gray-100 hover:border-[#0511F2]/20 hover:text-[#0511F2]'
-                                                    }`}
+                                                }`}
                                             >
                                                 {statusSequence.find(s => s.key === status)?.label || status.replace(/_/g, ' ')}
                                             </button>
@@ -777,6 +554,7 @@ export default function LeadDetailPage() {
                                     </div>
                                 </div>
 
+                                {/* OPERATIONS Domain */}
                                 <div>
                                     <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Dominio OPERATIONS</h4>
                                     <div className="grid grid-cols-1 gap-2">
@@ -788,7 +566,7 @@ export default function LeadDetailPage() {
                                                 className={`w-full py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${lead.status_flow.current === status
                                                     ? 'bg-[#26A3BF] text-white border-[#26A3BF] shadow-lg shadow-cyan-100'
                                                     : 'bg-white text-gray-400 border-gray-100 hover:border-[#26A3BF]/20 hover:text-[#26A3BF]'
-                                                    }`}
+                                                }`}
                                             >
                                                 {statusSequence.find(s => s.key === status)?.label || status.replace(/_/g, ' ')}
                                             </button>
@@ -796,6 +574,7 @@ export default function LeadDetailPage() {
                                     </div>
                                 </div>
 
+                                {/* SUPPORT Domain */}
                                 <div>
                                     <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Dominio SUPPORT</h4>
                                     <div className="grid grid-cols-1 gap-2">
@@ -807,7 +586,7 @@ export default function LeadDetailPage() {
                                                 className={`w-full py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${lead.status_flow.current === status
                                                     ? 'bg-[#EE05F2] text-white border-[#EE05F2] shadow-lg shadow-pink-100'
                                                     : 'bg-white text-gray-400 border-gray-100 hover:border-[#EE05F2]/20 hover:text-[#EE05F2]'
-                                                    }`}
+                                                }`}
                                             >
                                                 {statusSequence.find(s => s.key === status)?.label || status.replace(/_/g, ' ')}
                                             </button>

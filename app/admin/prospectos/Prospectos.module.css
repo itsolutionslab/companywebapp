@@ -1,0 +1,332 @@
+/* Prospectos Main Page Styles */
+.pageContainer {
+  padding-bottom: 5rem;
+  animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.loadingBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.spinner {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  border: 3px solid var(--admin-surface);
+  border-top-color: var(--admin-primary);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Domain Header Badge */
+.domainBadgeHeader {
+  padding: 1rem 1.5rem;
+  background: rgba(5, 17, 242, 0.05);
+  border-radius: var(--admin-radius-xl);
+  border: 1px solid rgba(5, 17, 242, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.domainInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.domainIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  background: white;
+  border-radius: var(--admin-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  shadow: var(--admin-shadow-sm);
+}
+
+.domainTitle {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--admin-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.domainSubtitle {
+  font-size: 10px;
+  color: var(--admin-text-light);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.125rem;
+}
+
+.countIndicator {
+  display: none;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .countIndicator { display: flex; }
+}
+
+.countText {
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--admin-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.pulseDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--admin-primary);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.5; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Modal Specifics */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modalContent {
+  width: 100%;
+  max-width: 700px;
+  background: white;
+  border-radius: 2.5rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modalIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalIn {
+  from { transform: scale(0.95) translateY(20px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.modalHeader {
+  padding: 2.5rem 2.5rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.modalClose {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--admin-surface);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--admin-transition);
+}
+
+.modalClose:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.formContainer {
+  padding: 0 2.5rem 2.5rem;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .formGrid { grid-template-columns: 1fr 1fr; }
+}
+
+/* Proportionality for Mobile */
+@media (max-width: 768px) {
+  .pageContainer { padding: 1rem; }
+  .domainBadgeHeader { padding: 0.75rem; border-radius: 1.25rem; }
+  .domainIcon { width: 2rem; height: 2rem; font-size: 1rem; }
+  .domainTitle { font-size: 10px; }
+  .domainSubtitle { font-size: 8px; }
+}
+
+/* Action Bar & Tabs */
+.actionBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.controlsGroup {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.toggleContainer {
+  display: flex;
+  background: var(--admin-surface);
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid var(--admin-border);
+}
+
+.toggleBtn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--admin-text-light);
+  cursor: pointer;
+  transition: var(--admin-transition);
+}
+
+.toggleBtnActive {
+  background: white;
+  color: var(--admin-primary);
+  box-shadow: 0 4px 10px rgba(5, 17, 242, 0.05);
+}
+
+.tabsPanel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  border-radius: 2.5rem;
+  border: 1px solid rgba(5, 17, 242, 0.05);
+  box-shadow: 0 10px 40px rgba(5, 17, 242, 0.05);
+  margin-top: 2rem;
+}
+
+@media (min-width: 768px) {
+  .tabsPanel {
+    flex-direction: row;
+    padding: 1rem 1.5rem;
+  }
+}
+
+.domainTabsGroup {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.domainTab {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 10px 20px;
+  border-radius: 1.25rem;
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--admin-text-light);
+  cursor: pointer;
+  transition: var(--admin-transition);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.domainTab:hover:not(.domainTabLocked) {
+  background: rgba(5, 17, 242, 0.03);
+  color: var(--admin-primary);
+}
+
+.domainTabActive {
+  background: white;
+  border-color: var(--admin-border);
+  color: var(--admin-primary);
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.domainTabLocked {
+  opacity: 0.3;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+.searchBox {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  opacity: 0.4;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 1rem 12px 2.75rem;
+  background: white;
+  border: 1px solid var(--admin-border);
+  border-radius: 1.25rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--admin-text-main);
+  transition: var(--admin-transition);
+  outline: none;
+}
+
+.searchInput:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 4px rgba(5, 17, 242, 0.05);
+}
+
+@media (max-width: 640px) {
+  .actionBar { flex-direction: column; align-items: stretch; gap: 1rem; }
+  .controlsGroup { justify-content: space-between; }
+  .tabsPanel { border-radius: 1.5rem; }
+  .domainTab { padding: 8px 12px; font-size: 9px; }
+  .searchBox { max-width: 100%; }
+}

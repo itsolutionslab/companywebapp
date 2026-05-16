@@ -17,6 +17,13 @@ export const ROLES_CONFIG: Record<string, RoleInfo> = {
         level: 10,
         allowedPaths: ['/admin/panel', '/admin/prospectos', '/admin/mensajes', '/admin/reservas', '/admin/horarios', '/admin/usuarios', '/admin/configuracion']
     },
+    'owner': {
+        id: 'owner',
+        pillar: 'ADMIN',
+        label: 'Owner',
+        level: 11,
+        allowedPaths: ['/admin/panel', '/admin/prospectos', '/admin/mensajes', '/admin/reservas', '/admin/horarios', '/admin/usuarios', '/admin/configuracion']
+    },
     'owneradmin': {
         id: 'owneradmin',
         pillar: 'ADMIN',

@@ -120,43 +120,50 @@ export default function AdminLayout({
     if (userRoleConfig && !isLoginPage) {
         // Super Admins (Owners/Admins) have a global bypass for all /admin paths
         const isSuperAdmin = userRoleConfig.pillar === 'ADMIN' || userRoleConfig.level >= 10;
-        const isAllowed = isSuperAdmin || (userRoleConfig.allowedPaths && userRoleConfig.allowedPaths.some((path: string) => currentAdminPath.startsWith(path)));
         
-        if (!isAllowed && currentAdminPath !== '/admin/panel') { 
-             const firstAllowed = userRoleConfig.allowedPaths[0] || '/admin/panel';
+        // Specific bypass for basic paths that everyone should see or are transitionary
+        const isPublicAdminPath = currentAdminPath === '/admin/panel' || currentAdminPath === '/admin/ingreso';
+        
+        const isAllowed = isSuperAdmin || isPublicAdminPath || (userRoleConfig.allowedPaths && userRoleConfig.allowedPaths.some((path: string) => currentAdminPath.startsWith(path)));
+        
+        if (!isAllowed) { 
+             const firstAllowed = (userRoleConfig.allowedPaths && userRoleConfig.allowedPaths[0]) || '/admin/panel';
+             const sectionName = currentAdminPath.split('/').pop()?.toUpperCase() || 'ESTA SECCIÓN';
              
              return (
                 <div className="min-h-screen flex items-center justify-center bg-[#F8F9FA] p-6">
                     <div className="max-w-md w-full bg-white rounded-[3rem] shadow-2xl shadow-blue-900/5 p-12 text-center border border-gray-100 animate-in zoom-in duration-500">
-                        <div className="w-24 h-24 bg-red-50 rounded-[2rem] flex items-center justify-center mx-auto mb-8 relative">
-                            <span className="text-4xl">🛡️</span>
-                            <div className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-pulse">!</div>
+                        <div className="w-24 h-24 bg-orange-50 rounded-[2rem] flex items-center justify-center mx-auto mb-8 relative">
+                            <span className="text-4xl">🔐</span>
+                            <div className="absolute -top-2 -right-2 w-8 h-8 bg-[#0511F2] rounded-full flex items-center justify-center text-white text-xs font-bold animate-pulse">!</div>
                         </div>
                         
-                        <h1 className="text-3xl font-black text-gray-900 mb-4 tracking-tight uppercase font-heading">Acceso Restringido</h1>
+                        <h1 className="text-3xl font-black text-gray-900 mb-4 tracking-tight uppercase font-heading">Acceso Privado</h1>
                         
                         <div className="bg-gray-50 rounded-2xl p-6 mb-8 border border-gray-100">
                             <p className="text-sm text-gray-500 font-medium leading-relaxed">
-                                Lo sentimos, tu perfil de <span className="text-[#0511F2] font-black">{userRoleConfig.label}</span> no tiene los privilegios necesarios para acceder a esta sección.
+                                Hola <span className="text-[#0511F2] font-black">{userRoleConfig.label}</span>. 
+                                Tu nivel de acceso actual no permite visualizar <span className="text-[#EE05F2] font-black">{sectionName}</span>.
                             </p>
+                            <p className="text-[10px] text-gray-400 mt-3 uppercase font-black tracking-widest">Consulta con un administrador si crees que esto es un error.</p>
                         </div>
 
                         <div className="flex flex-col gap-3">
                             <button
                                 onClick={() => router.push(firstAllowed)}
                                 className="w-full py-4 bg-[#0511F2] text-white rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-blue-200 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                            >
-                                Volver a Mi Espacio
+                             >
+                                Ir a mi área permitida
                             </button>
                             <button
                                 onClick={() => router.push('/admin/panel')}
                                 className="w-full py-4 bg-white text-gray-400 rounded-2xl font-black uppercase tracking-widest text-[11px] border border-gray-100 hover:bg-gray-50 transition-all"
                             >
-                                Ir al Panel Principal
+                                Panel de Control
                             </button>
                         </div>
 
-                        <p className="mt-8 text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">Brecomperu Security Protocol v2.0</p>
+                        <p className="mt-8 text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">Brecomperu Security Protocol v2.1</p>
                     </div>
                 </div>
             );

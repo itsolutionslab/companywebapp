@@ -14,6 +14,8 @@ import PipelineBoard from "@/components/admin/PipelineBoard";
 export type ViewMode = 'PIPELINE' | 'TABLE';
 export type Domain = 'GROW' | 'OPERATIONS' | 'SUPPORT';
 
+import styles from "./Prospectos.module.css";
+
 export default function ProspectosPage() {
     const { t } = useTranslation();
     const { showNotification } = useNotification();
@@ -47,24 +49,21 @@ export default function ProspectosPage() {
             setLoading(false);
         });
 
-        // Fetch user role for access control with auth listener
         const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
             if (user) {
                 try {
                     const userDoc = await getDoc(doc(db, "users", user.uid));
                     if (userDoc.exists()) {
                         const roleId = userDoc.data().role;
-                        // Try matching case-insensitively
-                        const config = ROLES_CONFIG[roleId] || 
-                                     ROLES_CONFIG[roleId?.toUpperCase()] || 
-                                     ROLES_CONFIG[roleId?.toLowerCase()];
-                        
+                        const config = ROLES_CONFIG[roleId] ||
+                            ROLES_CONFIG[roleId?.toUpperCase()] ||
+                            ROLES_CONFIG[roleId?.toLowerCase()];
+
                         if (config) {
                             setUserRole(roleId);
                             setUserPillar(config.pillar as any);
                             setUserLevel(config.level);
-                            
-                            // Auto-select domain based on pillar
+
                             if (config.pillar === 'GROW' || config.pillar === 'OPERATIONS' || config.pillar === 'SUPPORT') {
                                 setActiveDomain(config.pillar as Domain);
                             }
@@ -83,7 +82,7 @@ export default function ProspectosPage() {
     }, []);
 
     const canSwitchDomain = useMemo(() => {
-        if (!userPillar) return true; // Loading or admin
+        if (!userPillar) return true;
         if (userPillar === 'ADMIN' || userLevel >= 6) return true;
         return false;
     }, [userPillar, userLevel]);
@@ -125,13 +124,13 @@ export default function ProspectosPage() {
 
     const getStatusColor = (status: LeadStatus) => {
         const s = status as string;
-        if (s.includes('LOST') || s.includes('CLOSED')) return 'bg-gray-100 text-gray-500 border-gray-200';
-        if (s.includes('WIN') || s.includes('ACCEPTANCE')) return 'bg-[#6FD904]/10 text-[#6FD904] border-[#6FD904]/20';
-        if (s.startsWith('LEAD_') || s === 'QUALIFICATION' || s === 'CONTACTED') return 'bg-[#0511F2]/10 text-[#0511F2] border-[#0511F2]/20';
-        if (s.includes('DISCOVERY') || s.includes('PROPOSAL')) return 'bg-[#EE05F2]/10 text-[#EE05F2] border-[#EE05F2]/20';
-        if (s.includes('PROJECT') || s.includes('EXECUTION')) return 'bg-[#26A3BF]/10 text-[#26A3BF] border-[#26A3BF]/20';
-        if (s === 'KICK_OFF') return 'bg-[#EE05F2] text-white border-transparent shadow-md shadow-pink-200';
-        return 'bg-gray-50 text-gray-400 border-gray-100';
+        if (s.includes('LOST') || s.includes('CLOSED')) return 'admin-badge-gray';
+        if (s.includes('WIN') || s.includes('ACCEPTANCE')) return 'admin-badge-success';
+        if (s.startsWith('LEAD_') || s === 'QUALIFICATION' || s === 'CONTACTED') return 'admin-badge-primary';
+        if (s.includes('DISCOVERY') || s.includes('PROPOSAL')) return 'admin-badge-accent';
+        if (s.includes('PROJECT') || s.includes('EXECUTION')) return 'admin-badge-secondary';
+        if (s === 'KICK_OFF') return 'admin-badge-accent';
+        return 'admin-badge-gray';
     };
 
     const handleCreateLead = async (e: React.FormEvent) => {
@@ -139,7 +138,7 @@ export default function ProspectosPage() {
         setCreateLoading(true);
         try {
             const newStatus: LeadStatus = formData.start_kickoff ? 'KICK_OFF' : 'LEAD_NEW';
-            
+
             const leadToCreate: Partial<Lead> = {
                 data: {
                     name: formData.name,
@@ -168,12 +167,12 @@ export default function ProspectosPage() {
             await createLead(leadToCreate);
             showNotification("Prospecto creado exitosamente", "success");
             setIsCreating(false);
-            setFormData({ 
-                name: '', 
-                email: '', 
-                phone: '', 
-                company: '', 
-                project_desc: '', 
+            setFormData({
+                name: '',
+                email: '',
+                phone: '',
+                company: '',
+                project_desc: '',
                 start_kickoff: false,
                 delivery_model: 'ADVISORY' as DeliveryModel,
                 capability: 'SOFTWARE' as Capability
@@ -187,42 +186,48 @@ export default function ProspectosPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0511F2]"></div>
+            <div className={styles.loadingBox}>
+                <div className={styles.spinner}></div>
             </div>
         );
     }
 
-    return (
-        <div className="space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-            {/* Header */}
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 px-2 relative">
-                <div>
-                    <div className="admin-decorator-line mb-4"></div>
-                    <h1 className="admin-h1 text-4xl mb-2">Sistema Operativo de Consultoría</h1>
-                    <p className="admin-subtitle text-gray-500 font-medium">Gestión integral del ciclo de vida del cliente: Consigue, Construye y Sostiene</p>
-                </div>
+    const statusLabels: Record<LeadStatus, string> = {
+        LEAD_NEW: 'Nuevo Lead', QUALIFICATION: 'Calificación', CONTACTED: 'Contactado',
+        DISCOVERY_SCHEDULED: 'D. Agendado', DISCOVERY_COMPLETED: 'D. Completado',
+        PROPOSAL_PREPARING: 'Prep. Propuesta', PROPOSAL_SENT: 'Propuesta Enviada',
+        NEGOTIATION: 'Negociación', WIN_CLOSED: 'Venta Ganada', LOST: 'Perdido', ON_HOLD: 'Espera',
+        HANDOFF: 'Handoff', PROJECT_CREATED: 'Setup', KICK_OFF: 'Kick-off',
+        INCEPTION_SPRINT_0: 'Inception', IN_EXECUTION: 'Ejecución', QA_UAT: 'QA / UAT',
+        DELIVERY: 'Entrega', CLIENT_ACCEPTANCE: 'Aceptación', TECHNICAL_CLOSURE: 'Cierre Téc.',
+        ADMIN_CLOSURE: 'Cierre Adm.', CLOSED: 'Cerrado', HYPERCARE: 'Hypercare',
+        ACTIVE_SUPPORT: 'Soporte Activo', EVOLUTIVE: 'Evolutivo', RENEWAL: 'Renovación',
+        ACCOUNT_EXPANDED: 'Expansión', ACCOUNT_CLOSED: 'Finalizado'
+    };
 
-                <div className="flex flex-wrap items-center gap-4">
+    return (
+        <div className={styles.pageContainer}>
+            {/* Header */}
+            <div className={styles.actionBar}>
+                <div className={styles.controlsGroup}>
                     <button
                         onClick={() => setIsCreating(true)}
-                        className="admin-btn admin-btn-primary shadow-xl shadow-pink-200 uppercase"
+                        className="admin-btn admin-btn-primary"
                     >
                         <span>➕</span>
                         NUEVO LEAD
                     </button>
 
-                    {/* View Toggle */}
-                    <div className="bg-gray-50 p-1.5 rounded-[2rem] flex items-center border border-gray-100 shadow-inner">
+                    <div className={styles.toggleContainer}>
                         <button
                             onClick={() => setViewMode('PIPELINE')}
-                            className={`px-6 py-3 rounded-2xl text-[10px] font-black tracking-widest transition-all duration-500 uppercase ${viewMode === 'PIPELINE' ? 'bg-[#0511F2] text-white shadow-xl shadow-blue-200 scale-[1.05]' : 'text-gray-400 hover:text-[#0511F2]'}`}
+                            className={`${styles.toggleBtn} ${viewMode === 'PIPELINE' ? styles.toggleBtnActive : ''}`}
                         >
                             PIPELINE
                         </button>
                         <button
                             onClick={() => setViewMode('TABLE')}
-                            className={`px-6 py-3 rounded-2xl text-[10px] font-black tracking-widest transition-all duration-500 uppercase ${viewMode === 'TABLE' ? 'bg-[#0511F2] text-white shadow-xl shadow-blue-200 scale-[1.05]' : 'text-gray-400 hover:text-[#0511F2]'}`}
+                            className={`${styles.toggleBtn} ${viewMode === 'TABLE' ? styles.toggleBtnActive : ''}`}
                         >
                             TABLA
                         </button>
@@ -231,8 +236,8 @@ export default function ProspectosPage() {
             </div>
 
             {/* Domain Navigation Tabs */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                <div className="flex bg-gray-50 p-1.5 rounded-[2rem] w-full md:w-auto">
+            <div className={styles.tabsPanel}>
+                <div className={styles.domainTabsGroup}>
                     {(['GROW', 'OPERATIONS', 'SUPPORT'] as Domain[]).map((domain) => {
                         const isLocked = !canSwitchDomain && userPillar !== domain;
                         return (
@@ -240,54 +245,45 @@ export default function ProspectosPage() {
                                 key={domain}
                                 disabled={isLocked}
                                 onClick={() => setActiveDomain(domain)}
-                                className={`flex-1 md:flex-none px-8 py-4 rounded-[1.5rem] text-[11px] font-black tracking-[0.2em] transition-all duration-500 uppercase flex items-center justify-center gap-2 ${activeDomain === domain 
-                                    ? 'bg-white text-[#0511F2] shadow-lg shadow-blue-900/5 scale-[1.02]' 
-                                    : isLocked 
-                                        ? 'text-gray-300 cursor-not-allowed opacity-50'
-                                        : 'text-gray-400 hover:text-gray-600'}`}
+                                className={`${styles.domainTab} ${activeDomain === domain ? styles.domainTabActive : ''} ${isLocked ? styles.domainTabLocked : ''}`}
                             >
-                                {domain === 'GROW' && '🚀 '}
-                                {domain === 'OPERATIONS' && '🛠️ '}
-                                {domain === 'SUPPORT' && '💎 '}
+                                <span>{domain === 'GROW' ? '📈' : domain === 'OPERATIONS' ? '⚙️' : '🤝'}</span>
                                 {domain}
-                                {isLocked && <span className="text-[10px]">🔒</span>}
                             </button>
                         );
                     })}
                 </div>
 
-                <div className="flex items-center gap-4 w-full md:w-auto">
-                    <div className="relative group flex-grow">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm transition-colors group-focus-within:text-[#EE05F2]">🔍</span>
-                        <input
-                            type="text"
-                            placeholder={`Buscar en ${activeDomain}...`}
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="admin-input !pl-11 w-full md:w-72 !bg-gray-50 border-transparent focus:!bg-white focus:!border-gray-200"
-                        />
-                    </div>
+                <div className={styles.searchBox}>
+                    <span className={styles.searchIcon}>🔍</span>
+                    <input
+                        type="text"
+                        placeholder="Buscar por cliente o empresa..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className={styles.searchInput}
+                    />
                 </div>
             </div>
 
             {/* Domain Info Header */}
-            <div className="px-6 py-4 bg-[#0511F2]/5 rounded-[2rem] border border-[#0511F2]/10 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-xl shadow-sm">
+            <div className={styles.domainBadgeHeader}>
+                <div className={styles.domainInfo}>
+                    <div className={styles.domainIcon}>
                         {activeDomain === 'GROW' ? '📈' : activeDomain === 'OPERATIONS' ? '⚙️' : '🤝'}
                     </div>
                     <div>
-                        <h3 className="text-[12px] font-black text-[#0511F2] uppercase tracking-[0.2em]">
+                        <h3 className={styles.domainTitle}>
                             {activeDomain === 'GROW' ? 'Dominio de Crecimiento (Ventas)' : activeDomain === 'OPERATIONS' ? 'Dominio de Operaciones (Delivery)' : 'Dominio de Soporte (Continuidad)'}
                         </h3>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                        <p className={styles.domainSubtitle}>
                             {activeDomain === 'GROW' ? 'Convierte leads en contratos cerrados' : activeDomain === 'OPERATIONS' ? 'Garantiza la entrega de valor y calidad técnica' : 'Fomenta la retención y expansión de cuentas'}
                         </p>
                     </div>
                 </div>
-                <div className="hidden md:flex items-center gap-3">
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{filteredLeads.length} Items Encontrados</span>
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#0511F2] animate-pulse"></div>
+                <div className={styles.countIndicator}>
+                    <span className={styles.countText}>{filteredLeads.length} Items Encontrados</span>
+                    <div className={styles.pulseDot}></div>
                 </div>
             </div>
 
@@ -302,7 +298,7 @@ export default function ProspectosPage() {
                     }}
                 />
             ) : (
-                <div className="admin-table-container shadow-sm animate-in fade-in duration-500">
+                <div className="admin-table-container">
                     <table className="admin-table">
                         <thead>
                             <tr>
@@ -310,57 +306,55 @@ export default function ProspectosPage() {
                                 <th>Estado Actual</th>
                                 <th>Origen & Región</th>
                                 <th>Métricas</th>
-                                <th className="text-right">Gestión</th>
+                                <th style={{ textAlign: 'right' }}>Gestión</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredLeads.map((lead) => (
-                                <tr key={lead.lead_id} className="group">
+                                <tr key={lead.lead_id}>
                                     <td>
-                                        <div className="flex flex-col">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-black text-gray-900 group-hover:text-[#0511F2] transition-colors uppercase text-[13px] tracking-tight">
+                                        <div className="admin-table-entity">
+                                            <div className="admin-table-row-title">
+                                                <Link href={`/admin/prospectos/${lead.lead_id}`} className="admin-table-name">
                                                     {lead.data?.name || 'Sin Nombre'}
-                                                </span>
+                                                </Link>
                                                 {lead.data?.company && (
-                                                    <span className="text-[9px] font-black bg-gray-100 text-gray-500 px-2 py-0.5 rounded-md tracking-widest uppercase">{lead.data.company}</span>
+                                                    <span className="admin-table-company-badge">{lead.data.company}</span>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-2 mt-1.5">
-                                                <span className="text-[11px] text-gray-400 font-bold tracking-tight truncate max-w-[200px]">
-                                                    {lead.data?.email || lead.data?.phone || 'Sin contacto'}
-                                                </span>
+                                            <div className="admin-table-contact-info">
+                                                {lead.data?.email || lead.data?.phone || 'Sin contacto'}
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <span className={`admin-badge !py-1.5 !px-4 !text-[9px] !font-black !tracking-widest ${getStatusColor(lead.status_flow.current)}`}>
-                                            {lead.status_flow.current.replace(/_/g, ' ')}
+                                        <span className={`admin-badge ${getStatusColor(lead.status_flow.current)}`} style={{ padding: '0.4rem 1rem', fontSize: '9px' }}>
+                                            {statusLabels[lead.status_flow.current] || lead.status_flow.current}
                                         </span>
                                     </td>
                                     <td>
-                                        <div className="flex flex-col">
-                                            <span className="text-[11px] font-bold text-gray-600">{lead.source_attribution.landing_page?.split('_')[0] || 'Directo'}</span>
-                                            <span className="text-[9px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1">
+                                        <div className="admin-table-meta-box">
+                                            <span className="admin-table-meta-primary">{lead.source_attribution.landing_page?.split('_')[0] || 'Directo'}</span>
+                                            <span className="admin-table-meta-secondary">
                                                 {lead.data?.region || 'Global'} / {lead.source_attribution.utm_source || 'Organic'}
                                             </span>
                                         </div>
                                     </td>
                                     <td>
-                                        <div className="flex flex-col">
-                                            <span className="text-[11px] font-bold text-gray-600">
+                                        <div className="admin-table-meta-box">
+                                            <span className="admin-table-meta-primary">
                                                 {lead.kpis?.clicks_count || 0} clics • {Math.round((lead.kpis?.session_duration || 0) / 60)}m
                                             </span>
-                                            <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">
+                                            <span className="admin-table-meta-secondary">
                                                 Creado: {new Date(lead.audit_logs?.created_at?.toDate?.() ||
                                                     (lead.audit_logs?.created_at ? new Date(lead.audit_logs?.created_at) : new Date())).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
                                             </span>
                                         </div>
                                     </td>
-                                    <td className="text-right">
+                                    <td style={{ textAlign: 'right' }}>
                                         <Link
                                             href={`/admin/prospectos/${lead.lead_id}`}
-                                            className="inline-flex items-center justify-center w-12 h-12 rounded-[1.25rem] bg-gray-50 text-gray-400 hover:bg-[#0511F2] hover:text-white transition-all border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-blue-200"
+                                            className="admin-table-action-btn"
                                         >
                                             👁️
                                         </Link>
@@ -369,14 +363,12 @@ export default function ProspectosPage() {
                             ))}
                         </tbody>
                     </table>
-                    
+
                     {filteredLeads.length === 0 && (
-                        <div className="py-24 text-center relative overflow-hidden">
-                            <div className="w-24 h-24 bg-gray-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-inner border border-gray-100">
-                                <span className="text-4xl grayscale opacity-50">🏜️</span>
-                            </div>
-                            <h3 className="text-xl font-black text-[#0511F2] font-heading uppercase tracking-tight">No hay leads en este dominio</h3>
-                            <p className="text-gray-400 text-sm font-medium mt-2">Prueba cambiando de dominio o ajustando tu búsqueda</p>
+                        <div style={{ textAlign: 'center', padding: '5rem 0' }}>
+                            <span style={{ fontSize: '3rem', display: 'block', marginBottom: '1.5rem' }}>🏜️</span>
+                            <h3 className="admin-h3" style={{ fontSize: '1.25rem', color: 'var(--admin-primary)' }}>No hay leads en este dominio</h3>
+                            <p className="admin-subtitle" style={{ fontSize: '0.85rem' }}>Prueba cambiando de dominio o ajustando tu búsqueda</p>
                         </div>
                     )}
                 </div>
@@ -384,52 +376,50 @@ export default function ProspectosPage() {
 
             {/* Create Prospect Modal */}
             {isCreating && (
-                <div className="admin-modal-overlay animate-in fade-in duration-300">
-                    <div className="admin-modal animate-in zoom-in-95 duration-300 !p-10 relative overflow-hidden max-w-2xl">
-                        <div className="diagonal-accent !opacity-10"></div>
-                        <div className="flex justify-between items-start mb-10 relative z-10">
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalContent}>
+                        <div className="diagonal-accent" style={{ opacity: 0.1 }}></div>
+
+                        <div className={styles.modalHeader}>
                             <div>
-                                <div className="admin-decorator-line mb-4 w-16"></div>
-                                <h2 className="text-3xl font-black text-[#0511F2] tracking-tighter uppercase font-heading">Capturar Nuevo Lead</h2>
-                                <p className="text-gray-400 text-[11px] font-black uppercase tracking-[0.2em] mt-2">Inicia el flujo de preventa manualmente</p>
+                                <div className="admin-decorator-line" style={{ width: '4rem', marginBottom: '1rem' }}></div>
+                                <h2 className="admin-modal-title">Capturar Nuevo Lead</h2>
+                                <p className="admin-modal-subtitle">Inicia el flujo de preventa manualmente</p>
                             </div>
-                            <button 
-                                onClick={() => setIsCreating(false)} 
-                                className="w-12 h-12 rounded-[1.25rem] flex items-center justify-center text-gray-400 hover:text-[#EE05F2] hover:bg-pink-50 transition-all border border-transparent hover:border-pink-100"
-                            >
-                                <span className="text-xl">✕</span>
-                            </button>
+                            <button onClick={() => setIsCreating(false)} className={styles.modalClose}>✕</button>
                         </div>
 
-                        <form onSubmit={handleCreateLead} className="space-y-8 relative z-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <form onSubmit={handleCreateLead} className={styles.formContainer}>
+                            <div className={styles.formGrid}>
                                 <div className="admin-input-group">
-                                    <label className="admin-label">Nombre Completo</label>
+                                    <label className="admin-label">Nombre del Contacto</label>
                                     <input
-                                        required
                                         type="text"
-                                        placeholder="Ej: Alessandro De Piero"
+                                        required
+                                        placeholder="Ej. Juan Pérez"
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                         className="admin-input"
                                     />
                                 </div>
                                 <div className="admin-input-group">
-                                    <label className="admin-label">Empresa</label>
+                                    <label className="admin-label">Nombre de Empresa</label>
                                     <input
                                         type="text"
-                                        placeholder="Compañía / Organización"
+                                        placeholder="Ej. Brecomp"
                                         value={formData.company}
                                         onChange={e => setFormData({ ...formData, company: e.target.value })}
                                         className="admin-input"
                                     />
                                 </div>
+                            </div>
+
+                            <div className={styles.formGrid} style={{ marginTop: '1.5rem' }}>
                                 <div className="admin-input-group">
                                     <label className="admin-label">Email Corporativo</label>
                                     <input
-                                        required
                                         type="email"
-                                        placeholder="nombre@dominio.com"
+                                        placeholder="juan@empresa.com"
                                         value={formData.email}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
                                         className="admin-input"
@@ -447,22 +437,22 @@ export default function ProspectosPage() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className={styles.formGrid} style={{ marginTop: '1.5rem' }}>
                                 <div className="admin-input-group">
-                                    <label className="admin-label">Modelo de Entrega (Delivery Model)</label>
+                                    <label className="admin-label">Modelo de Entrega</label>
                                     <select
                                         value={formData.delivery_model}
                                         onChange={e => setFormData({ ...formData, delivery_model: e.target.value as DeliveryModel })}
                                         className="admin-input"
                                     >
-                                        <option value="ADVISORY">🧠 ADVISORY (Consultoría / Estrategia)</option>
-                                        <option value="IMPLEMENTATION">⚙️ IMPLEMENTATION (Desarrollo / Ejecución)</option>
-                                        <option value="MANAGED_SERVICES">🛠️ MANAGED SERVICES (Continuidad / Soporte)</option>
-                                        <option value="STAFF_AUGMENTATION">👥 STAFF AUGMENTATION (Talento Dedicado)</option>
+                                        <option value="ADVISORY">🧠 ADVISORY</option>
+                                        <option value="IMPLEMENTATION">⚙️ IMPLEMENTATION</option>
+                                        <option value="MANAGED_SERVICES">🛠️ MANAGED SERVICES</option>
+                                        <option value="STAFF_AUGMENTATION">👥 STAFF AUGMENTATION</option>
                                     </select>
                                 </div>
                                 <div className="admin-input-group">
-                                    <label className="admin-label">Capacidad (Capability)</label>
+                                    <label className="admin-label">Capacidad</label>
                                     <select
                                         value={formData.capability}
                                         onChange={e => setFormData({ ...formData, capability: e.target.value as Capability })}
@@ -480,50 +470,44 @@ export default function ProspectosPage() {
                                 </div>
                             </div>
 
-                            <div className="admin-input-group">
+                            <div className="admin-input-group" style={{ marginTop: '1.5rem' }}>
                                 <label className="admin-label">Necesidad / Dolor Detectado</label>
                                 <textarea
                                     rows={3}
-                                    placeholder="¿Qué problema estamos resolviendo? ¿Cuál es el interés principal?"
+                                    placeholder="¿Qué problema estamos resolviendo?"
                                     value={formData.project_desc}
                                     onChange={e => setFormData({ ...formData, project_desc: e.target.value })}
-                                    className="admin-input admin-textarea"
+                                    className="admin-input"
+                                    style={{ resize: 'vertical', minHeight: '80px' }}
                                 />
                             </div>
 
-                            <div className="bg-[#0511F2]/5 p-6 rounded-[2rem] border border-[#0511F2]/10 flex items-center justify-between group cursor-pointer" onClick={() => setFormData({ ...formData, start_kickoff: !formData.start_kickoff })}>
-                                <div className="flex items-center gap-5">
-                                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-6 border border-[#0511F2]/5">🚀</div>
-                                    <div>
-                                        <h4 className="text-sm font-black text-[#0511F2] uppercase tracking-widest">Salto Directo a Kick-off</h4>
-                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] mt-1">El proyecto ya ha sido vendido previamente</p>
-                                    </div>
+                            <div className="admin-form-toggle-card" style={{ marginTop: '1.5rem' }} onClick={() => setFormData({ ...formData, start_kickoff: !formData.start_kickoff })}>
+                                <div>
+                                    <h4 className="admin-label" style={{ margin: 0, fontSize: '13px' }}>Salto Directo a Kick-off</h4>
+                                    <p className="admin-modal-subtitle" style={{ margin: '4px 0 0 0' }}>El proyecto ya ha sido vendido previamente</p>
                                 </div>
-                                <div
-                                    className={`w-16 h-9 rounded-full transition-all relative shadow-inner ${formData.start_kickoff ? 'bg-[#6FD904]' : 'bg-gray-200'}`}
-                                >
-                                    <div className={`absolute top-1 w-7 h-7 bg-white rounded-full transition-all shadow-md ${formData.start_kickoff ? 'left-8' : 'left-1'}`} />
+                                <div className={`admin-toggle-switch ${formData.start_kickoff ? 'active' : ''}`}>
+                                    <div className="admin-toggle-knob" />
                                 </div>
                             </div>
 
-                            <div className="flex gap-4 pt-6">
+                            <div className="admin-form-actions" style={{ marginTop: '2rem' }}>
                                 <button
                                     type="button"
                                     onClick={() => setIsCreating(false)}
-                                    className="flex-1 admin-btn admin-btn-secondary !rounded-[1.5rem]"
+                                    className="admin-btn admin-btn-secondary"
+                                    style={{ flex: 1 }}
                                 >
                                     DESCARTAR
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={createLoading}
-                                    className="flex-[2] admin-btn admin-btn-primary shadow-2xl shadow-blue-900/10 !rounded-[1.5rem]"
+                                    className="admin-btn admin-btn-primary"
+                                    style={{ flex: 2 }}
                                 >
-                                    {createLoading ? (
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    ) : (
-                                        'GUARDAR EN PIPELINE'
-                                    )}
+                                    {createLoading ? '...' : 'GUARDAR EN PIPELINE'}
                                 </button>
                             </div>
                         </form>
