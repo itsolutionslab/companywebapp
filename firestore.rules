@@ -40,40 +40,36 @@ service cloud.firestore {
       return hasRole('employ');
     }
     
-    // New pillar roles with lead-access (Growth, Eng, Cloud, CS)
+    // New pillar roles with lead-access (GROW, OPERATIONS, SUPPORT) + Legacy Support
     function isGrowthRole() {
       return isSignedIn() && !isAnonymous() && getUserData().role in
-        ['GROWTH_L0','GROWTH_L1','GROWTH_L2','GROWTH_L3','GROWTH_L4','GROWTH_L5','GROWTH_L6'];
+        ['GROW_L0','GROW_L1','GROW_L2','GROW_L3','GROW_L4','GROW_L5',
+         'GROWTH_L0','GROWTH_L1','GROWTH_L2','GROWTH_L3','GROWTH_L4','GROWTH_L5'];
     }
 
-    function isEngineeringRole() {
+    function isOperationsRole() {
       return isSignedIn() && !isAnonymous() && getUserData().role in
-        ['ENG_L0','ENG_L1','ENG_L2','ENG_L3','ENG_L4'];
+        ['OPS_L0','OPS_L1','OPS_L2','OPS_L3','OPS_L4','OPS_L5',
+         'ENG_L0','ENG_L1','ENG_L2','ENG_L3','ENG_L4','ENG_L5',
+         'CLOUD_L0','CLOUD_L1'];
     }
 
-    function isCloudRole() {
+    function isSupportRole() {
       return isSignedIn() && !isAnonymous() && getUserData().role in
-        ['CLOUD_L0','CLOUD_L1','CLOUD_L2','CLOUD_L3','CLOUD_L4','CLOUD_L5'];
-    }
-
-    function isCSRole() {
-      return isSignedIn() && !isAnonymous() && getUserData().role in
-        ['CS_L0','CS_L1','CS_L2','CS_L3'];
+        ['SUP_L0','SUP_L1','SUP_L2','SUP_L3',
+         'CS_L0','CS_L1','CS_L2','CS_L3'];
     }
 
     // Any authenticated employee pillar with lead access
     function isAnyEmployee() {
-      return isSignedIn() && getUserData().role in ['staff', 'admin', 'owneradmin', 'employ',
-         'GROWTH_L0','GROWTH_L1','GROWTH_L2','GROWTH_L3','GROWTH_L4','GROWTH_L5','GROWTH_L6',
-         'ENG_L0','ENG_L1','ENG_L2','ENG_L3','ENG_L4',
-         'CLOUD_L0','CLOUD_L1','CLOUD_L2','CLOUD_L3','CLOUD_L4','CLOUD_L5',
-         'CS_L0','CS_L1','CS_L2','CS_L3'];
+      return isSignedIn() && (getUserData().role in ['staff', 'admin', 'owneradmin', 'employ']
+         || isGrowthRole() || isOperationsRole() || isSupportRole());
     }
 
-    // Roles that can access chat/messages (Growth, ENG_L4 Solutions Architect, CS)
+    // Roles that can access chat/messages (GROW, OPS_L4 Solutions Architect, SUPPORT)
     function canAccessChats() {
-      return isAdmin() || hasRole('staff') || isEmploy() || isGrowthRole() || isCSRole()
-        || (isSignedIn() && !isAnonymous() && getUserData().role == 'ENG_L4');
+      return isAdmin() || hasRole('staff') || isEmploy() || isGrowthRole() || isSupportRole()
+        || (isSignedIn() && !isAnonymous() && (getUserData().role == 'OPS_L4' || getUserData().role == 'ENG_L4'));
     }
 
     function canAccessWahaInbox() {

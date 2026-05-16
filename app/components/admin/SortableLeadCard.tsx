@@ -66,8 +66,18 @@ export function SortableLeadCard({ lead }: SortableLeadCardProps) {
                             <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#0511F2] to-blue-600 border-2 border-white shadow-md flex items-center justify-center text-[10px] font-black text-white uppercase">
                                 {lead.owner_id ? 'A' : '?'}
                             </div>
-                            <span className="text-[9px] font-black text-[#0511F2]/40 uppercase tracking-tighter">
+                            <span className="text-[9px] font-black text-[#0511F2]/40 uppercase tracking-tighter flex items-center gap-1.5">
                                 {lead.data?.region || 'GLOBAL'}
+                                <span className="text-[12px]">
+                                    {lead.data?.capability === 'SOFTWARE' && '💻'}
+                                    {lead.data?.capability === 'AI' && '🤖'}
+                                    {lead.data?.capability === 'MARKETING' && '📣'}
+                                    {lead.data?.capability === 'CLOUD' && '☁️'}
+                                    {lead.data?.capability === 'ERP' && '🏢'}
+                                    {lead.data?.capability === 'DATA' && '📊'}
+                                    {lead.data?.capability === 'PMO' && '📋'}
+                                    {lead.data?.capability === 'AUTOMATION' && '⚡'}
+                                </span>
                             </span>
                         </div>
                         <span className="text-[9px] font-black text-gray-300 uppercase bg-gray-50 px-2 py-1 rounded-md">

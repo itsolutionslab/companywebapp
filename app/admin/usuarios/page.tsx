@@ -69,14 +69,12 @@ export default function UsersPage() {
         switch (pillar) {
             case 'ADMIN':
                 return role === 'owneradmin' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' : 'bg-blue-600 text-white';
-            case 'GROWTH':
-                return 'bg-green-500 text-white';
-            case 'ENGINEERING':
-                return 'bg-indigo-600 text-white';
-            case 'CLOUD':
-                return 'bg-sky-500 text-white';
-            case 'CUSTOMER_SUCCESS':
-                return 'bg-teal-500 text-white';
+            case 'GROW':
+                return 'bg-[#0511F2] text-white';
+            case 'OPERATIONS':
+                return 'bg-[#26A3BF] text-white';
+            case 'SUPPORT':
+                return 'bg-[#EE05F2] text-white';
             default:
                 return 'bg-gray-400 text-white';
         }
@@ -490,26 +488,20 @@ export default function UsersPage() {
                                         <option value="staff">Personal General (Staff)</option>
                                     </optgroup>
                                     
-                                    <optgroup label="PILAR GROWTH">
-                                        {Object.values(ROLES_CONFIG).filter(r => r.pillar === 'GROWTH').map(r => (
+                                    <optgroup label="DOMINIO GROW">
+                                        {Object.values(ROLES_CONFIG).filter(r => r.pillar === 'GROW').map(r => (
                                             <option key={r.id} value={r.id}>{r.label}</option>
                                         ))}
                                     </optgroup>
 
-                                    <optgroup label="PILAR ENGINEERING">
-                                        {Object.values(ROLES_CONFIG).filter(r => r.pillar === 'ENGINEERING').map(r => (
+                                    <optgroup label="DOMINIO OPERATIONS">
+                                        {Object.values(ROLES_CONFIG).filter(r => r.pillar === 'OPERATIONS').map(r => (
                                             <option key={r.id} value={r.id}>{r.label}</option>
                                         ))}
                                     </optgroup>
 
-                                    <optgroup label="CLOUD & INFRASTRUCTURE">
-                                        {Object.values(ROLES_CONFIG).filter(r => r.pillar === 'CLOUD').map(r => (
-                                            <option key={r.id} value={r.id}>{r.label}</option>
-                                        ))}
-                                    </optgroup>
-
-                                    <optgroup label="CUSTOMER SUCCESS">
-                                        {Object.values(ROLES_CONFIG).filter(r => r.pillar === 'CUSTOMER_SUCCESS').map(r => (
+                                    <optgroup label="DOMINIO SUPPORT">
+                                        {Object.values(ROLES_CONFIG).filter(r => r.pillar === 'SUPPORT').map(r => (
                                             <option key={r.id} value={r.id}>{r.label}</option>
                                         ))}
                                     </optgroup>
@@ -585,33 +577,25 @@ export default function UsersPage() {
                                         <option value="staff">Personal General (Staff)</option>
                                     </optgroup>
                                     
-                                    <optgroup label="PILAR GROWTH">
+                                    <optgroup label="DOMINIO GROW">
                                         {Object.values(ROLES_CONFIG)
-                                            .filter(r => r.pillar === 'GROWTH' && (getRoleLevel(currentUserRole) > r.level || currentUserRole === 'owneradmin'))
+                                            .filter(r => r.pillar === 'GROW' && (getRoleLevel(currentUserRole) > r.level || currentUserRole === 'owneradmin'))
                                             .map(r => (
                                                 <option key={r.id} value={r.id}>{r.label}</option>
                                             ))}
                                     </optgroup>
 
-                                    <optgroup label="PILAR ENGINEERING">
+                                    <optgroup label="DOMINIO OPERATIONS">
                                         {Object.values(ROLES_CONFIG)
-                                            .filter(r => r.pillar === 'ENGINEERING' && (getRoleLevel(currentUserRole) > r.level || currentUserRole === 'owneradmin'))
+                                            .filter(r => r.pillar === 'OPERATIONS' && (getRoleLevel(currentUserRole) > r.level || currentUserRole === 'owneradmin'))
                                             .map(r => (
                                                 <option key={r.id} value={r.id}>{r.label}</option>
                                             ))}
                                     </optgroup>
 
-                                    <optgroup label="CLOUD & INFRASTRUCTURE">
+                                    <optgroup label="DOMINIO SUPPORT">
                                         {Object.values(ROLES_CONFIG)
-                                            .filter(r => r.pillar === 'CLOUD' && (getRoleLevel(currentUserRole) > r.level || currentUserRole === 'owneradmin'))
-                                            .map(r => (
-                                                <option key={r.id} value={r.id}>{r.label}</option>
-                                            ))}
-                                    </optgroup>
-
-                                    <optgroup label="CUSTOMER SUCCESS">
-                                        {Object.values(ROLES_CONFIG)
-                                            .filter(r => r.pillar === 'CUSTOMER_SUCCESS' && (getRoleLevel(currentUserRole) > r.level || currentUserRole === 'owneradmin'))
+                                            .filter(r => r.pillar === 'SUPPORT' && (getRoleLevel(currentUserRole) > r.level || currentUserRole === 'owneradmin'))
                                             .map(r => (
                                                 <option key={r.id} value={r.id}>{r.label}</option>
                                             ))}

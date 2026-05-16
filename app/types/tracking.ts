@@ -1,16 +1,36 @@
 export type LeadStatus =
-    | 'NEW'
-    | 'QUALIFIED'
+    // GROW (Comercial)
+    | 'LEAD_NEW'
+    | 'QUALIFICATION'
     | 'CONTACTED'
     | 'DISCOVERY_SCHEDULED'
     | 'DISCOVERY_COMPLETED'
     | 'PROPOSAL_PREPARING'
     | 'PROPOSAL_SENT'
     | 'NEGOTIATION'
-    | 'WON'
+    | 'WIN_CLOSED'
     | 'LOST'
     | 'ON_HOLD'
-    | 'KICK_OFF';
+    // OPERATIONS (Delivery)
+    | 'HANDOFF'
+    | 'PROJECT_CREATED'
+    | 'KICK_OFF'
+    | 'INCEPTION_SPRINT_0'
+    | 'IN_EXECUTION'
+    | 'QA_UAT'
+    | 'DELIVERY'
+    | 'CLIENT_ACCEPTANCE'
+    | 'TECHNICAL_CLOSURE'
+    | 'ADMIN_CLOSURE'
+    | 'CLOSED'
+    // SUPPORT (Post-venta)
+    | 'HYPERCARE'
+    | 'ACTIVE_SUPPORT'
+    | 'EVOLUTIVE'
+    | 'RENEWAL'
+    | 'ACCOUNT_EXPANDED'
+
+    | 'ACCOUNT_CLOSED';
 
 export interface LeadEvent {
     id: string;
@@ -38,6 +58,9 @@ export interface StatusHistory {
     notes?: string;
 }
 
+export type DeliveryModel = 'ADVISORY' | 'IMPLEMENTATION' | 'MANAGED_SERVICES' | 'STAFF_AUGMENTATION';
+export type Capability = 'SOFTWARE' | 'AI' | 'MARKETING' | 'CLOUD' | 'ERP' | 'DATA' | 'PMO' | 'AUTOMATION';
+
 export interface LeadData {
     name?: string;
     company?: string;
@@ -55,6 +78,8 @@ export interface LeadData {
     file_url?: string;
     service_interest?: string; // Legacy
     service_interests?: string[]; // New multiselect
+    delivery_model?: DeliveryModel;
+    capability?: Capability;
     budget_range?: string; // Legacy?
     region?: string;
     origin?: 'web_page' | 'admin_panel';

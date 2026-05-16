@@ -92,18 +92,37 @@ export default function LeadDetailPage() {
     }
 
     const statusSequence: { key: LeadStatus; label: string; color: string }[] = [
+        // GROW
+        { key: 'LEAD_NEW', label: '🚀 Nuevo Lead', color: 'bg-[#0511F2]' },
+        { key: 'QUALIFICATION', label: '⚖️ Calificación', color: 'bg-[#26A3BF]' },
+        { key: 'CONTACTED', label: '📞 Contactado', color: 'bg-[#0511F2]/80' },
+        { key: 'DISCOVERY_SCHEDULED', label: '📅 Discovery Agendado', color: 'bg-[#EE05F2]/70' },
+        { key: 'DISCOVERY_COMPLETED', label: '✅ Discovery Completado', color: 'bg-[#EE05F2]/90' },
+        { key: 'PROPOSAL_PREPARING', label: '📝 Propuesta en Prep.', color: 'bg-[#EAF207]' },
+        { key: 'PROPOSAL_SENT', label: '📧 Propuesta Enviada', color: 'bg-[#26A3BF]/80' },
+        { key: 'NEGOTIATION', label: '🤝 Negociación', color: 'bg-[#EE05F2]/50' },
+        { key: 'WIN_CLOSED', label: '🏆 Venta Cerrada', color: 'bg-[#6FD904]' },
+        { key: 'LOST', label: '❌ Perdido', color: 'bg-gray-400' },
+        { key: 'ON_HOLD', label: '⏳ En Espera', color: 'bg-gray-200' },
+        // OPERATIONS
+        { key: 'HANDOFF', label: '🤝 Handoff', color: 'bg-[#0511F2]/60' },
+        { key: 'PROJECT_CREATED', label: '🏗️ Proyecto Creado', color: 'bg-[#26A3BF]/60' },
         { key: 'KICK_OFF', label: '🚀 Kick-off', color: 'bg-[#EE05F2]' },
-        { key: 'NEW', label: 'Nuevo', color: 'bg-[#0511F2]' },
-        { key: 'QUALIFIED', label: 'Calificado', color: 'bg-[#26A3BF]' },
-        { key: 'CONTACTED', label: 'Contactado', color: 'bg-[#0511F2]/80' },
-        { key: 'DISCOVERY_SCHEDULED', label: 'Sesión Agendada', color: 'bg-[#EE05F2]/70' },
-        { key: 'DISCOVERY_COMPLETED', label: 'Sesión Completada', color: 'bg-[#EE05F2]/90' },
-        { key: 'PROPOSAL_PREPARING', label: 'Propuesta en Prep.', color: 'bg-[#EAF207]' },
-        { key: 'PROPOSAL_SENT', label: 'Propuesta Enviada', color: 'bg-[#26A3BF]/80' },
-        { key: 'NEGOTIATION', label: 'Negociación', color: 'bg-[#EE05F2]/50' },
-        { key: 'WON', label: 'Ganado', color: 'bg-[#6FD904]' },
-        { key: 'LOST', label: 'Perdido', color: 'bg-gray-400' },
-        { key: 'ON_HOLD', label: 'En Espera', color: 'bg-gray-200' },
+        { key: 'INCEPTION_SPRINT_0', label: '🏁 Inception / S0', color: 'bg-[#0511F2]/40' },
+        { key: 'IN_EXECUTION', label: '⚡ En Ejecución', color: 'bg-[#0511F2]' },
+        { key: 'QA_UAT', label: '🧪 QA / UAT', color: 'bg-[#EE05F2]/60' },
+        { key: 'DELIVERY', label: '📦 Entrega', color: 'bg-[#26A3BF]' },
+        { key: 'CLIENT_ACCEPTANCE', label: '✅ Aceptación Cliente', color: 'bg-[#6FD904]' },
+        { key: 'TECHNICAL_CLOSURE', label: '🔧 Cierre Técnico', color: 'bg-gray-400' },
+        { key: 'ADMIN_CLOSURE', label: '📑 Cierre Admin.', color: 'bg-gray-300' },
+        { key: 'CLOSED', label: '🔒 Cerrado', color: 'bg-gray-500' },
+        // SUPPORT
+        { key: 'HYPERCARE', label: '🏥 Hypercare', color: 'bg-[#EE05F2]/80' },
+        { key: 'ACTIVE_SUPPORT', label: '🛠️ Soporte Activo', color: 'bg-[#0511F2]' },
+        { key: 'EVOLUTIVE', label: '📈 Evolutivos', color: 'bg-[#26A3BF]' },
+        { key: 'RENEWAL', label: '🔄 Renovación', color: 'bg-[#EAF207]' },
+        { key: 'ACCOUNT_EXPANDED', label: '💰 Cuenta Expandida', color: 'bg-[#6FD904]' },
+        { key: 'ACCOUNT_CLOSED', label: '🚫 Cuenta Cerrada', color: 'bg-gray-500' },
     ];
 
     const currentIdx = statusSequence.findIndex(s => s.key === lead?.status_flow.current);
@@ -387,6 +406,43 @@ export default function LeadDetailPage() {
                                         </div>
                                     </div>
                                 )}
+                            </div>
+                        </section>
+
+                        <section className="space-y-4">
+                            <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+                                <span className="w-1 h-3 bg-[#EAF207] rounded-full"></span>
+                                Modelo Operativo (LEGO)
+                            </h3>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Delivery Model</label>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="px-3 py-1 bg-[#0511F2]/5 text-[#0511F2] rounded-xl text-[10px] font-black uppercase border border-[#0511F2]/10 flex items-center gap-2">
+                                            {lead.data?.delivery_model === 'ADVISORY' && '🧠'}
+                                            {lead.data?.delivery_model === 'IMPLEMENTATION' && '⚙️'}
+                                            {lead.data?.delivery_model === 'MANAGED_SERVICES' && '🛠️'}
+                                            {lead.data?.delivery_model === 'STAFF_AUGMENTATION' && '👥'}
+                                            {lead.data?.delivery_model || 'ADVISORY'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Capability / Práctica</label>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="px-3 py-1 bg-[#EE05F2]/5 text-[#EE05F2] rounded-xl text-[10px] font-black uppercase border border-[#EE05F2]/10 flex items-center gap-2">
+                                            {lead.data?.capability === 'SOFTWARE' && '💻'}
+                                            {lead.data?.capability === 'AI' && '🤖'}
+                                            {lead.data?.capability === 'MARKETING' && '📣'}
+                                            {lead.data?.capability === 'CLOUD' && '☁️'}
+                                            {lead.data?.capability === 'ERP' && '🏢'}
+                                            {lead.data?.capability === 'DATA' && '📊'}
+                                            {lead.data?.capability === 'PMO' && '📋'}
+                                            {lead.data?.capability === 'AUTOMATION' && '⚡'}
+                                            {lead.data?.capability || 'SOFTWARE'}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </section>
 
@@ -701,20 +757,63 @@ export default function LeadDetailPage() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-2 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
-                                {(['NEW', 'QUALIFIED', 'CONTACTED', 'DISCOVERY_SCHEDULED', 'DISCOVERY_COMPLETED', 'PROPOSAL_PREPARING', 'PROPOSAL_SENT', 'NEGOTIATION', 'WON', 'LOST', 'ON_HOLD'] as LeadStatus[]).map((status) => (
-                                    <button
-                                        key={status}
-                                        onClick={() => handleStatusUpdate(status)}
-                                        disabled={lead.status_flow.current === status || isUpdating}
-                                        className={`w-full py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${lead.status_flow.current === status
-                                            ? 'bg-[#0511F2] text-white border-[#0511F2] shadow-lg shadow-blue-100'
-                                            : 'bg-white text-gray-400 border-gray-100 hover:border-[#0511F2]/20 hover:text-[#0511F2]'
-                                            }`}
-                                    >
-                                        {statusSequence.find(s => s.key === status)?.label || status.replace(/_/g, ' ')}
-                                    </button>
-                                ))}
+                            <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 no-scrollbar">
+                                <div>
+                                    <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Dominio GROW</h4>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {(['LEAD_NEW', 'QUALIFICATION', 'CONTACTED', 'DISCOVERY_SCHEDULED', 'DISCOVERY_COMPLETED', 'PROPOSAL_PREPARING', 'PROPOSAL_SENT', 'NEGOTIATION', 'WIN_CLOSED', 'LOST', 'ON_HOLD'] as LeadStatus[]).map((status) => (
+                                            <button
+                                                key={status}
+                                                onClick={() => handleStatusUpdate(status)}
+                                                disabled={lead.status_flow.current === status || isUpdating}
+                                                className={`w-full py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${lead.status_flow.current === status
+                                                    ? 'bg-[#0511F2] text-white border-[#0511F2] shadow-lg shadow-blue-100'
+                                                    : 'bg-white text-gray-400 border-gray-100 hover:border-[#0511F2]/20 hover:text-[#0511F2]'
+                                                    }`}
+                                            >
+                                                {statusSequence.find(s => s.key === status)?.label || status.replace(/_/g, ' ')}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Dominio OPERATIONS</h4>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {(['HANDOFF', 'PROJECT_CREATED', 'KICK_OFF', 'INCEPTION_SPRINT_0', 'IN_EXECUTION', 'QA_UAT', 'DELIVERY', 'CLIENT_ACCEPTANCE', 'TECHNICAL_CLOSURE', 'ADMIN_CLOSURE', 'CLOSED'] as LeadStatus[]).map((status) => (
+                                            <button
+                                                key={status}
+                                                onClick={() => handleStatusUpdate(status)}
+                                                disabled={lead.status_flow.current === status || isUpdating}
+                                                className={`w-full py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${lead.status_flow.current === status
+                                                    ? 'bg-[#26A3BF] text-white border-[#26A3BF] shadow-lg shadow-cyan-100'
+                                                    : 'bg-white text-gray-400 border-gray-100 hover:border-[#26A3BF]/20 hover:text-[#26A3BF]'
+                                                    }`}
+                                            >
+                                                {statusSequence.find(s => s.key === status)?.label || status.replace(/_/g, ' ')}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Dominio SUPPORT</h4>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {(['HYPERCARE', 'ACTIVE_SUPPORT', 'EVOLUTIVE', 'RENEWAL', 'ACCOUNT_EXPANDED', 'ACCOUNT_CLOSED'] as LeadStatus[]).map((status) => (
+                                            <button
+                                                key={status}
+                                                onClick={() => handleStatusUpdate(status)}
+                                                disabled={lead.status_flow.current === status || isUpdating}
+                                                className={`w-full py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${lead.status_flow.current === status
+                                                    ? 'bg-[#EE05F2] text-white border-[#EE05F2] shadow-lg shadow-pink-100'
+                                                    : 'bg-white text-gray-400 border-gray-100 hover:border-[#EE05F2]/20 hover:text-[#EE05F2]'
+                                                    }`}
+                                            >
+                                                {statusSequence.find(s => s.key === status)?.label || status.replace(/_/g, ' ')}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

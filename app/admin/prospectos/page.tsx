@@ -2,21 +2,24 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { onLeadsUpdate, updateLead, createLead } from "@/lib/firebase";
-import { Lead, LeadStatus } from "@/types/tracking";
+import { onLeadsUpdate, updateLead, createLead, auth, db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { Lead, LeadStatus, DeliveryModel, Capability } from "@/types/tracking";
+import { ROLES_CONFIG } from "@/config/roles_config";
 import { useTranslation } from "@/components/admin/LanguageContext";
 import Link from "next/link";
 import { useNotification } from "@/components/admin/NotificationContext";
 import PipelineBoard from "@/components/admin/PipelineBoard";
 
-type ViewMode = 'PIPELINE' | 'TABLE';
+export type ViewMode = 'PIPELINE' | 'TABLE';
+export type Domain = 'GROW' | 'OPERATIONS' | 'SUPPORT';
 
 export default function ProspectosPage() {
     const { t } = useTranslation();
     const { showNotification } = useNotification();
     const [leads, setLeads] = useState<Lead[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState<string>('ALL');
+    const [activeDomain, setActiveDomain] = useState<Domain>('GROW');
     const [searchTerm, setSearchTerm] = useState('');
     const [viewMode, setViewMode] = useState<ViewMode>('PIPELINE');
     const [isCreating, setIsCreating] = useState(false);
@@ -29,69 +32,113 @@ export default function ProspectosPage() {
         phone: '',
         company: '',
         project_desc: '',
-        start_kickoff: false
+        start_kickoff: false,
+        delivery_model: 'ADVISORY' as DeliveryModel,
+        capability: 'SOFTWARE' as Capability
     });
 
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [userPillar, setUserPillar] = useState<Domain | 'ADMIN' | null>(null);
+    const [userLevel, setUserLevel] = useState<number>(0);
+
     useEffect(() => {
-        const unsubscribe = onLeadsUpdate((data) => {
+        const unsubscribeLeads = onLeadsUpdate((data) => {
             setLeads(data);
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        // Fetch user role for access control with auth listener
+        const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists()) {
+                        const roleId = userDoc.data().role;
+                        // Try matching case-insensitively
+                        const config = ROLES_CONFIG[roleId] || 
+                                     ROLES_CONFIG[roleId?.toUpperCase()] || 
+                                     ROLES_CONFIG[roleId?.toLowerCase()];
+                        
+                        if (config) {
+                            setUserRole(roleId);
+                            setUserPillar(config.pillar as any);
+                            setUserLevel(config.level);
+                            
+                            // Auto-select domain based on pillar
+                            if (config.pillar === 'GROW' || config.pillar === 'OPERATIONS' || config.pillar === 'SUPPORT') {
+                                setActiveDomain(config.pillar as Domain);
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error fetching user role:", error);
+                }
+            }
+        });
+
+        return () => {
+            unsubscribeLeads();
+            unsubscribeAuth();
+        };
     }, []);
+
+    const canSwitchDomain = useMemo(() => {
+        if (!userPillar) return true; // Loading or admin
+        if (userPillar === 'ADMIN' || userLevel >= 6) return true;
+        return false;
+    }, [userPillar, userLevel]);
+
+    const domainStatuses: Record<Domain, LeadStatus[]> = {
+        GROW: ['LEAD_NEW', 'QUALIFICATION', 'CONTACTED', 'DISCOVERY_SCHEDULED', 'DISCOVERY_COMPLETED', 'PROPOSAL_PREPARING', 'PROPOSAL_SENT', 'NEGOTIATION', 'WIN_CLOSED', 'LOST', 'ON_HOLD'],
+        OPERATIONS: ['HANDOFF', 'PROJECT_CREATED', 'KICK_OFF', 'INCEPTION_SPRINT_0', 'IN_EXECUTION', 'QA_UAT', 'DELIVERY', 'CLIENT_ACCEPTANCE', 'TECHNICAL_CLOSURE', 'ADMIN_CLOSURE', 'CLOSED'],
+        SUPPORT: ['HYPERCARE', 'ACTIVE_SUPPORT', 'EVOLUTIVE', 'RENEWAL', 'ACCOUNT_EXPANDED', 'ACCOUNT_CLOSED']
+    };
+
+    const normalizeStatus = (status: any): LeadStatus => {
+        const s = status as string;
+        if (s === 'NEW') return 'LEAD_NEW';
+        if (s === 'QUALIFIED') return 'QUALIFICATION';
+        if (s === 'WON') return 'WIN_CLOSED';
+        return status as LeadStatus;
+    };
 
     const filteredLeads = useMemo(() => {
         return leads.filter(lead => {
-            // 1. Verificación de seguridad inicial
             if (!lead) return false;
 
-            // 2. Filtro de estado (Protegemos status_flow)
-            const matchesFilter = filter === 'ALL' || lead.status_flow?.current === filter;
+            const currentStatus = normalizeStatus(lead.status_flow?.current);
+            const matchesDomain = domainStatuses[activeDomain].includes(currentStatus);
 
-            // 3. Búsqueda de texto (Protegemos data y lead_id)
             const searchTermLower = searchTerm.toLowerCase();
-
             const name = (lead.data?.name || "").toLowerCase();
             const email = (lead.data?.email || "").toLowerCase();
-            const phone = (lead.data?.phone || "").toLowerCase();
             const company = (lead.data?.company || "").toLowerCase();
-            const id = (lead.lead_id || "").toLowerCase();
 
             const matchesSearch =
                 name.includes(searchTermLower) ||
                 email.includes(searchTermLower) ||
-                phone.includes(searchTermLower) ||
-                company.includes(searchTermLower) ||
-                id.includes(searchTermLower);
+                company.includes(searchTermLower);
 
-            return matchesFilter && matchesSearch;
+            return matchesDomain && matchesSearch;
         });
-    }, [leads, filter, searchTerm]);
+    }, [leads, activeDomain, searchTerm]);
 
     const getStatusColor = (status: LeadStatus) => {
-        switch (status) {
-            case 'NEW': return 'bg-[#0511F2]/10 text-[#0511F2] border-[#0511F2]/20';
-            case 'QUALIFIED': return 'bg-[#26A3BF]/10 text-[#26A3BF] border-[#26A3BF]/20';
-            case 'CONTACTED': return 'bg-[#0511F2]/5 text-[#0511F2]/70 border-[#0511F2]/10';
-            case 'DISCOVERY_SCHEDULED': return 'bg-[#EE05F2]/10 text-[#EE05F2] border-[#EE05F2]/20';
-            case 'DISCOVERY_COMPLETED': return 'bg-[#EE05F2]/5 text-[#EE05F2]/80 border-[#EE05F2]/10';
-            case 'PROPOSAL_PREPARING': return 'bg-[#EAF207]/10 text-[#121212] border-[#EAF207]/30';
-            case 'PROPOSAL_SENT': return 'bg-[#26A3BF]/5 text-[#26A3BF]/80 border-[#26A3BF]/10';
-            case 'NEGOTIATION': return 'bg-[#EE05F2]/20 text-[#EE05F2] border-[#EE05F2]/30';
-            case 'WON': return 'bg-[#6FD904]/10 text-[#6FD904] border-[#6FD904]/20';
-            case 'LOST': return 'bg-gray-100 text-gray-500 border-gray-200';
-            case 'ON_HOLD': return 'bg-gray-50 text-gray-400 border-gray-100';
-            case 'KICK_OFF': return 'bg-[#EE05F2] text-white border-transparent shadow-md shadow-pink-200';
-            default: return 'bg-gray-50 text-gray-400 border-gray-100';
-        }
+        const s = status as string;
+        if (s.includes('LOST') || s.includes('CLOSED')) return 'bg-gray-100 text-gray-500 border-gray-200';
+        if (s.includes('WIN') || s.includes('ACCEPTANCE')) return 'bg-[#6FD904]/10 text-[#6FD904] border-[#6FD904]/20';
+        if (s.startsWith('LEAD_') || s === 'QUALIFICATION' || s === 'CONTACTED') return 'bg-[#0511F2]/10 text-[#0511F2] border-[#0511F2]/20';
+        if (s.includes('DISCOVERY') || s.includes('PROPOSAL')) return 'bg-[#EE05F2]/10 text-[#EE05F2] border-[#EE05F2]/20';
+        if (s.includes('PROJECT') || s.includes('EXECUTION')) return 'bg-[#26A3BF]/10 text-[#26A3BF] border-[#26A3BF]/20';
+        if (s === 'KICK_OFF') return 'bg-[#EE05F2] text-white border-transparent shadow-md shadow-pink-200';
+        return 'bg-gray-50 text-gray-400 border-gray-100';
     };
 
     const handleCreateLead = async (e: React.FormEvent) => {
         e.preventDefault();
         setCreateLoading(true);
         try {
-            const newStatus: LeadStatus = formData.start_kickoff ? 'KICK_OFF' : 'NEW';
+            const newStatus: LeadStatus = formData.start_kickoff ? 'KICK_OFF' : 'LEAD_NEW';
             
             const leadToCreate: Partial<Lead> = {
                 data: {
@@ -100,6 +147,8 @@ export default function ProspectosPage() {
                     phone: formData.phone,
                     company: formData.company,
                     project_desc: formData.project_desc,
+                    delivery_model: formData.delivery_model,
+                    capability: formData.capability,
                     origin: 'admin_panel'
                 },
                 status_flow: {
@@ -119,7 +168,16 @@ export default function ProspectosPage() {
             await createLead(leadToCreate);
             showNotification("Prospecto creado exitosamente", "success");
             setIsCreating(false);
-            setFormData({ name: '', email: '', phone: '', company: '', project_desc: '', start_kickoff: false });
+            setFormData({ 
+                name: '', 
+                email: '', 
+                phone: '', 
+                company: '', 
+                project_desc: '', 
+                start_kickoff: false,
+                delivery_model: 'ADVISORY' as DeliveryModel,
+                capability: 'SOFTWARE' as Capability
+            });
         } catch (error: any) {
             showNotification(`Error: ${error.message}`, "error");
         } finally {
@@ -136,13 +194,13 @@ export default function ProspectosPage() {
     }
 
     return (
-        <div className="space-y-12 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+        <div className="space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-1000">
             {/* Header */}
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 px-2 relative">
                 <div>
                     <div className="admin-decorator-line mb-4"></div>
-                    <h1 className="admin-h1 text-4xl mb-2">{t('prospectos')}</h1>
-                    <p className="admin-subtitle text-gray-500 font-medium">Gestiona y haz seguimiento a tus leads comerciales</p>
+                    <h1 className="admin-h1 text-4xl mb-2">Sistema Operativo de Consultoría</h1>
+                    <p className="admin-subtitle text-gray-500 font-medium">Gestión integral del ciclo de vida del cliente: Consigue, Construye y Sostiene</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4">
@@ -151,7 +209,7 @@ export default function ProspectosPage() {
                         className="admin-btn admin-btn-primary shadow-xl shadow-pink-200 uppercase"
                     >
                         <span>➕</span>
-                        NUEVO PROSPECTO
+                        NUEVO LEAD
                     </button>
 
                     {/* View Toggle */}
@@ -169,31 +227,67 @@ export default function ProspectosPage() {
                             TABLA
                         </button>
                     </div>
+                </div>
+            </div>
 
-                    <div className="relative group flex-grow lg:flex-grow-0">
+            {/* Domain Navigation Tabs */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
+                <div className="flex bg-gray-50 p-1.5 rounded-[2rem] w-full md:w-auto">
+                    {(['GROW', 'OPERATIONS', 'SUPPORT'] as Domain[]).map((domain) => {
+                        const isLocked = !canSwitchDomain && userPillar !== domain;
+                        return (
+                            <button
+                                key={domain}
+                                disabled={isLocked}
+                                onClick={() => setActiveDomain(domain)}
+                                className={`flex-1 md:flex-none px-8 py-4 rounded-[1.5rem] text-[11px] font-black tracking-[0.2em] transition-all duration-500 uppercase flex items-center justify-center gap-2 ${activeDomain === domain 
+                                    ? 'bg-white text-[#0511F2] shadow-lg shadow-blue-900/5 scale-[1.02]' 
+                                    : isLocked 
+                                        ? 'text-gray-300 cursor-not-allowed opacity-50'
+                                        : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                {domain === 'GROW' && '🚀 '}
+                                {domain === 'OPERATIONS' && '🛠️ '}
+                                {domain === 'SUPPORT' && '💎 '}
+                                {domain}
+                                {isLocked && <span className="text-[10px]">🔒</span>}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <div className="flex items-center gap-4 w-full md:w-auto">
+                    <div className="relative group flex-grow">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm transition-colors group-focus-within:text-[#EE05F2]">🔍</span>
                         <input
                             type="text"
-                            placeholder="Buscar prospectos..."
+                            placeholder={`Buscar en ${activeDomain}...`}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="admin-input !pl-11 w-full lg:w-72"
+                            className="admin-input !pl-11 w-full md:w-72 !bg-gray-50 border-transparent focus:!bg-white focus:!border-gray-200"
                         />
                     </div>
+                </div>
+            </div>
 
-                    <select
-                        value={filter}
-                        onChange={(e) => setFilter(e.target.value)}
-                        className="admin-input w-full lg:w-48 cursor-pointer"
-                    >
-                        <option value="ALL">Todas las etapas</option>
-                        <option value="NEW">Nuevos</option>
-                        <option value="CONTACTED">Contactados</option>
-                        <option value="DISCOVERY_SCHEDULED">Agendado</option>
-                        <option value="PROPOSAL_SENT">Propuesta Enviada</option>
-                        <option value="WON">Ganados</option>
-                        <option value="LOST">Perdidos</option>
-                    </select>
+            {/* Domain Info Header */}
+            <div className="px-6 py-4 bg-[#0511F2]/5 rounded-[2rem] border border-[#0511F2]/10 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-xl shadow-sm">
+                        {activeDomain === 'GROW' ? '📈' : activeDomain === 'OPERATIONS' ? '⚙️' : '🤝'}
+                    </div>
+                    <div>
+                        <h3 className="text-[12px] font-black text-[#0511F2] uppercase tracking-[0.2em]">
+                            {activeDomain === 'GROW' ? 'Dominio de Crecimiento (Ventas)' : activeDomain === 'OPERATIONS' ? 'Dominio de Operaciones (Delivery)' : 'Dominio de Soporte (Continuidad)'}
+                        </h3>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                            {activeDomain === 'GROW' ? 'Convierte leads en contratos cerrados' : activeDomain === 'OPERATIONS' ? 'Garantiza la entrega de valor y calidad técnica' : 'Fomenta la retención y expansión de cuentas'}
+                        </p>
+                    </div>
+                </div>
+                <div className="hidden md:flex items-center gap-3">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{filteredLeads.length} Items Encontrados</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#0511F2] animate-pulse"></div>
                 </div>
             </div>
 
@@ -201,6 +295,7 @@ export default function ProspectosPage() {
             {viewMode === 'PIPELINE' ? (
                 <PipelineBoard
                     leads={filteredLeads}
+                    statuses={domainStatuses[activeDomain]}
                     onStatusChange={async (leadId, newStatus) => {
                         await updateLead(leadId, { status_flow: { current: newStatus, history: [] } });
                         showNotification("Estado actualizado", "success");
@@ -211,11 +306,11 @@ export default function ProspectosPage() {
                     <table className="admin-table">
                         <thead>
                             <tr>
-                                <th>Prospecto</th>
-                                <th>Estado</th>
+                                <th>Entidad / Contacto</th>
+                                <th>Estado Actual</th>
                                 <th>Origen & Región</th>
-                                <th>Actividad</th>
-                                <th className="text-right">Acciones</th>
+                                <th>Métricas</th>
+                                <th className="text-right">Gestión</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -224,38 +319,29 @@ export default function ProspectosPage() {
                                     <td>
                                         <div className="flex flex-col">
                                             <div className="flex items-center gap-2">
-                                                <span className="font-black text-gray-900 group-hover:text-[#0511F2] transition-colors">
+                                                <span className="font-black text-gray-900 group-hover:text-[#0511F2] transition-colors uppercase text-[13px] tracking-tight">
                                                     {lead.data?.name || 'Sin Nombre'}
                                                 </span>
-                                                {lead.data?.decision_maker === 'yes' && (
-                                                    <span className="text-[8px] font-black bg-[#6FD904] text-white px-1.5 py-0.5 rounded-md shadow-sm tracking-widest" title="Decision Maker">DM</span>
-                                                )}
-                                                {lead.data?.investment_level === 'ultra' && (
-                                                    <span className="text-[8px] font-black bg-[#EE05F2] text-white px-1.5 py-0.5 rounded-md shadow-sm tracking-widest" title="High Investment">VIP</span>
+                                                {lead.data?.company && (
+                                                    <span className="text-[9px] font-black bg-gray-100 text-gray-500 px-2 py-0.5 rounded-md tracking-widest uppercase">{lead.data.company}</span>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-[11px] text-gray-500 font-bold tracking-tight truncate max-w-[200px]">
+                                            <div className="flex items-center gap-2 mt-1.5">
+                                                <span className="text-[11px] text-gray-400 font-bold tracking-tight truncate max-w-[200px]">
                                                     {lead.data?.email || lead.data?.phone || 'Sin contacto'}
                                                 </span>
-                                                {lead.data?.role && (
-                                                    <span className="text-[9px] text-gray-400 font-black uppercase tracking-[0.2em]">• {lead.data.role}</span>
-                                                )}
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <span className={`admin-badge ${getStatusColor(lead.status_flow.current)}`}>
-                                            {lead.status_flow.current.replace('_', ' ')}
+                                        <span className={`admin-badge !py-1.5 !px-4 !text-[9px] !font-black !tracking-widest ${getStatusColor(lead.status_flow.current)}`}>
+                                            {lead.status_flow.current.replace(/_/g, ' ')}
                                         </span>
                                     </td>
                                     <td>
                                         <div className="flex flex-col">
-                                            <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-gray-50 text-gray-500 self-start mb-1 tracking-widest border border-gray-100">
-                                                {lead.data?.origin === 'admin_panel' ? '🛠️ ADMIN' : '🌐 WEB'}
-                                            </span>
                                             <span className="text-[11px] font-bold text-gray-600">{lead.source_attribution.landing_page?.split('_')[0] || 'Directo'}</span>
-                                            <span className="text-[9px] text-gray-400 font-black uppercase tracking-[0.2em] mt-0.5">
+                                            <span className="text-[9px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1">
                                                 {lead.data?.region || 'Global'} / {lead.source_attribution.utm_source || 'Organic'}
                                             </span>
                                         </div>
@@ -266,7 +352,7 @@ export default function ProspectosPage() {
                                                 {lead.kpis?.clicks_count || 0} clics • {Math.round((lead.kpis?.session_duration || 0) / 60)}m
                                             </span>
                                             <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">
-                                                {new Date(lead.audit_logs?.created_at?.toDate?.() ||
+                                                Creado: {new Date(lead.audit_logs?.created_at?.toDate?.() ||
                                                     (lead.audit_logs?.created_at ? new Date(lead.audit_logs?.created_at) : new Date())).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
                                             </span>
                                         </div>
@@ -274,7 +360,7 @@ export default function ProspectosPage() {
                                     <td className="text-right">
                                         <Link
                                             href={`/admin/prospectos/${lead.lead_id}`}
-                                            className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gray-50 text-gray-400 hover:bg-[#0511F2] hover:text-white transition-all border border-gray-100 shadow-sm hover:shadow-lg hover:shadow-blue-200"
+                                            className="inline-flex items-center justify-center w-12 h-12 rounded-[1.25rem] bg-gray-50 text-gray-400 hover:bg-[#0511F2] hover:text-white transition-all border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-blue-200"
                                         >
                                             👁️
                                         </Link>
@@ -289,8 +375,8 @@ export default function ProspectosPage() {
                             <div className="w-24 h-24 bg-gray-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-inner border border-gray-100">
                                 <span className="text-4xl grayscale opacity-50">🏜️</span>
                             </div>
-                            <h3 className="text-xl font-black text-[#0511F2] font-heading uppercase tracking-tight">No se encontraron prospectos</h3>
-                            <p className="text-gray-400 text-sm font-medium mt-2">Intenta con otros filtros o términos de búsqueda</p>
+                            <h3 className="text-xl font-black text-[#0511F2] font-heading uppercase tracking-tight">No hay leads en este dominio</h3>
+                            <p className="text-gray-400 text-sm font-medium mt-2">Prueba cambiando de dominio o ajustando tu búsqueda</p>
                         </div>
                     )}
                 </div>
@@ -299,24 +385,24 @@ export default function ProspectosPage() {
             {/* Create Prospect Modal */}
             {isCreating && (
                 <div className="admin-modal-overlay animate-in fade-in duration-300">
-                    <div className="admin-modal animate-in zoom-in-95 duration-300 !p-8 relative overflow-hidden">
+                    <div className="admin-modal animate-in zoom-in-95 duration-300 !p-10 relative overflow-hidden max-w-2xl">
                         <div className="diagonal-accent !opacity-10"></div>
-                        <div className="flex justify-between items-start mb-8 relative z-10">
+                        <div className="flex justify-between items-start mb-10 relative z-10">
                             <div>
-                                <div className="admin-decorator-line mb-3 w-12"></div>
-                                <h2 className="text-2xl font-black text-[#0511F2] tracking-tighter uppercase font-heading">Crear Nuevo Prospecto</h2>
-                                <p className="text-gray-400 text-[11px] font-black uppercase tracking-[0.2em] mt-2">Ingresa los datos del lead manualmente</p>
+                                <div className="admin-decorator-line mb-4 w-16"></div>
+                                <h2 className="text-3xl font-black text-[#0511F2] tracking-tighter uppercase font-heading">Capturar Nuevo Lead</h2>
+                                <p className="text-gray-400 text-[11px] font-black uppercase tracking-[0.2em] mt-2">Inicia el flujo de preventa manualmente</p>
                             </div>
                             <button 
                                 onClick={() => setIsCreating(false)} 
-                                className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-400 hover:text-[#EE05F2] hover:bg-pink-50 transition-all border border-transparent hover:border-pink-100"
+                                className="w-12 h-12 rounded-[1.25rem] flex items-center justify-center text-gray-400 hover:text-[#EE05F2] hover:bg-pink-50 transition-all border border-transparent hover:border-pink-100"
                             >
                                 <span className="text-xl">✕</span>
                             </button>
                         </div>
 
-                        <form onSubmit={handleCreateLead} className="space-y-6 relative z-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <form onSubmit={handleCreateLead} className="space-y-8 relative z-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="admin-input-group">
                                     <label className="admin-label">Nombre Completo</label>
                                     <input
@@ -332,7 +418,7 @@ export default function ProspectosPage() {
                                     <label className="admin-label">Empresa</label>
                                     <input
                                         type="text"
-                                        placeholder="Nombre de la compañía"
+                                        placeholder="Compañía / Organización"
                                         value={formData.company}
                                         onChange={e => setFormData({ ...formData, company: e.target.value })}
                                         className="admin-input"
@@ -343,17 +429,17 @@ export default function ProspectosPage() {
                                     <input
                                         required
                                         type="email"
-                                        placeholder="nombre@empresa.com"
+                                        placeholder="nombre@dominio.com"
                                         value={formData.email}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
                                         className="admin-input"
                                     />
                                 </div>
                                 <div className="admin-input-group">
-                                    <label className="admin-label">Teléfono / WhatsApp</label>
+                                    <label className="admin-label">WhatsApp de Contacto</label>
                                     <input
                                         type="tel"
-                                        placeholder="+51 999 000 000"
+                                        placeholder="+51 9XX XXX XXX"
                                         value={formData.phone}
                                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                         className="admin-input"
@@ -361,51 +447,82 @@ export default function ProspectosPage() {
                                 </div>
                             </div>
 
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="admin-input-group">
+                                    <label className="admin-label">Modelo de Entrega (Delivery Model)</label>
+                                    <select
+                                        value={formData.delivery_model}
+                                        onChange={e => setFormData({ ...formData, delivery_model: e.target.value as DeliveryModel })}
+                                        className="admin-input"
+                                    >
+                                        <option value="ADVISORY">🧠 ADVISORY (Consultoría / Estrategia)</option>
+                                        <option value="IMPLEMENTATION">⚙️ IMPLEMENTATION (Desarrollo / Ejecución)</option>
+                                        <option value="MANAGED_SERVICES">🛠️ MANAGED SERVICES (Continuidad / Soporte)</option>
+                                        <option value="STAFF_AUGMENTATION">👥 STAFF AUGMENTATION (Talento Dedicado)</option>
+                                    </select>
+                                </div>
+                                <div className="admin-input-group">
+                                    <label className="admin-label">Capacidad (Capability)</label>
+                                    <select
+                                        value={formData.capability}
+                                        onChange={e => setFormData({ ...formData, capability: e.target.value as Capability })}
+                                        className="admin-input"
+                                    >
+                                        <option value="SOFTWARE">💻 Software & Apps</option>
+                                        <option value="AI">🤖 IA & Data Science</option>
+                                        <option value="MARKETING">📣 Marketing & Growth</option>
+                                        <option value="CLOUD">☁️ Cloud & Infra</option>
+                                        <option value="ERP">🏢 ERP & Business</option>
+                                        <option value="DATA">📊 Data Analytics</option>
+                                        <option value="PMO">📋 PMO & Governance</option>
+                                        <option value="AUTOMATION">⚡ Automation / RPA</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <div className="admin-input-group">
-                                <label className="admin-label">Detalles del Proyecto</label>
+                                <label className="admin-label">Necesidad / Dolor Detectado</label>
                                 <textarea
-                                    rows={4}
-                                    placeholder="Describe brevemente el interés o necesidad del cliente..."
+                                    rows={3}
+                                    placeholder="¿Qué problema estamos resolviendo? ¿Cuál es el interés principal?"
                                     value={formData.project_desc}
                                     onChange={e => setFormData({ ...formData, project_desc: e.target.value })}
                                     className="admin-input admin-textarea"
                                 />
                             </div>
 
-                            <div className="bg-[#0511F2]/5 p-5 rounded-[1.5rem] border border-[#0511F2]/10 flex items-center justify-between group">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-2xl shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-12 border border-[#0511F2]/5">🚀</div>
+                            <div className="bg-[#0511F2]/5 p-6 rounded-[2rem] border border-[#0511F2]/10 flex items-center justify-between group cursor-pointer" onClick={() => setFormData({ ...formData, start_kickoff: !formData.start_kickoff })}>
+                                <div className="flex items-center gap-5">
+                                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-6 border border-[#0511F2]/5">🚀</div>
                                     <div>
-                                        <h4 className="text-sm font-black text-[#0511F2] uppercase tracking-widest">Iniciar en Kick-off</h4>
-                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] mt-1">Saltar etapas de prospección</p>
+                                        <h4 className="text-sm font-black text-[#0511F2] uppercase tracking-widest">Salto Directo a Kick-off</h4>
+                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] mt-1">El proyecto ya ha sido vendido previamente</p>
                                     </div>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, start_kickoff: !formData.start_kickoff })}
-                                    className={`w-14 h-8 rounded-full transition-all relative shadow-inner ${formData.start_kickoff ? 'bg-[#6FD904]' : 'bg-gray-200'}`}
+                                <div
+                                    className={`w-16 h-9 rounded-full transition-all relative shadow-inner ${formData.start_kickoff ? 'bg-[#6FD904]' : 'bg-gray-200'}`}
                                 >
-                                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all shadow-md ${formData.start_kickoff ? 'left-7' : 'left-1'}`} />
-                                </button>
+                                    <div className={`absolute top-1 w-7 h-7 bg-white rounded-full transition-all shadow-md ${formData.start_kickoff ? 'left-8' : 'left-1'}`} />
+                                </div>
                             </div>
 
-                            <div className="flex gap-4 pt-4">
+                            <div className="flex gap-4 pt-6">
                                 <button
                                     type="button"
                                     onClick={() => setIsCreating(false)}
-                                    className="flex-1 admin-btn admin-btn-secondary"
+                                    className="flex-1 admin-btn admin-btn-secondary !rounded-[1.5rem]"
                                 >
-                                    CANCELAR
+                                    DESCARTAR
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={createLoading}
-                                    className="flex-[2] admin-btn admin-btn-primary shadow-xl shadow-pink-200"
+                                    className="flex-[2] admin-btn admin-btn-primary shadow-2xl shadow-blue-900/10 !rounded-[1.5rem]"
                                 >
                                     {createLoading ? (
                                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                     ) : (
-                                        'CREAR PROSPECTO'
+                                        'GUARDAR EN PIPELINE'
                                     )}
                                 </button>
                             </div>

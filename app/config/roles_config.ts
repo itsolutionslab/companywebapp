@@ -1,5 +1,5 @@
 
-export type Pillar = 'GROWTH' | 'ENGINEERING' | 'CLOUD' | 'CUSTOMER_SUCCESS' | 'ADMIN';
+export type Pillar = 'GROW' | 'OPERATIONS' | 'SUPPORT' | 'ADMIN';
 
 export interface RoleInfo {
     id: string;
@@ -24,33 +24,51 @@ export const ROLES_CONFIG: Record<string, RoleInfo> = {
         level: 11,
         allowedPaths: ['/admin/panel', '/admin/prospectos', '/admin/mensajes', '/admin/reservas', '/admin/horarios', '/admin/usuarios', '/admin/configuracion']
     },
-    // GROWTH
-    'GROWTH_L0': { id: 'GROWTH_L0', pillar: 'GROWTH', label: 'Growth Intern', level: 0, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
-    'GROWTH_L1': { id: 'GROWTH_L1', pillar: 'GROWTH', label: 'SDR', level: 1, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
-    'GROWTH_L2': { id: 'GROWTH_L2', pillar: 'GROWTH', label: 'BDR', level: 2, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
-    'GROWTH_L3': { id: 'GROWTH_L3', pillar: 'GROWTH', label: 'BDR Associate', level: 3, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
-    'GROWTH_L4': { id: 'GROWTH_L4', pillar: 'GROWTH', label: 'Solutions Consultant', level: 4, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
-    'GROWTH_L5': { id: 'GROWTH_L5', pillar: 'GROWTH', label: 'Senior Account Executive', level: 5, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
-    'GROWTH_L6': { id: 'GROWTH_L6', pillar: 'GROWTH', label: 'Growth Lead', level: 6, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
+    // GROW (Comercial + Marketing + Preventa)
+    'GROW_L0': { id: 'GROW_L0', pillar: 'GROW', label: 'Intern de Crecimiento', level: 0, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
+    'GROW_L1': { id: 'GROW_L1', pillar: 'GROW', label: 'SDR (Sales Development Rep)', level: 1, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
+    'GROW_L2': { id: 'GROW_L2', pillar: 'GROW', label: 'BDR (Business Development Rep)', level: 2, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
+    'GROW_L3': { id: 'GROW_L3', pillar: 'GROW', label: 'Account Executive', level: 3, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
+    'GROW_L4': { id: 'GROW_L4', pillar: 'GROW', label: 'Solutions Consultant', level: 4, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
+    'GROW_L5': { id: 'GROW_L5', pillar: 'GROW', label: 'Growth Lead', level: 5, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
     
-    // ENGINEERING
-    'ENG_L0': { id: 'ENG_L0', pillar: 'ENGINEERING', label: 'Engineering Intern', level: 0, allowedPaths: ['/admin/prospectos'] },
-    'ENG_L1': { id: 'ENG_L1', pillar: 'ENGINEERING', label: 'Associate Software Engineer', level: 1, allowedPaths: ['/admin/prospectos'] },
-    'ENG_L2': { id: 'ENG_L2', pillar: 'ENGINEERING', label: 'Software Engineer', level: 2, allowedPaths: ['/admin/prospectos'] },
-    'ENG_L3': { id: 'ENG_L3', pillar: 'ENGINEERING', label: 'Senior Software Engineer', level: 3, allowedPaths: ['/admin/prospectos'] },
-    'ENG_L4': { id: 'ENG_L4', pillar: 'ENGINEERING', label: 'Solutions Architect', level: 4, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
+    // OPERATIONS (Delivery + Ingeniería + Project Management)
+    'OPS_L0': { id: 'OPS_L0', pillar: 'OPERATIONS', label: 'Engineering Intern', level: 0, allowedPaths: ['/admin/prospectos', '/admin/panel'] },
+    'OPS_L1': { id: 'OPS_L1', pillar: 'OPERATIONS', label: 'Junior Developer', level: 1, allowedPaths: ['/admin/prospectos', '/admin/panel'] },
+    'OPS_L2': { id: 'OPS_L2', pillar: 'OPERATIONS', label: 'Software Engineer', level: 2, allowedPaths: ['/admin/prospectos', '/admin/panel'] },
+    'OPS_L3': { id: 'OPS_L3', pillar: 'OPERATIONS', label: 'Project Manager / Scrum Master', level: 3, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/panel'] },
+    'OPS_L4': { id: 'OPS_L4', pillar: 'OPERATIONS', label: 'Solutions Architect', level: 4, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/panel'] },
+    'OPS_L5': { id: 'OPS_L5', pillar: 'OPERATIONS', label: 'Delivery Director', level: 5, allowedPaths: ['/admin/prospectos', '/admin/panel', '/admin/usuarios'] },
     
-    // CLOUD
-    'CLOUD_L0': { id: 'CLOUD_L0', pillar: 'CLOUD', label: 'Cloud Operations Intern', level: 0, allowedPaths: ['/admin/prospectos'] },
-    'CLOUD_L1': { id: 'CLOUD_L1', pillar: 'CLOUD', label: 'Junior DevOps Engineer', level: 1, allowedPaths: ['/admin/prospectos'] },
-    'CLOUD_L2': { id: 'CLOUD_L2', pillar: 'CLOUD', label: 'Cloud Engineer', level: 2, allowedPaths: ['/admin/prospectos'] },
-    'CLOUD_L3': { id: 'CLOUD_L3', pillar: 'CLOUD', label: 'Senior DevOps / SRE', level: 3, allowedPaths: ['/admin/prospectos'] },
-    'CLOUD_L4': { id: 'CLOUD_L4', pillar: 'CLOUD', label: 'Platform Lead', level: 4, allowedPaths: ['/admin/prospectos'] },
-    'CLOUD_L5': { id: 'CLOUD_L5', pillar: 'CLOUD', label: 'Principal Cloud Architect', level: 5, allowedPaths: ['/admin/prospectos'] },
+    // SUPPORT (Customer Success + Postventa + Soporte)
+    'SUP_L0': { id: 'SUP_L0', pillar: 'SUPPORT', label: 'Support Intern', level: 0, allowedPaths: ['/admin/prospectos', '/admin/mensajes'] },
+    'SUP_L1': { id: 'SUP_L1', pillar: 'SUPPORT', label: 'Support Agent', level: 1, allowedPaths: ['/admin/prospectos', '/admin/mensajes'] },
+    'SUP_L2': { id: 'SUP_L2', pillar: 'SUPPORT', label: 'Customer Success Specialist', level: 2, allowedPaths: ['/admin/prospectos', '/admin/mensajes'] },
+    'SUP_L3': { id: 'SUP_L3', pillar: 'SUPPORT', label: 'CS Manager', level: 3, allowedPaths: ['/admin/prospectos', '/admin/mensajes'] },
+    
+    // CONSULTORIA & ESTRATEGIA (Cross-Domain)
+    'CONSULTOR': { id: 'CONSULTOR', pillar: 'OPERATIONS', label: 'Consultor Senior (Cross-Domain)', level: 6, allowedPaths: ['/admin/panel', '/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
 
-    // CUSTOMER SUCCESS
-    'CS_L0': { id: 'CS_L0', pillar: 'CUSTOMER_SUCCESS', label: 'Customer Support Intern', level: 0, allowedPaths: ['/admin/prospectos', '/admin/mensajes'] },
-    'CS_L1': { id: 'CS_L1', pillar: 'CUSTOMER_SUCCESS', label: 'Customer Success Associate', level: 1, allowedPaths: ['/admin/prospectos', '/admin/mensajes'] },
-    'CS_L2': { id: 'CS_L2', pillar: 'CUSTOMER_SUCCESS', label: 'Customer Success Specialist', level: 2, allowedPaths: ['/admin/prospectos', '/admin/mensajes'] },
-    'CS_L3': { id: 'CS_L3', pillar: 'CUSTOMER_SUCCESS', label: 'Technical Customer Success Manager', level: 3, allowedPaths: ['/admin/prospectos', '/admin/mensajes'] },
+    // --- ALIASES PARA COMPATIBILIDAD (Legacy) ---
+    'GROWTH_L0': { id: 'GROW_L0', pillar: 'GROW', label: 'Intern de Crecimiento', level: 0, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
+    'GROWTH_L1': { id: 'GROW_L1', pillar: 'GROW', label: 'SDR (Sales Development Rep)', level: 1, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
+    'GROWTH_L2': { id: 'GROW_L2', pillar: 'GROW', label: 'BDR (Business Development Rep)', level: 2, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
+    'GROWTH_L3': { id: 'GROW_L3', pillar: 'GROW', label: 'Account Executive', level: 3, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
+    'GROWTH_L4': { id: 'GROW_L4', pillar: 'GROW', label: 'Solutions Consultant', level: 4, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
+    'GROWTH_L5': { id: 'GROW_L5', pillar: 'GROW', label: 'Growth Lead', level: 5, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/reservas'] },
+    
+    'ENG_L0': { id: 'OPS_L0', pillar: 'OPERATIONS', label: 'Engineering Intern', level: 0, allowedPaths: ['/admin/prospectos', '/admin/panel'] },
+    'ENG_L1': { id: 'OPS_L1', pillar: 'OPERATIONS', label: 'Junior Developer', level: 1, allowedPaths: ['/admin/prospectos', '/admin/panel'] },
+    'ENG_L2': { id: 'OPS_L2', pillar: 'OPERATIONS', label: 'Software Engineer', level: 2, allowedPaths: ['/admin/prospectos', '/admin/panel'] },
+    'ENG_L3': { id: 'OPS_L3', pillar: 'OPERATIONS', label: 'Project Manager / Scrum Master', level: 3, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/panel'] },
+    'ENG_L4': { id: 'OPS_L4', pillar: 'OPERATIONS', label: 'Solutions Architect', level: 4, allowedPaths: ['/admin/prospectos', '/admin/mensajes', '/admin/panel'] },
+    'ENG_L5': { id: 'OPS_L5', pillar: 'OPERATIONS', label: 'Delivery Director', level: 5, allowedPaths: ['/admin/prospectos', '/admin/panel', '/admin/usuarios'] },
+
+    'CLOUD_L0': { id: 'OPS_L0', pillar: 'OPERATIONS', label: 'Cloud Intern', level: 0, allowedPaths: ['/admin/prospectos', '/admin/panel'] },
+    'CLOUD_L1': { id: 'OPS_L1', pillar: 'OPERATIONS', label: 'Cloud Junior', level: 1, allowedPaths: ['/admin/prospectos', '/admin/panel'] },
+    
+    'CS_L0': { id: 'SUP_L0', pillar: 'SUPPORT', label: 'Support Intern', level: 0, allowedPaths: ['/admin/prospectos', '/admin/mensajes'] },
+    'CS_L1': { id: 'SUP_L1', pillar: 'SUPPORT', label: 'Support Agent', level: 1, allowedPaths: ['/admin/prospectos', '/admin/mensajes'] },
+    'CS_L2': { id: 'SUP_L2', pillar: 'SUPPORT', label: 'Customer Success Specialist', level: 2, allowedPaths: ['/admin/prospectos', '/admin/mensajes'] },
+    'CS_L3': { id: 'SUP_L3', pillar: 'SUPPORT', label: 'CS Manager', level: 3, allowedPaths: ['/admin/prospectos', '/admin/mensajes'] },
 };

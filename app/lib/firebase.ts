@@ -185,16 +185,18 @@ export const updateRoleConfig = async (config: any) => {
 };
 
 const statusMapping: Record<string, LeadStatus> = {
-    'LEAD_NEW': 'NEW',
+    'NEW': 'LEAD_NEW',
+    'QUALIFIED': 'QUALIFICATION',
+    'WON': 'WIN_CLOSED',
     'SCHEDULED': 'DISCOVERY_SCHEDULED',
     'IN_PROPOSAL': 'PROPOSAL_PREPARING',
-    'PROJ_APPROVED': 'QUALIFIED',
+    'PROJ_APPROVED': 'QUALIFICATION',
     'DOWN_PAYMENT': 'PROPOSAL_PREPARING',
-    'PROJ_STARTED': 'QUALIFIED',
-    'IN_TESTING': 'QUALIFIED',
-    'PROJ_FINISHED': 'WON',
-    'DELIVERED': 'WON',
-    'CLOSED': 'WON',
+    'PROJ_STARTED': 'QUALIFICATION',
+    'IN_TESTING': 'QUALIFICATION',
+    'PROJ_FINISHED': 'WIN_CLOSED',
+    'DELIVERED': 'WIN_CLOSED',
+    'CLOSED': 'WIN_CLOSED',
     'CLOSED_LOST': 'LOST'
 };
 
@@ -206,7 +208,7 @@ const normalizeLeadData = (raw: any): Lead => {
     if (!lead.data) lead.data = {};
     if (!lead.audit_logs) lead.audit_logs = {};
     if (!lead.kpis) lead.kpis = {};
-    if (!lead.status_flow) lead.status_flow = { current: 'NEW', history: [] };
+    if (!lead.status_flow) lead.status_flow = { current: 'LEAD_NEW', history: [] };
     if (!lead.events) lead.events = [];
     if (!lead.source_attribution) lead.source_attribution = {};
     if (!lead.owner_id) lead.owner_id = null;
@@ -296,7 +298,7 @@ export const createLead = async (leadData: Partial<Lead>) => {
     const newLead = {
         ...leadData,
         lead_id: Math.random().toString(36).substr(2, 9), // Temporary, will be overwritten by doc id if using addDoc, but here we might want to specify it
-        status_flow: leadData.status_flow || { current: 'NEW', history: [] },
+        status_flow: leadData.status_flow || { current: 'LEAD_NEW', history: [] },
         audit_logs: {
             created_at: Timestamp.now(),
             updated_at: Timestamp.now(),

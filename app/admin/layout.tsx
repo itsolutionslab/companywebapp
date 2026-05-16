@@ -28,49 +28,66 @@ export default function AdminLayout({
     const isLoginPage = currentAdminPath === "/admin/ingreso";
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
-            if (authUser) {
-                // Fetch user role
-                try {
-                    const { doc, getDoc } = await import("firebase/firestore");
-                    const { db } = await import("@/lib/firebase");
-                    const userDoc = await getDoc(doc(db, "users", authUser.uid));
+        let unsubscribeRole: (() => void) | null = null;
 
-                    if (userDoc.exists()) {
-                        const userData = userDoc.data();
-                        const validatedRole = (userData.role || 'staff').toLowerCase();
-                        setRole(validatedRole);
+        const unsubscribeAuth = onAuthStateChanged(auth, async (authUser) => {
+            if (authUser) {
+                // Set up real-time role listener for security and instant permission updates
+                const { doc, onSnapshot } = await import("firebase/firestore");
+                const { db } = await import("@/lib/firebase");
+                
+                unsubscribeRole = onSnapshot(doc(db, "users", authUser.uid), (docSnapshot) => {
+                    if (docSnapshot.exists()) {
+                        const userData = docSnapshot.data();
+                        const newRole = (userData.role || 'staff').toLowerCase();
+                        
+                        setRole((prevRole) => {
+                            // Security: If role changed and it's not the initial load, force a reload
+                            if (prevRole && prevRole !== newRole) {
+                                console.log("Security: Role changed from", prevRole, "to", newRole, ". Refreshing permissions...");
+                                window.location.reload(); 
+                            }
+                            return newRole;
+                        });
+                        setUser(authUser);
                     } else {
                         setRole('staff');
+                        setUser(authUser);
                     }
-                    setUser(authUser);
-                } catch (error) {
-                    console.error("Error fetching user role:", error);
-                    setRole('staff');
-                    setUser(authUser);
-                }
-                
-                // Fetch dynamic role configuration
+                    setLoading(false);
+                }, (error) => {
+                    console.error("Error listening to user role change:", error);
+                    setLoading(false);
+                });
+
+                // Fetch dynamic role configuration (meta-config)
                 try {
                     const config = await getRoleConfig();
                     if (config) {
                         setDynamicRoles({ ...ROLES_CONFIG, ...config });
                     }
                 } catch (error) {
-                    console.error("Error fetching dynamic roles:", error);
+                    console.error("Error fetching dynamic roles config:", error);
                 }
             } else {
+                if (unsubscribeRole) {
+                    unsubscribeRole();
+                    unsubscribeRole = null;
+                }
                 setUser(null);
                 setRole(null);
                 if (!isLoginPage) {
                     router.push("/admin/ingreso");
                 }
+                setLoading(false);
             }
-            setLoading(false);
         });
 
-        return () => unsubscribe();
-    }, [isLoginPage]); // Stable observer: only re-runs if login page status flips
+        return () => {
+            unsubscribeAuth();
+            if (unsubscribeRole) unsubscribeRole();
+        };
+    }, [isLoginPage]);
 
     const handleLogout = async () => {
         await signOut(auth);
@@ -145,7 +162,7 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath, dy
 
     const allMenuItems = [
         { name: t('dashboard') || 'Panel', path: '/admin/panel', icon: '📊' },
-        { name: t('prospectos') || 'Prospectos', path: '/admin/prospectos', icon: '🎯' },
+        { name: t('prospectos') || 'Pipeline Maestro', path: '/admin/prospectos', icon: '🎯' },
         { name: t('chats') || 'Mensajes', path: '/admin/mensajes', icon: '💬' },
         { name: t('reservations') || 'Reservas', path: '/admin/reservas', icon: '🤝' },
         { name: t('schedules') || 'Horarios', path: '/admin/horarios', icon: '⏰' },

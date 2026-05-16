@@ -25,17 +25,18 @@ import { SortableLeadCard } from "./SortableLeadCard";
 
 interface PipelineBoardProps {
     leads: Lead[];
+    statuses: LeadStatus[];
     onStatusChange: (leadId: string, newStatus: LeadStatus) => Promise<void>;
 }
 
-export default function PipelineBoard({ leads, onStatusChange }: PipelineBoardProps) {
+export default function PipelineBoard({ leads, statuses, onStatusChange }: PipelineBoardProps) {
     const { t } = useTranslation();
     const [activeId, setActiveId] = useState<string | null>(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 8, // Avoid accidental drags when clicking
+                distance: 8,
             },
         }),
         useSensor(TouchSensor, {
@@ -49,23 +50,56 @@ export default function PipelineBoard({ leads, onStatusChange }: PipelineBoardPr
         })
     );
 
-    const stages: { key: LeadStatus; label: string; color: string }[] = [
-        { key: 'KICK_OFF', label: '🚀 Kick-off', color: 'bg-[#EE05F2]' },
-        { key: 'NEW', label: 'Nuevo', color: 'bg-[#0511F2]' },
-        { key: 'QUALIFIED', label: 'Calificado', color: 'bg-[#26A3BF]' },
-        { key: 'CONTACTED', label: 'Contactado', color: 'bg-[#0511F2]/80' },
-        { key: 'DISCOVERY_SCHEDULED', label: 'Sesión Agendada', color: 'bg-[#EE05F2]/70' },
-        { key: 'DISCOVERY_COMPLETED', label: 'Sesión Completada', color: 'bg-[#EE05F2]/90' },
-        { key: 'PROPOSAL_PREPARING', label: 'Propuesta en Prep.', color: 'bg-[#EAF207] !text-black' },
-        { key: 'PROPOSAL_SENT', label: 'Propuesta Enviada', color: 'bg-[#26A3BF]/80' },
-        { key: 'NEGOTIATION', label: 'Negociación', color: 'bg-[#EE05F2]/50' },
-        { key: 'WON', label: 'Ganado', color: 'bg-[#6FD904]' },
-        { key: 'LOST', label: 'Perdido', color: 'bg-gray-400' },
-        { key: 'ON_HOLD', label: 'En Espera', color: 'bg-gray-200' },
-    ];
+    const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+        // GROW
+        'LEAD_NEW': { label: '🚀 Nuevo Lead', color: 'bg-[#0511F2]' },
+        'QUALIFICATION': { label: '⚖️ Calificación', color: 'bg-[#26A3BF]' },
+        'CONTACTED': { label: '📞 Contactado', color: 'bg-[#0511F2]/80' },
+        'DISCOVERY_SCHEDULED': { label: '📅 Discovery Agendado', color: 'bg-[#EE05F2]/70' },
+        'DISCOVERY_COMPLETED': { label: '✅ Discovery Completado', color: 'bg-[#EE05F2]/90' },
+        'PROPOSAL_PREPARING': { label: '📝 Propuesta en Prep.', color: 'bg-[#EAF207] !text-black' },
+        'PROPOSAL_SENT': { label: '📧 Propuesta Enviada', color: 'bg-[#26A3BF]/80' },
+        'NEGOTIATION': { label: '🤝 Negociación', color: 'bg-[#EE05F2]/50' },
+        'WIN_CLOSED': { label: '🏆 Venta Cerrada', color: 'bg-[#6FD904]' },
+        'LOST': { label: '❌ Perdido', color: 'bg-gray-400' },
+        'ON_HOLD': { label: '⏳ En Espera', color: 'bg-gray-200' },
+        // OPERATIONS
+        'HANDOFF': { label: '🤝 Handoff', color: 'bg-[#0511F2]/60' },
+        'PROJECT_CREATED': { label: '🏗️ Proyecto Creado', color: 'bg-[#26A3BF]/60' },
+        'KICK_OFF': { label: '🚀 Kick-off', color: 'bg-[#EE05F2]' },
+        'INCEPTION_SPRINT_0': { label: '🏁 Inception / S0', color: 'bg-[#0511F2]/40' },
+        'IN_EXECUTION': { label: '⚡ En Ejecución', color: 'bg-[#0511F2]' },
+        'QA_UAT': { label: '🧪 QA / UAT', color: 'bg-[#EE05F2]/60' },
+        'DELIVERY': { label: '📦 Entrega', color: 'bg-[#26A3BF]' },
+        'CLIENT_ACCEPTANCE': { label: '✅ Aceptación Cliente', color: 'bg-[#6FD904]' },
+        'TECHNICAL_CLOSURE': { label: '🔧 Cierre Técnico', color: 'bg-gray-400' },
+        'ADMIN_CLOSURE': { label: '📑 Cierre Admin.', color: 'bg-gray-300' },
+        'CLOSED': { label: '🔒 Cerrado', color: 'bg-gray-500' },
+        // SUPPORT
+        'HYPERCARE': { label: '🏥 Hypercare', color: 'bg-[#EE05F2]/80' },
+        'ACTIVE_SUPPORT': { label: '🛠️ Soporte Activo', color: 'bg-[#0511F2]' },
+        'EVOLUTIVE': { label: '📈 Evolutivos', color: 'bg-[#26A3BF]' },
+        'RENEWAL': { label: '🔄 Renovación', color: 'bg-[#EAF207] !text-black' },
+        'ACCOUNT_EXPANDED': { label: '💰 Cuenta Expandida', color: 'bg-[#6FD904]' },
+        'ACCOUNT_CLOSED': { label: '🚫 Cuenta Cerrada', color: 'bg-gray-500' },
+    };
+
+    const stages = statuses.map(s => ({
+        key: s,
+        label: STATUS_CONFIG[s]?.label || s.replace(/_/g, ' '),
+        color: STATUS_CONFIG[s]?.color || 'bg-gray-200'
+    }));
+
+    const normalizeStatus = (status: any): LeadStatus => {
+        const s = status as string;
+        if (s === 'NEW') return 'LEAD_NEW';
+        if (s === 'QUALIFIED') return 'QUALIFICATION';
+        if (s === 'WON') return 'WIN_CLOSED';
+        return status as LeadStatus;
+    };
 
     const getLeadsInStage = (stage: LeadStatus) => {
-        return leads.filter(l => l.status_flow.current === stage);
+        return leads.filter(l => normalizeStatus(l.status_flow.current) === stage);
     };
 
     const handleDragStart = (event: DragStartEvent) => {
@@ -81,15 +115,11 @@ export default function PipelineBoard({ leads, onStatusChange }: PipelineBoardPr
         const leadId = active.id as string;
         const overId = over.id as string;
 
-        // Find the stage from the over component
-        // overId could be a stage key (from Droppable) or a leadId (from Sortable)
         let newStatus: LeadStatus | undefined;
 
-        // If dropped over a column
         if (stages.some(s => s.key === overId)) {
             newStatus = overId as LeadStatus;
         } else {
-            // Find which column the overId lead belongs to
             const overLead = leads.find(l => l.lead_id === overId);
             if (overLead) {
                 newStatus = overLead.status_flow.current;
@@ -111,7 +141,7 @@ export default function PipelineBoard({ leads, onStatusChange }: PipelineBoardPr
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
         >
-            <div className="flex gap-4 overflow-x-auto pb-8 no-scrollbar min-h-[calc(100vh-250px)] pt-4 px-2">
+            <div className="flex gap-6 overflow-x-auto pb-12 no-scrollbar min-h-[calc(100vh-350px)] pt-2 px-2">
                 {stages.map((stage) => (
                     <PipelineColumn
                         key={stage.key}
