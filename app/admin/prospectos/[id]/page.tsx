@@ -92,17 +92,18 @@ export default function LeadDetailPage() {
     }
 
     const statusSequence: { key: LeadStatus; label: string; color: string }[] = [
-        { key: 'NEW', label: 'Nuevo', color: 'bg-blue-500' },
-        { key: 'QUALIFIED', label: 'Calificado', color: 'bg-cyan-500' },
-        { key: 'CONTACTED', label: 'Contactado', color: 'bg-indigo-500' },
-        { key: 'DISCOVERY_SCHEDULED', label: 'Sesión Agendada', color: 'bg-purple-500' },
-        { key: 'DISCOVERY_COMPLETED', label: 'Sesión Completada', color: 'bg-fuchsia-500' },
-        { key: 'PROPOSAL_PREPARING', label: 'Propuesta en Prep.', color: 'bg-amber-500' },
-        { key: 'PROPOSAL_SENT', label: 'Propuesta Enviada', color: 'bg-orange-500' },
-        { key: 'NEGOTIATION', label: 'Negociación', color: 'bg-rose-500' },
-        { key: 'WON', label: 'Ganado', color: 'bg-green-500' },
-        { key: 'LOST', label: 'Perdido', color: 'bg-gray-500' },
-        { key: 'ON_HOLD', label: 'En Espera', color: 'bg-slate-400' },
+        { key: 'KICK_OFF', label: '🚀 Kick-off', color: 'bg-[#EE05F2]' },
+        { key: 'NEW', label: 'Nuevo', color: 'bg-[#0511F2]' },
+        { key: 'QUALIFIED', label: 'Calificado', color: 'bg-[#26A3BF]' },
+        { key: 'CONTACTED', label: 'Contactado', color: 'bg-[#0511F2]/80' },
+        { key: 'DISCOVERY_SCHEDULED', label: 'Sesión Agendada', color: 'bg-[#EE05F2]/70' },
+        { key: 'DISCOVERY_COMPLETED', label: 'Sesión Completada', color: 'bg-[#EE05F2]/90' },
+        { key: 'PROPOSAL_PREPARING', label: 'Propuesta en Prep.', color: 'bg-[#EAF207]' },
+        { key: 'PROPOSAL_SENT', label: 'Propuesta Enviada', color: 'bg-[#26A3BF]/80' },
+        { key: 'NEGOTIATION', label: 'Negociación', color: 'bg-[#EE05F2]/50' },
+        { key: 'WON', label: 'Ganado', color: 'bg-[#6FD904]' },
+        { key: 'LOST', label: 'Perdido', color: 'bg-gray-400' },
+        { key: 'ON_HOLD', label: 'En Espera', color: 'bg-gray-200' },
     ];
 
     const currentIdx = statusSequence.findIndex(s => s.key === lead?.status_flow.current);
@@ -231,7 +232,7 @@ export default function LeadDetailPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0511F2]"></div>
             </div>
         );
     }
@@ -248,17 +249,19 @@ export default function LeadDetailPage() {
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-700 pb-12">
             {/* Header & Progress Tracker */}
-            <div className="flex flex-col gap-6">
-                <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-6 relative">
+                <div className="diagonal-accent !opacity-10"></div>
+                <div className="flex items-center justify-between gap-4 relative z-10">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => router.push('/admin/prospectos')}
-                            className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-blue-500 transition-all shadow-sm"
+                            className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-[#0511F2] transition-all shadow-sm"
                         >
                             ←
                         </button>
                         <div>
-                            <h1 className="text-2xl font-black text-gray-900 tracking-tight uppercase">{lead.data?.name || 'Prospecto Sin Nombre'}</h1>
+                            <div className="admin-decorator-line mb-2"></div>
+                            <h1 className="text-2xl font-black text-[#0511F2] tracking-tighter uppercase font-heading">{lead.data?.name || 'Prospecto Sin Nombre'}</h1>
                             <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mt-0.5">ID: {lead.lead_id}</p>
                         </div>
                     </div>
@@ -266,21 +269,21 @@ export default function LeadDetailPage() {
                     <div className="hidden md:flex items-center gap-3">
                         <div className="text-right">
                             <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Valor Estimado</span>
-                            <span className="block text-lg font-black text-emerald-600">${lead.value_estimate?.toLocaleString() || '0'}</span>
+                            <span className="block text-lg font-black text-[#6FD904]">${lead.value_estimate?.toLocaleString() || '0'}</span>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 text-xl">
+                        <div className="w-10 h-10 rounded-full bg-[#6FD904]/10 flex items-center justify-center text-[#6FD904] text-xl">
                             💰
                         </div>
                     </div>
                 </div>
 
                 {/* Horizontal Progress Bar */}
-                <div className="bg-white rounded-3xl border border-gray-100 p-4 shadow-sm overflow-x-auto no-scrollbar">
+                <div className="bg-white rounded-[2rem] border border-gray-100 p-4 shadow-sm overflow-x-auto no-scrollbar relative z-10">
                     <div className="flex items-center justify-between min-w-[800px] px-4 h-12 relative">
                         {/* Connecting Line */}
                         <div className="absolute left-10 right-10 top-1/2 -translate-y-1/2 h-0.5 bg-gray-100 z-0"></div>
                         <div
-                            className="absolute left-10 top-1/2 -translate-y-1/2 h-0.5 bg-blue-500 transition-all duration-1000 z-0"
+                            className="absolute left-10 top-1/2 -translate-y-1/2 h-0.5 bg-[#0511F2] transition-all duration-1000 z-0"
                             style={{ width: `${(currentIdx / (statusSequence.length - 1)) * 100}%` }}
                         ></div>
 
@@ -292,9 +295,9 @@ export default function LeadDetailPage() {
                                     <div className={`
                                         w-8 h-8 rounded-full border-4 flex items-center justify-center transition-all duration-500
                                         ${isCurrent
-                                            ? 'bg-blue-600 border-blue-100 scale-125 shadow-xl shadow-blue-200'
+                                            ? 'bg-[#0511F2] border-blue-100 scale-125 shadow-xl shadow-blue-200'
                                             : isCompleted
-                                                ? 'bg-blue-500 border-white'
+                                                ? 'bg-[#0511F2] border-white'
                                                 : 'bg-white border-gray-100 group-hover:border-blue-200'
                                         }
                                     `}>
@@ -308,7 +311,7 @@ export default function LeadDetailPage() {
                                     </div>
                                     <span className={`
                                         absolute top-10 whitespace-nowrap text-[9px] font-black uppercase tracking-tighter transition-all duration-300
-                                        ${isCurrent ? 'text-blue-600' : isCompleted ? 'text-gray-900' : 'text-gray-300'}
+                                        ${isCurrent ? 'text-[#0511F2]' : isCompleted ? 'text-gray-900' : 'text-gray-300'}
                                     `}>
                                         {stage.label}
                                     </span>
@@ -326,7 +329,7 @@ export default function LeadDetailPage() {
                     <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                         <section className="space-y-4">
                             <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
-                                <span className="w-1 h-3 bg-blue-500 rounded-full"></span>
+                                <span className="w-1 h-3 bg-[#0511F2] rounded-full"></span>
                                 Datos de Contacto
                             </h3>
                             <div className="space-y-3">
@@ -389,7 +392,7 @@ export default function LeadDetailPage() {
 
                         <section className="space-y-4">
                             <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
-                                <span className="w-1 h-3 bg-indigo-500 rounded-full"></span>
+                                <span className="w-1 h-3 bg-[#EE05F2] rounded-full"></span>
                                 Fuente / Origen
                             </h3>
                             <div className="space-y-3">
@@ -420,20 +423,20 @@ export default function LeadDetailPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-3">Etapa Actual</label>
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-lime-50 text-lime-700 rounded-xl border border-lime-100 text-xs font-black uppercase">
-                                <span className="w-2 h-2 rounded-full bg-lime-500 animate-pulse"></span>
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#6FD904]/10 text-[#6FD904] rounded-xl border border-[#6FD904]/20 text-xs font-black uppercase">
+                                <span className="w-2 h-2 rounded-full bg-[#6FD904] animate-pulse"></span>
                                 {lead.data?.stage || 'No definida'}
                             </div>
                         </div>
                         <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-3">Urgencia / Timeline</label>
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-cyan-50 text-cyan-700 rounded-xl border border-cyan-100 text-xs font-black uppercase">
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#26A3BF]/10 text-[#26A3BF] rounded-xl border border-[#26A3BF]/20 text-xs font-black uppercase">
                                 📅 {lead.data?.timeline || 'No definida'}
                             </div>
                         </div>
                         <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-3">Inversión Estimada</label>
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 text-xs font-black uppercase">
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#6FD904]/10 text-[#6FD904] rounded-xl border border-[#6FD904]/20 text-xs font-black uppercase">
                                 💰 {lead.data?.investment_level || 'No definida'}
                             </div>
                         </div>
@@ -443,22 +446,22 @@ export default function LeadDetailPage() {
                     <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8 space-y-8">
                         <section>
                             <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
-                                <span className="w-1 h-3 bg-emerald-500 rounded-full"></span>
+                                <span className="w-1 h-3 bg-[#6FD904] rounded-full"></span>
                                 Resultados de Negocio Esperados (Impacto)
                             </h3>
-                            <p className="text-gray-900 font-bold leading-relaxed bg-emerald-50/30 rounded-2xl p-6 border border-emerald-50">
+                            <p className="text-gray-900 font-bold leading-relaxed bg-[#6FD904]/5 rounded-2xl p-6 border border-[#6FD904]/10">
                                 {lead.data?.impact || 'No se especificó el impacto esperado.'}
                             </p>
                         </section>
 
                         <section>
                             <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
-                                <span className="w-1 h-3 bg-blue-500 rounded-full"></span>
+                                <span className="w-1 h-3 bg-[#0511F2] rounded-full"></span>
                                 Toma de Decisión
                             </h3>
                             <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
                                 <p className="text-xs font-bold text-gray-700 uppercase tracking-tight">
-                                    ¿Es el tomador de decisión final?: <span className="text-blue-600 ml-2">{lead.data?.decision_maker || 'N/A'}</span>
+                                    ¿Es el tomador de decisión final?: <span className="text-[#0511F2] ml-2">{lead.data?.decision_maker || 'N/A'}</span>
                                 </p>
                             </div>
                         </section>
@@ -478,7 +481,7 @@ export default function LeadDetailPage() {
                     {lead.data?.file_url && (
                         <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8">
                             <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-6 flex items-center gap-2">
-                                <span className="w-1 h-3 bg-rose-500 rounded-full"></span>
+                                <span className="w-1 h-3 bg-[#EE05F2] rounded-full"></span>
                                 Documentos Adjuntos
                             </h3>
                             <a
@@ -514,29 +517,29 @@ export default function LeadDetailPage() {
                             Actividad de Usuario
                         </h3>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
-                            <div className="p-4 bg-orange-50 rounded-2xl border border-orange-100">
+                            <div className="p-4 bg-[#EAF207]/10 rounded-2xl border border-[#EAF207]/20">
                                 <span className="block text-xl mb-1">🖱️</span>
-                                <span className="block text-lg font-black text-orange-600">{lead.kpis?.clicks_count || 0}</span>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-orange-400">Clics</span>
+                                <span className="block text-lg font-black text-[#121212]">{lead.kpis?.clicks_count || 0}</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Clics</span>
                             </div>
-                            <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                            <div className="p-4 bg-[#0511F2]/10 rounded-2xl border border-[#0511F2]/20">
                                 <span className="block text-xl mb-1">⏱️</span>
-                                <span className="block text-lg font-black text-indigo-600">{Math.round((lead.kpis?.session_duration || 0) / 60)}m</span>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">Duración</span>
+                                <span className="block text-lg font-black text-[#0511F2]">{Math.round((lead.kpis?.session_duration || 0) / 60)}m</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-[#0511F2]/60">Duración</span>
                             </div>
-                            <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                            <div className="p-4 bg-[#6FD904]/10 rounded-2xl border border-[#6FD904]/20">
                                 <span className="block text-xl mb-1">🌍</span>
-                                <span className="block text-md font-black text-emerald-600 truncate px-1">
+                                <span className="block text-md font-black text-[#6FD904] truncate px-1">
                                     {lead.audit_logs?.geo_location?.city || 'Local'}
                                 </span>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400">Ubicación</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-[#6FD904]/60">Ubicación</span>
                             </div>
-                            <div className="p-4 bg-rose-50 rounded-2xl border border-rose-100 opacity-50">
+                            <div className="p-4 bg-[#EE05F2]/10 rounded-2xl border border-[#EE05F2]/20 opacity-80">
                                 <span className="block text-xl mb-1">📄</span>
-                                <span className="block text-lg font-black text-rose-600">
+                                <span className="block text-lg font-black text-[#EE05F2]">
                                     {lead.data?.file_url ? 'SÍ' : 'NO'}
                                 </span>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-rose-400">Archivo</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-[#EE05F2]/60">Archivo</span>
                             </div>
                         </div>
                     </div>
@@ -556,13 +559,13 @@ export default function LeadDetailPage() {
                                 value={noteText}
                                 onChange={(e) => setNoteText(e.target.value)}
                                 placeholder="Escribe una actualización o nota interna..."
-                                className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500/10 outline-none transition-all resize-none min-h-[80px]"
+                                className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#0511F2]/10 outline-none transition-all resize-none min-h-[80px]"
                             />
                             <div className="flex justify-end mt-2">
                                 <button
                                     onClick={handleAddNote}
                                     disabled={!noteText.trim() || isAddingNote}
-                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 disabled:opacity-50 transition-all"
+                                    className="bg-[#0511F2] text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#040ed1] disabled:opacity-50 transition-all shadow-lg shadow-blue-200"
                                 >
                                     {isAddingNote ? 'Guardando...' : 'Postear Nota'}
                                 </button>
@@ -636,18 +639,18 @@ export default function LeadDetailPage() {
                     {/* Quick Actions Card */}
                     <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-8">
                         <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-6 flex items-center gap-2">
-                            <span className="w-1 h-3 bg-amber-500 rounded-full"></span>
+                            <span className="w-1 h-3 bg-[#EAF207] rounded-full"></span>
                             Acciones Rápidas
                         </h3>
                         <div className="space-y-3">
                             <button
                                 onClick={() => setShowScheduleModal(true)}
-                                className="w-full py-3.5 bg-blue-50 text-blue-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all flex items-center justify-center gap-2"
+                                className="w-full py-3.5 bg-[#0511F2]/5 text-[#0511F2] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#0511F2]/10 transition-all flex items-center justify-center gap-2 border border-[#0511F2]/5"
                             >
                                 🗓️ Agendar Discovery
                             </button>
                             <button
-                                className="w-full py-3.5 bg-indigo-50 text-indigo-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-100 transition-all flex items-center justify-center gap-2"
+                                className="w-full py-3.5 bg-[#EE05F2]/5 text-[#EE05F2] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#EE05F2]/10 transition-all flex items-center justify-center gap-2 border border-[#EE05F2]/5"
                                 onClick={() => {/* Future logic */ }}
                             >
                                 📧 Enviar Propuesta
@@ -657,7 +660,7 @@ export default function LeadDetailPage() {
                                     setNewValue(lead.value_estimate?.toString() || '0');
                                     setIsUpdatingValue(!isUpdatingValue);
                                 }}
-                                className="w-full py-3.5 bg-emerald-50 text-emerald-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-100 transition-all flex items-center justify-center gap-2"
+                                className="w-full py-3.5 bg-[#6FD904]/5 text-[#6FD904] rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#6FD904]/10 transition-all flex items-center justify-center gap-2 border border-[#6FD904]/5"
                             >
                                 💰 {isUpdatingValue ? 'Cerrar' : 'Actualizar Valor'}
                             </button>
@@ -668,12 +671,12 @@ export default function LeadDetailPage() {
                                         type="number"
                                         value={newValue}
                                         onChange={(e) => setNewValue(e.target.value)}
-                                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500/10 outline-none"
+                                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-[#6FD904]/10 outline-none"
                                         placeholder="Valor USD"
                                     />
                                     <button
                                         onClick={handleUpdateValue}
-                                        className="w-full mt-2 bg-emerald-500 text-white py-2 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                                        className="w-full mt-2 bg-[#6FD904] text-white py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-lime-100"
                                     >
                                         Guardar Valor
                                     </button>
@@ -705,8 +708,8 @@ export default function LeadDetailPage() {
                                         onClick={() => handleStatusUpdate(status)}
                                         disabled={lead.status_flow.current === status || isUpdating}
                                         className={`w-full py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${lead.status_flow.current === status
-                                            ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-100'
-                                            : 'bg-white text-gray-400 border-gray-100 hover:border-blue-200 hover:text-blue-600'
+                                            ? 'bg-[#0511F2] text-white border-[#0511F2] shadow-lg shadow-blue-100'
+                                            : 'bg-white text-gray-400 border-gray-100 hover:border-[#0511F2]/20 hover:text-[#0511F2]'
                                             }`}
                                     >
                                         {statusSequence.find(s => s.key === status)?.label || status.replace(/_/g, ' ')}

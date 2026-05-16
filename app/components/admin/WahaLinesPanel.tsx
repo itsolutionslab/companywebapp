@@ -82,28 +82,37 @@ export function WahaLinesPanel() {
     }, [sessions, fetchQr]);
 
     return (
-        <section className="mb-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <section className="mb-8 rounded-[2rem] border border-gray-100 bg-white p-8 shadow-sm">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h2 className="text-lg font-bold text-gray-900">{t("line_settings")}</h2>
-                    <p className="text-sm text-gray-500">{t("line_settings_hint")}</p>
+                    <h2 className="text-xl font-black text-[#0511F2] uppercase tracking-tight">{t("line_settings")}</h2>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">{t("line_settings_hint")}</p>
                 </div>
                 <button
                     type="button"
                     onClick={() => void loadSessions()}
-                    className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold uppercase tracking-wide text-gray-600 transition hover:bg-gray-50"
+                    className="admin-btn admin-btn-secondary px-6 py-2.5 text-[10px]"
                 >
                     {t("refresh_qr")}
                 </button>
             </div>
 
-            {error && <p className="mb-4 text-sm text-rose-600">{error}</p>}
+            {error && (
+                <div className="mb-6 p-4 bg-[#EE05F2]/5 border border-[#EE05F2]/20 rounded-2xl">
+                    <p className="text-xs font-bold text-[#EE05F2]">{error}</p>
+                </div>
+            )}
+            
             {loading ? (
-                <p className="text-sm text-gray-400">{t("loading")}</p>
+                <div className="flex items-center justify-center py-12">
+                    <div className="w-8 h-8 border-4 border-[#0511F2]/10 border-t-[#0511F2] rounded-full animate-spin"></div>
+                </div>
             ) : sessions.length === 0 ? (
-                <p className="text-sm text-gray-500">WAHA no devolvió sesiones. Crea `sede_peru`, `sede_usa`, etc. en WAHA.</p>
+                <div className="py-12 text-center bg-gray-50 rounded-2xl border border-gray-100 border-dashed">
+                    <p className="text-sm font-bold text-gray-400">WAHA no devolvió sesiones activa.</p>
+                </div>
             ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {sessions.map((s, i) => {
                         const name = String(s.name || `session_${i}`);
                         const status = String(s.status || "—");
@@ -113,33 +122,36 @@ export function WahaLinesPanel() {
                         return (
                             <div
                                 key={name}
-                                className="rounded-xl border border-gray-100 bg-gray-50/50 p-4"
+                                className="rounded-[1.5rem] border border-gray-100 bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
                             >
-                                <div className="mb-2 flex items-center justify-between">
-                                    <span className="font-bold text-gray-800">{name}</span>
-                                    <span className="rounded-lg bg-white px-2 py-0.5 text-[10px] font-bold uppercase text-[#0081C8]">
+                                <div className="mb-4 flex items-center justify-between">
+                                    <span className="font-black text-[#0511F2] uppercase text-xs tracking-wider">{name}</span>
+                                    <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                                        isLinked ? 'bg-[#6FD904]/10 text-[#6FD904]' : 'bg-gray-100 text-gray-400'
+                                    }`}>
                                         {status}
                                     </span>
                                 </div>
-                                <div className="mb-3 flex min-h-[160px] items-center justify-center rounded-lg bg-white p-2">
+                                <div className="mb-4 flex min-h-[180px] items-center justify-center rounded-2xl bg-gray-50 p-4 border border-gray-100 overflow-hidden">
                                     {src ? (
                                         // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={src} alt={`QR ${name}`} className="max-h-44 w-auto" />
+                                        <img src={src} alt={`QR ${name}`} className="max-h-40 w-auto rounded-lg mix-blend-multiply" />
                                     ) : (
-                                        <span
-                                            className={`px-2 text-center text-xs ${isLinked ? "text-emerald-700" : "text-gray-400"}`}
-                                        >
-                                            {isLinked
-                                                ? t("session_connected_hint")
-                                                : "QR no cargado — pulsa el botón o revisa WAHA"}
-                                        </span>
+                                        <div className="text-center px-4">
+                                            <span className="text-3xl block mb-2">{isLinked ? "✅" : "⚠️"}</span>
+                                            <span className={`text-[10px] font-black uppercase tracking-widest ${isLinked ? "text-[#6FD904]" : "text-gray-400"}`}>
+                                                {isLinked
+                                                    ? t("session_connected_hint")
+                                                    : "QR no cargado"}
+                                            </span>
+                                        </div>
                                     )}
                                 </div>
                                 <button
                                     type="button"
                                     disabled={qrLoading === name}
                                     onClick={() => void fetchQr(name)}
-                                    className="w-full rounded-xl bg-[#E6007E] py-2 text-xs font-bold text-white shadow-md shadow-[#E6007E]/20 transition hover:opacity-90 disabled:opacity-50"
+                                    className="w-full admin-btn admin-btn-primary py-3 text-[10px] shadow-lg shadow-pink-100"
                                 >
                                     {qrLoading === name ? t("sending") : t("refresh_qr")}
                                 </button>

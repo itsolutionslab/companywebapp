@@ -200,10 +200,10 @@ export default function DashboardPage() {
         .sort((a, b) => b.value - a.value);
 
     const mainStats = [
-        { name: 'Total Leads', value: totalLeads, icon: '🎯', color: 'bg-blue-50 text-blue-600', border: 'border-blue-100' },
-        { name: 'Nuevos', value: newLeadsCount, icon: '✨', color: 'bg-emerald-50 text-emerald-600', border: 'border-emerald-100' },
-        { name: 'Conversión', value: `${conversionRate.toFixed(1)}%`, icon: '📈', color: 'bg-indigo-50 text-indigo-600', border: 'border-indigo-100' },
-        { name: 'Sesión Prom.', value: `${Math.round(avgDuration / 60)}m`, icon: '⏱️', color: 'bg-purple-50 text-purple-600', border: 'border-purple-100' },
+        { name: 'Total Leads', value: totalLeads, icon: '🎯', color: 'bg-blue-50 text-[#0511F2]', border: 'border-blue-100' },
+        { name: 'Nuevos', value: newLeadsCount, icon: '✨', color: 'bg-emerald-50 text-[#6FD904]', border: 'border-emerald-100' },
+        { name: 'Conversión', value: `${conversionRate.toFixed(1)}%`, icon: '📈', color: 'bg-pink-50 text-[#EE05F2]', border: 'border-pink-100' },
+        { name: 'Sesión Prom.', value: `${Math.round(avgDuration / 60)}m`, icon: '⏱️', color: 'bg-cyan-50 text-[#26A3BF]', border: 'border-cyan-100' },
     ];
 
     const filterOptions: { id: TimeFilter; label: TranslationKey; icon: string }[] = [
@@ -218,21 +218,22 @@ export default function DashboardPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-[50vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0511F2]"></div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-5 duration-700">
+        <div className="space-y-12 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-1000">
             {/* Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 px-2 relative">
                 <div>
-                    <h1 className="text-3xl font-bold text-black tracking-tight mb-1">{t('dashboard')}</h1>
-                    <p className="text-[#8E8E93] text-sm font-medium leading-tight">Métricas de tracking y conversión en tiempo real</p>
+                    <div className="admin-decorator-line mb-4"></div>
+                    <h1 className="admin-h1 text-4xl mb-2">{t('dashboard')}</h1>
+                    <p className="admin-subtitle text-gray-500 font-medium">Métricas de tracking y consultoría global en tiempo real</p>
                 </div>
 
-                <div className="flex bg-white p-1.5 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 overflow-x-auto no-scrollbar max-w-full">
+                <div className="flex bg-gray-50 p-1.5 rounded-[2rem] border border-gray-100 shadow-inner overflow-x-auto no-scrollbar max-w-full">
                     <div className="flex items-center gap-1.5">
                         {filterOptions.map((opt) => {
                             const isActive = filter === opt.id;
@@ -248,14 +249,14 @@ export default function DashboardPage() {
                                         }
                                     }}
                                     className={`
-                                        px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.12em] transition-all duration-300 flex items-center justify-center gap-2.5 whitespace-nowrap group
+                                        px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-500 flex items-center justify-center gap-2 whitespace-nowrap
                                         ${isActive
-                                            ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-100 scale-[1.05] ring-1 ring-blue-400/20"
-                                            : "text-gray-500 hover:text-blue-600 hover:bg-blue-50/50"
+                                            ? "bg-[#0511F2] text-white shadow-xl shadow-blue-200 scale-[1.05]"
+                                            : "text-gray-400 hover:text-[#0511F2] hover:bg-white"
                                         }
                                     `}
                                 >
-                                    <span className={`text-lg transition-all duration-500 ${isActive ? 'scale-110 rotate-[5deg]' : 'opacity-40 grayscale group-hover:opacity-100 group-hover:grayscale-0'}`}>
+                                    <span className={`text-sm transition-all ${isActive ? 'scale-110' : 'opacity-40 grayscale'}`}>
                                         {opt.icon}
                                     </span>
                                     <span>{t(opt.label as any)}</span>
@@ -283,124 +284,152 @@ export default function DashboardPage() {
             {/* Main Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {mainStats.map((stat) => (
-                    <div key={stat.name} className={`bg-white p-6 rounded-[2rem] border ${stat.border} shadow-sm hover:shadow-xl transition-all duration-300`}>
-                        <div className={`w-12 h-12 rounded-2xl ${stat.color} flex items-center justify-center text-2xl mb-4`}>
+                    <div key={stat.name} className="admin-card group hover:shadow-2xl hover:shadow-blue-100/50 border-gray-100">
+                        <div className="diagonal-accent"></div>
+                        <div className={`w-14 h-14 rounded-2xl ${stat.color} flex items-center justify-center text-3xl mb-8 shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3`}>
                             {stat.icon}
                         </div>
-                        <div className="text-3xl font-black text-gray-800 tracking-tight">{stat.value}</div>
-                        <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1">{stat.name}</div>
+                        <div className="text-4xl font-black text-[#0511F2] tracking-tighter mb-2">{stat.value}</div>
+                        <div className="text-[11px] text-gray-400 font-black uppercase tracking-[0.2em]">{stat.name}</div>
                     </div>
                 ))}
             </div>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
 
                 {/* 1. Leads Growth */}
-                <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                    <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
-                        <span className="w-2 h-8 bg-blue-400 rounded-full mr-3" />
-                        Crecimiento de Leads
-                    </h3>
-                    <div className="h-[300px] w-full min-h-[300px]">
+                <div className="admin-card !p-10 shadow-sm relative group">
+                    <div className="flex items-center justify-between mb-10">
+                        <div className="flex items-center gap-4">
+                            <div className="w-2 h-8 bg-[#EE05F2] rounded-full" />
+                            <h3 className="text-[12px] font-black text-[#0511F2] uppercase tracking-[0.2em]">Crecimiento Global</h3>
+                        </div>
+                        <div className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Leads Activos</div>
+                    </div>
+                    <div className="h-[320px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={leadsGrowthData}>
                                 <defs>
                                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
-                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                        <stop offset="5%" stopColor="#EE05F2" stopOpacity={0.2} />
+                                        <stop offset="95%" stopColor="#EE05F2" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 11 }} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 11 }} />
-                                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
-                                <Area type="monotone" dataKey="value" stroke="#3b82f6" fillOpacity={1} fill="url(#colorValue)" strokeWidth={3} />
+                                <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#f1f5f9" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} />
+                                <Tooltip 
+                                    contentStyle={{ borderRadius: '2rem', border: 'none', boxShadow: '0 30px 60px rgba(5, 17, 242, 0.15)', padding: '20px' }}
+                                    itemStyle={{ fontWeight: 800, fontSize: '12px', color: '#EE05F2' }}
+                                />
+                                <Area type="monotone" dataKey="value" stroke="#EE05F2" fillOpacity={1} fill="url(#colorValue)" strokeWidth={5} />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* 2. Popular Landings */}
-                <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                    <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
-                        <span className="w-2 h-8 bg-indigo-400 rounded-full mr-3" />
-                        Conversion por Landing
-                    </h3>
-                    <div className="h-[300px] w-full min-h-[300px]">
+                <div className="admin-card !p-10 shadow-sm relative group">
+                    <div className="flex items-center justify-between mb-10">
+                        <div className="flex items-center gap-4">
+                            <div className="w-2 h-8 bg-[#0511F2] rounded-full" />
+                            <h3 className="text-[12px] font-black text-[#0511F2] uppercase tracking-[0.2em]">Impacto por Solución</h3>
+                        </div>
+                        <div className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Conversión</div>
+                    </div>
+                    <div className="h-[320px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={popularLandingsData} layout="vertical">
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
+                                <CartesianGrid strokeDasharray="5 5" horizontal={false} stroke="#f1f5f9" />
                                 <XAxis type="number" hide />
-                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 10, fontWeight: 600 }} width={100} />
-                                <Tooltip cursor={{ fill: 'transparent' }} />
-                                <Bar dataKey="value" radius={[0, 10, 10, 0]} barSize={24} fill="#6366f1" />
+                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10, fontWeight: 800 }} width={120} />
+                                <Tooltip 
+                                    cursor={{ fill: 'rgba(5, 17, 242, 0.03)' }}
+                                    contentStyle={{ borderRadius: '2rem', border: 'none', boxShadow: '0 30px 60px rgba(5, 17, 242, 0.15)' }}
+                                />
+                                <Bar dataKey="value" radius={[0, 20, 20, 0]} barSize={28} fill="#0511F2" />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* 3. Source Distribution */}
-                <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                    <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
-                        <span className="w-2 h-8 bg-emerald-400 rounded-full mr-3" />
-                        Fuentes de Tráfico
-                    </h3>
-                    <div className="h-[300px] w-full min-h-[300px]">
+                <div className="admin-card !p-10 shadow-sm">
+                    <div className="flex items-center gap-4 mb-10">
+                        <div className="w-2 h-8 bg-[#26A3BF] rounded-full" />
+                        <h3 className="text-[12px] font-black text-[#0511F2] uppercase tracking-[0.2em]">Canales de Adquisición</h3>
+                    </div>
+                    <div className="h-[320px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
                                     data={sourcesData}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
+                                    innerRadius={80}
+                                    outerRadius={110}
+                                    paddingAngle={10}
                                     dataKey="value"
+                                    stroke="none"
                                 >
                                     {sourcesData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#6366f1', '#f59e0b'][index % 4]} />
+                                        <Cell key={`cell-${index}`} fill={['#EE05F2', '#0511F2', '#26A3BF', '#6FD904', '#EAF207'][index % 5]} />
                                     ))}
                                 </Pie>
-                                <Tooltip />
+                                <Tooltip 
+                                    contentStyle={{ borderRadius: '2rem', border: 'none', boxShadow: '0 30px 60px rgba(5, 17, 242, 0.15)' }}
+                                />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* 4. Budget Distribution */}
-                <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                    <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
-                        <span className="w-2 h-8 bg-amber-400 rounded-full mr-3" />
-                        Distribución de Presupuestos
-                    </h3>
-                    <div className="h-[300px] w-full min-h-[300px]">
+                <div className="admin-card !p-10 shadow-sm">
+                    <div className="flex items-center gap-4 mb-10">
+                        <div className="w-2 h-8 bg-[#6FD904] rounded-full" />
+                        <h3 className="text-[12px] font-black text-[#0511F2] uppercase tracking-[0.2em]">Escala de Proyectos</h3>
+                    </div>
+                    <div className="h-[320px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={budgetData} layout="vertical">
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
+                                <CartesianGrid strokeDasharray="5 5" horizontal={false} stroke="#f1f5f9" />
                                 <XAxis type="number" hide />
-                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 10, fontWeight: 600 }} width={100} />
-                                <Tooltip cursor={{ fill: 'transparent' }} />
-                                <Bar dataKey="value" radius={[0, 10, 10, 0]} barSize={24} fill="#f59e0b" />
+                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10, fontWeight: 800 }} width={120} />
+                                <Tooltip 
+                                    contentStyle={{ borderRadius: '2rem', border: 'none', boxShadow: '0 30px 60px rgba(5, 17, 242, 0.15)' }}
+                                />
+                                <Bar dataKey="value" radius={[0, 20, 20, 0]} barSize={28} fill="#6FD904" />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* 5. Service Interests */}
-                <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm lg:col-span-2">
-                    <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
-                        <span className="w-2 h-8 bg-rose-400 rounded-full mr-3" />
-                        Servicios más Solicitados
-                    </h3>
-                    <div className="h-[300px] w-full min-h-[300px]">
+                <div className="admin-card !p-10 shadow-sm lg:col-span-2 overflow-visible relative">
+                    <div className="diagonal-accent !opacity-10"></div>
+                    <div className="flex items-center justify-between mb-12">
+                        <div className="flex items-center gap-4">
+                            <div className="w-2 h-8 bg-[#EAF207] rounded-full" />
+                            <h3 className="text-[12px] font-black text-[#0511F2] uppercase tracking-[0.2em]">Interés Tecnológico Global</h3>
+                        </div>
+                    </div>
+                    <div className="h-[380px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={servicesInterestsData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 10, fontWeight: 600 }} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 11 }} />
-                                <Tooltip cursor={{ fill: 'transparent' }} />
-                                <Bar dataKey="value" radius={[10, 10, 0, 0]} barSize={40} fill="#f43f5e" />
+                                <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#f1f5f9" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10, fontWeight: 800 }} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} />
+                                <Tooltip 
+                                    cursor={{ fill: 'rgba(5, 17, 242, 0.03)' }}
+                                    contentStyle={{ borderRadius: '2rem', border: 'none', boxShadow: '0 30px 60px rgba(5, 17, 242, 0.15)' }}
+                                />
+                                <Bar dataKey="value" radius={[20, 20, 0, 0]} barSize={60}>
+                                    {servicesInterestsData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={['#0511F2', '#26A3BF', '#EE05F2', '#6FD904'][index % 4]} />
+                                    ))}
+                                </Bar>
                             </BarChart>
                         </ResponsiveContainer>
                     </div>

@@ -50,17 +50,18 @@ export default function PipelineBoard({ leads, onStatusChange }: PipelineBoardPr
     );
 
     const stages: { key: LeadStatus; label: string; color: string }[] = [
-        { key: 'NEW', label: 'Nuevo', color: 'bg-blue-500' },
-        { key: 'QUALIFIED', label: 'Calificado', color: 'bg-cyan-500' },
-        { key: 'CONTACTED', label: 'Contactado', color: 'bg-indigo-500' },
-        { key: 'DISCOVERY_SCHEDULED', label: 'Sesión Agendada', color: 'bg-purple-500' },
-        { key: 'DISCOVERY_COMPLETED', label: 'Sesión Completada', color: 'bg-fuchsia-500' },
-        { key: 'PROPOSAL_PREPARING', label: 'Propuesta en Prep.', color: 'bg-amber-500' },
-        { key: 'PROPOSAL_SENT', label: 'Propuesta Enviada', color: 'bg-orange-500' },
-        { key: 'NEGOTIATION', label: 'Negociación', color: 'bg-rose-500' },
-        { key: 'WON', label: 'Ganado', color: 'bg-green-500' },
-        { key: 'LOST', label: 'Perdido', color: 'bg-gray-500' },
-        { key: 'ON_HOLD', label: 'En Espera', color: 'bg-slate-400' },
+        { key: 'KICK_OFF', label: '🚀 Kick-off', color: 'bg-[#EE05F2]' },
+        { key: 'NEW', label: 'Nuevo', color: 'bg-[#0511F2]' },
+        { key: 'QUALIFIED', label: 'Calificado', color: 'bg-[#26A3BF]' },
+        { key: 'CONTACTED', label: 'Contactado', color: 'bg-[#0511F2]/80' },
+        { key: 'DISCOVERY_SCHEDULED', label: 'Sesión Agendada', color: 'bg-[#EE05F2]/70' },
+        { key: 'DISCOVERY_COMPLETED', label: 'Sesión Completada', color: 'bg-[#EE05F2]/90' },
+        { key: 'PROPOSAL_PREPARING', label: 'Propuesta en Prep.', color: 'bg-[#EAF207] !text-black' },
+        { key: 'PROPOSAL_SENT', label: 'Propuesta Enviada', color: 'bg-[#26A3BF]/80' },
+        { key: 'NEGOTIATION', label: 'Negociación', color: 'bg-[#EE05F2]/50' },
+        { key: 'WON', label: 'Ganado', color: 'bg-[#6FD904]' },
+        { key: 'LOST', label: 'Perdido', color: 'bg-gray-400' },
+        { key: 'ON_HOLD', label: 'En Espera', color: 'bg-gray-200' },
     ];
 
     const getLeadsInStage = (stage: LeadStatus) => {

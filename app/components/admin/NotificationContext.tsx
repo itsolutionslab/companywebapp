@@ -23,12 +23,17 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         <NotificationContext.Provider value={{ showNotification }}>
             {children}
             {notification && (
-                <div className={`fixed bottom-24 right-6 px-6 py-3 rounded-2xl shadow-2xl z-[100] animate-in slide-in-from-right-10 duration-300 font-bold border ${notification.type === 'success' ? 'bg-emerald-500 text-white border-emerald-400' :
-                    notification.type === 'error' ? 'bg-rose-500 text-white border-rose-400' :
-                        'bg-blue-500 text-white border-blue-400'
+                <div className={`fixed bottom-10 right-6 px-8 py-4 rounded-[2rem] shadow-2xl z-[200] animate-in slide-in-from-right-10 duration-500 font-black uppercase text-[10px] tracking-[0.15em] border backdrop-blur-xl ${
+                    notification.type === 'success' ? 'bg-[#6FD904]/90 text-white border-[#6FD904]/20 shadow-[#6FD904]/20' :
+                    notification.type === 'error' ? 'bg-[#EE05F2]/90 text-white border-[#EE05F2]/20 shadow-[#EE05F2]/20' :
+                    'bg-[#0511F2]/90 text-white border-[#0511F2]/20 shadow-[#0511F2]/20'
                     }`}>
-                    {notification.type === 'success' ? '✅ ' : notification.type === 'error' ? '❌ ' : 'ℹ️ '}
-                    {notification.message}
+                    <div className="flex items-center gap-3">
+                        <span className="text-lg">
+                            {notification.type === 'success' ? '✅' : notification.type === 'error' ? '❌' : 'ℹ️'}
+                        </span>
+                        {notification.message}
+                    </div>
                 </div>
             )}
         </NotificationContext.Provider>

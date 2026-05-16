@@ -21,8 +21,9 @@ export default function AdminPage() {
     }, [router]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
+        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-6">
+            <div className="w-16 h-16 border-4 border-[#0081C8]/10 border-t-[#0081C8] rounded-full animate-spin"></div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">Verificando Credenciales...</p>
         </div>
     );
 }

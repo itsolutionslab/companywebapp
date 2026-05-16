@@ -320,211 +320,205 @@ export default function SchedulesPage() {
     const dayKeys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
     return (
-        <div className="space-y-5 md:space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            {/* Header - Mobile Optimized */}
-            <div className="flex flex-col gap-3">
+        <div className="space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+            {/* Header */}
+            <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 px-2 relative">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-pink-600 via-rose-500 to-purple-600 bg-clip-text text-transparent">
-                        {t('schedules')}
-                    </h1>
-                    <p className="text-sm md:text-base text-gray-500 font-medium mt-1">{t('manage_schedules')}</p>
+                    <div className="admin-decorator-line mb-4"></div>
+                    <h1 className="admin-h1 text-4xl mb-2">📅 {t('schedules')}</h1>
+                    <p className="admin-subtitle text-gray-500 font-medium">{t('manage_schedules')}</p>
                 </div>
 
-                {/* Controls - Stack on mobile */}
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex flex-col sm:flex-row gap-3">
                     <button
                         onClick={() => setShowWeeklyModal(true)}
-                        className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
+                        className="admin-btn admin-btn-secondary flex items-center justify-center gap-2"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        {t('weekly_hours')}
+                        <span className="text-xl">⚙️</span>
+                        HORARIOS SEMANALES
                     </button>
-
-                    <div className="bg-white p-1 rounded-2xl shadow-sm border border-gray-100 flex gap-1">
+                    <div className="flex bg-gray-50 p-1.5 rounded-[2rem] border border-gray-100 shadow-inner overflow-x-auto no-scrollbar">
                         {(['hours', 'single', 'range'] as Mode[]).map((m) => (
                             <button
                                 key={m}
                                 onClick={() => { setMode(m); setRangeStart(null); setRangeEnd(null); }}
-                                className={`flex-1 px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${mode === m
-                                    ? 'bg-gray-900 text-white shadow-lg'
-                                    : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                                className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 whitespace-nowrap ${mode === m
+                                    ? 'bg-[#0511F2] text-white shadow-xl shadow-blue-200 scale-[1.05]'
+                                    : 'text-gray-400 hover:text-[#0511F2]'
                                     }`}
                             >
-                                {m === 'hours' ? t('mode_hours_short') : m === 'single' ? t('mode_single_short') : t('mode_range_short')}
+                                {m === 'hours' ? "GESTIÓN HORAS" : m === 'single' ? "BLOQUEO DÍA" : "RANGO DÍAS"}
                             </button>
                         ))}
                     </div>
                 </div>
-            </div>
+            </header>
 
-            {/* Main Content - Stack vertically on mobile */}
-            <div className="flex flex-col lg:flex-row gap-5 md:gap-8">
-                {/* Calendar Section */}
-                <div className="w-full lg:w-1/2 flex flex-col gap-4">
-                    <div className="bg-white p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-gray-100 shadow-lg">
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Calendar Column */}
+                <div className="lg:col-span-7 space-y-6">
+                    <div className="admin-card !p-8 relative overflow-hidden">
+                        <div className="diagonal-accent !opacity-[0.03]"></div>
                         {/* Month Nav */}
-                        <div className="flex justify-between items-center mb-4 md:mb-6">
-                            <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-lg">◀</button>
-                            <h2 className="text-base md:text-xl font-black text-gray-800 uppercase tracking-wide">
+                        <div className="flex justify-between items-center mb-8 relative z-10">
+                            <button onClick={() => changeMonth(-1)} className="w-12 h-12 rounded-[1rem] bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-[#0511F2] hover:text-white transition-all shadow-sm">◀</button>
+                            <h2 className="text-2xl font-black text-[#0511F2] uppercase font-heading tracking-widest">
                                 {viewDate.toLocaleDateString(t('locale' as any) === 'es' ? 'es-ES' : t('locale' as any) === 'ru' ? 'ru-RU' : 'en-US', { month: 'long', year: 'numeric' })}
                             </h2>
-                            <button onClick={() => changeMonth(1)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-lg">▶</button>
+                            <button onClick={() => changeMonth(1)} className="w-12 h-12 rounded-[1rem] bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-[#0511F2] hover:text-white transition-all shadow-sm">▶</button>
                         </div>
 
                         {/* Weekday Headers */}
-                        <div className="grid grid-cols-7 mb-2 text-center">
+                        <div className="grid grid-cols-7 mb-4 text-center relative z-10">
                             {['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].map((d, i) => (
-                                <span key={i} className="text-[10px] md:text-xs font-bold text-gray-300 uppercase">
+                                <span key={i} className="text-[10px] font-black text-gray-300 uppercase tracking-widest">
                                     {t(`day_${d}` as any).charAt(0)}
                                 </span>
                             ))}
                         </div>
 
                         {/* Calendar Grid */}
-                        <div className="grid grid-cols-7 gap-1 md:gap-2">
+                        <div className="grid grid-cols-7 gap-2 relative z-10">
                             {renderCalendar()}
                         </div>
 
-                        {/* Action Buttons - Mobile Optimized */}
-                        <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-100">
-                            {mode === 'single' && (
-                                <div className="flex flex-col sm:flex-row gap-2">
-                                    <button onClick={() => toggleFullDay(selectedDate, true)} className="flex-1 py-2.5 md:py-3 bg-gray-100 text-gray-500 rounded-xl font-bold text-xs md:text-sm hover:bg-gray-200 transition-colors">{t('disable_day')}</button>
-                                    <button onClick={() => toggleFullDay(selectedDate, false)} className="flex-1 py-2.5 md:py-3 bg-pink-50 text-pink-600 rounded-xl font-bold text-xs md:text-sm hover:bg-pink-100 transition-colors">{t('enable_day')}</button>
-                                </div>
-                            )}
-                            {mode === 'range' && rangeStart && rangeEnd && (
-                                <div className="flex flex-col sm:flex-row gap-2">
-                                    <button onClick={() => handleRangeAction('block')} className="flex-1 py-2.5 md:py-3 bg-red-50 text-red-600 rounded-xl font-bold text-xs md:text-sm hover:bg-red-100 transition-colors">{t('disable_range')}</button>
-                                    <button onClick={() => handleRangeAction('unblock')} className="flex-1 py-2.5 md:py-3 bg-green-50 text-green-600 rounded-xl font-bold text-xs md:text-sm hover:bg-green-100 transition-colors">{t('enable_range')}</button>
-                                </div>
-                            )}
-                            {mode === 'hours' && (
-                                <div className="text-center text-gray-400 text-xs md:text-sm font-medium">
-                                    {t('select_date_to_manage')}
-                                </div>
-                            )}
-                        </div>
+                        {/* Quick Actions Footer */}
+                        {(mode === 'single' || (mode === 'range' && rangeStart && rangeEnd)) && (
+                            <div className="mt-8 pt-8 border-t border-gray-100 flex flex-col sm:flex-row gap-3 relative z-10">
+                                {mode === 'single' && (
+                                    <>
+                                        <button onClick={() => toggleFullDay(selectedDate, true)} className="flex-1 admin-btn bg-gray-100 text-gray-500 hover:bg-gray-200 !text-[10px] uppercase tracking-widest font-black">BLOQUEAR DÍA</button>
+                                        <button onClick={() => toggleFullDay(selectedDate, false)} className="flex-1 admin-btn bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100 !text-[10px] uppercase tracking-widest font-black">HABILITAR DÍA</button>
+                                    </>
+                                )}
+                                {mode === 'range' && rangeStart && rangeEnd && (
+                                    <>
+                                        <button onClick={() => handleRangeAction('block')} className="flex-1 admin-btn bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100 !text-[10px] uppercase tracking-widest font-black">BLOQUEAR RANGO</button>
+                                        <button onClick={() => handleRangeAction('unblock')} className="flex-1 admin-btn bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100 !text-[10px] uppercase tracking-widest font-black">HABILITAR RANGO</button>
+                                    </>
+                                )}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Legend - Mobile Optimized */}
-                    <div className="bg-white/50 backdrop-blur-sm p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-gray-100">
-                        <h3 className="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 md:mb-4">{t('legend_legend')}</h3>
-                        <div className="grid grid-cols-2 md:flex md:flex-wrap gap-3 md:gap-4">
-                            <div className="flex items-center gap-2">
-                                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-red-400"></div>
-                                <span className="text-[10px] md:text-xs font-medium text-gray-500">{t('legend_reserved')}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-gray-400"></div>
-                                <span className="text-[10px] md:text-xs font-medium text-gray-500">{t('legend_blocked')}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-gray-300"></div>
-                                <span className="text-[10px] md:text-xs font-medium text-gray-500">{t('legend_closed')}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-400"></div>
-                                <span className="text-[10px] md:text-xs font-medium text-gray-500">{t('legend_attended')}</span>
-                            </div>
+                    {/* Legend */}
+                    <div className="admin-card bg-gray-50/50 !p-6 border border-gray-100">
+                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6">LEYENDA DE DISPONIBILIDAD</h3>
+                        <div className="flex flex-wrap gap-6">
+                            {[
+                                { color: 'bg-rose-400', label: 'RESERVADO' },
+                                { color: 'bg-gray-400', label: 'BLOQUEADO' },
+                                { color: 'bg-gray-200', label: 'CERRADO' },
+                                { color: 'bg-[#6FD904]', label: 'ATENDIDO' }
+                            ].map((item, i) => (
+                                <div key={i} className="flex items-center gap-2">
+                                    <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
+                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{item.label}</span>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
 
-                {/* Time Slots Section */}
-                <div className="w-full lg:w-1/2">
-                    <div className="bg-white p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] border border-gray-100 shadow-sm max-h-[600px] md:max-h-[800px] overflow-y-auto">
-                        <div className="sticky top-0 bg-white/95 backdrop-blur-xl pb-4 mb-4 border-b border-gray-50 z-10">
-                            <h3 className="text-lg md:text-2xl font-bold text-gray-800">
-                                {new Date(selectedDate + 'T00:00:00').toLocaleDateString(t('locale' as any) === 'es' ? 'es-ES' : t('locale' as any) === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
+                {/* Time Slots Column */}
+                <div className="lg:col-span-5">
+                    <div className="admin-card h-full flex flex-col min-h-[600px] !p-0 overflow-hidden relative">
+                        <div className="diagonal-accent !opacity-[0.03]"></div>
+                        <header className="p-8 bg-white/80 backdrop-blur-sm border-b border-gray-100 relative z-10">
+                            <h3 className="text-2xl font-black text-[#0511F2] font-heading tracking-tight leading-none mb-4 uppercase">
+                                {new Date(selectedDate + 'T00:00:00').toLocaleDateString(t('locale' as any) === 'es' ? 'es-ES' : t('locale' as any) === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase()}
                             </h3>
-                            <div className="flex flex-wrap gap-2 mt-2">
+                            <div className="flex flex-wrap gap-2">
                                 {isDayClosedBySchedule(selectedDate) && (
-                                    <span className="bg-purple-100 text-purple-600 px-2 py-1 rounded-full text-[10px] md:text-xs font-bold">📅 {t('closed_caps')}</span>
+                                    <span className="bg-gray-100 text-gray-500 px-3 py-1.5 rounded-lg text-[9px] font-black tracking-widest uppercase border border-gray-200">CERRADO</span>
                                 )}
                                 {isDayFullDisabled(selectedDate)
-                                    ? <span className="bg-gray-100 text-gray-500 px-2 py-1 rounded-full text-[10px] md:text-xs font-bold">⚠️ {t('blocked_caps')}</span>
-                                    : <span className="bg-green-100 text-green-600 px-2 py-1 rounded-full text-[10px] md:text-xs font-bold">✓ {t('active_caps')}</span>
+                                    ? <span className="bg-rose-50 text-rose-500 border border-rose-100 px-3 py-1.5 rounded-lg text-[9px] font-black tracking-widest uppercase">BLOQUEADO</span>
+                                    : <span className="bg-[#6FD904]/10 text-[#6FD904] border border-[#6FD904]/20 px-3 py-1.5 rounded-lg text-[9px] font-black tracking-widest uppercase">ACTIVO</span>
                                 }
                             </div>
+                        </header>
+
+                        <div className="flex-1 overflow-y-auto p-8 no-scrollbar relative z-10">
+                            {mode === 'range' ? (
+                                <div className="h-full flex flex-col items-center justify-center text-center opacity-30 grayscale p-10">
+                                    <span className="text-6xl mb-6">🗓️</span>
+                                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">MODO RANGO</h3>
+                                    <p className="text-[11px] text-gray-400 font-bold mt-2 leading-relaxed">Selecciona el inicio y fin en el calendario para gestionar bloques masivos</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {timeSlots.map((time) => {
+                                        const status = getSlotStatus(selectedDate, time);
+                                        let btnStyle = "bg-white text-gray-600 border-gray-100 hover:border-[#0511F2] hover:text-[#0511F2] hover:shadow-lg hover:shadow-blue-50";
+
+                                        if (status === 'occupied') { btnStyle = "bg-rose-50 text-rose-500 border-rose-100 cursor-not-allowed opacity-80"; }
+                                        else if (status === 'attended') { btnStyle = "bg-[#6FD904]/10 text-[#6FD904] border-[#6FD904]/20 cursor-not-allowed opacity-80"; }
+                                        else if (status === 'disabled') { btnStyle = "bg-gray-50 text-gray-400 border-gray-100"; }
+
+                                        return (
+                                            <button
+                                                key={time}
+                                                disabled={status === 'occupied' || status === 'attended'}
+                                                onClick={() => toggleSingleSlot(time)}
+                                                className={`p-4 rounded-[1.5rem] border-2 transition-all duration-300 flex flex-col items-center gap-2 group ${btnStyle} ${mode === 'single' ? 'opacity-30 pointer-events-none' : ''}`}
+                                            >
+                                                <span className="text-sm font-black tracking-tight">{time.replace(':00 ', ' ')}</span>
+                                                <span className="text-[8px] font-black uppercase tracking-widest bg-white/50 px-2 py-0.5 rounded-full border border-gray-100/50">
+                                                    {status === 'available' ? 'LIBRE' : status === 'occupied' ? 'OCUPADO' : status === 'attended' ? 'ATENDIDO' : 'BLOQUEO'}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {mode === 'single' && (
+                                <div className="mt-8 p-6 bg-blue-50/50 rounded-[2rem] border border-blue-100 flex gap-4 items-start animate-in fade-in zoom-in-95">
+                                    <span className="text-2xl">💡</span>
+                                    <p className="text-blue-900 text-[11px] font-bold leading-relaxed uppercase tracking-wide">
+                                        Modo bloqueo activado. Selecciona un día en el calendario para bloquearlo o habilitarlo por completo.
+                                    </p>
+                                </div>
+                            )}
                         </div>
-
-                        {mode === 'range' ? (
-                            <div className="flex flex-col items-center justify-center h-48 md:h-64 text-center">
-                                <span className="text-4xl md:text-6xl mb-3 md:mb-4">🗓️</span>
-                                <h3 className="text-lg md:text-xl font-bold text-gray-800">{t('mode_range_title')}</h3>
-                                <p className="text-sm md:text-base text-gray-400 max-w-xs mt-2">{t('use_calendar_to_select')}</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2 md:gap-4">
-                                {timeSlots.map((time) => {
-                                    const status = getSlotStatus(selectedDate, time);
-                                    let btnClass = "";
-
-                                    if (status === 'occupied') { btnClass = "bg-red-50 text-red-500 border-red-100 cursor-not-allowed"; }
-                                    else if (status === 'attended') { btnClass = "bg-green-50 text-green-600 border-green-100 cursor-not-allowed"; }
-                                    else if (status === 'disabled') { btnClass = "bg-gray-50 text-gray-400 border-gray-100"; }
-                                    else { btnClass = "bg-white text-gray-600 border-gray-100 hover:border-pink-300 hover:text-pink-500 hover:shadow-md"; }
-
-                                    return (
-                                        <button
-                                            key={time}
-                                            disabled={status === 'occupied' || status === 'attended'}
-                                            onClick={() => toggleSingleSlot(time)}
-                                            className={`p-3 md:p-4 rounded-xl md:rounded-2xl border-2 transition-all duration-200 flex flex-col items-center gap-1 md:gap-2 ${btnClass} ${mode === 'single' ? 'opacity-40 pointer-events-none' : ''}`}
-                                        >
-                                            <span className="text-sm md:text-lg font-bold">{time.replace(':00 ', ' ')}</span>
-                                            <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest bg-white/50 px-1.5 md:px-2 py-0.5 rounded-full">
-                                                {status === 'available' ? t('free_caps') : status === 'occupied' ? t('occupied_caps') : status === 'attended' ? t('attended_caps') : t('blocked_caps')}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
-
-                        {mode === 'single' && (
-                            <div className="mt-6 md:mt-8 p-4 md:p-6 bg-blue-50 rounded-2xl border border-blue-100 flex gap-3 md:gap-4 items-start">
-                                <span className="text-xl md:text-2xl">👆</span>
-                                <p className="text-blue-800 text-xs md:text-sm font-medium">{t('full_day_mode_helper')}</p>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Weekly Schedule Modal - Mobile Optimized */}
+            {/* Weekly Schedule Modal */}
             {showWeeklyModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4">
-                        <div className="p-5 md:p-8">
-                            <div className="flex justify-between items-center mb-3 md:mb-4">
-                                <h2 className="text-lg md:text-2xl font-black text-gray-800">{t('general_schedule')}</h2>
-                                <button onClick={() => setShowWeeklyModal(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
-                                    <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                </button>
+                <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md flex items-center justify-center z-[120] p-4 animate-in fade-in duration-300">
+                    <div className="admin-modal w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-500 shadow-2xl relative">
+                        <div className="diagonal-accent !opacity-[0.05]"></div>
+                        <header className="p-8 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                            <div>
+                                <h3 className="text-2xl font-black text-[#0511F2] tracking-tighter uppercase font-heading">HORARIOS GENERALES</h3>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Configura tu horario base semanal</p>
                             </div>
+                            <button onClick={() => setShowWeeklyModal(false)} className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-all border border-gray-200">✕</button>
+                        </header>
 
-                            <p className="text-sm md:text-base text-gray-500 mb-4 md:mb-6">{t('manage_schedules')}</p>
-
-                            {/* Time Interval Selector - Mobile First */}
-                            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-2 md:p-2 rounded-2xl border border-purple-100 mb-4 md:mb-6">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <span className="text-xl">⚙️</span>
-                                    <h3 className="text-sm md:text-base font-bold text-gray-700">{t('time_interval')}</h3>
+                        <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar relative z-10">
+                            {/* Interval Selector */}
+                            <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
+                                <div className="flex items-center gap-2 mb-6">
+                                    <span className="text-xl">⏱️</span>
+                                    <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-widest">INTERVALO DE SESIONES</h3>
                                 </div>
-                                <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
+                                <div className="grid grid-cols-3 gap-3">
                                     {[
-                                        { value: 30, label: t('interval_30min') },
-                                        { value: 60, label: t('interval_1hour') },
-                                        { value: 120, label: t('interval_2hours') }
+                                        { value: 30, label: '30 MIN' },
+                                        { value: 60, label: '1 HORA' },
+                                        { value: 120, label: '2 HORAS' }
                                     ].map((option) => (
                                         <button
                                             key={option.value}
                                             onClick={() => setTimeInterval(option.value)}
-                                            className={`flex-1 py-3 md:py-3.5 px-4 rounded-xl font-bold text-sm md:text-base transition-all ${timeInterval === option.value
-                                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-200'
-                                                : 'bg-white text-gray-600 border border-gray-200 hover:border-purple-300 hover:shadow-md'
+                                            className={`py-3.5 rounded-xl font-black text-[10px] tracking-widest transition-all border-2 ${timeInterval === option.value
+                                                ? 'bg-[#0511F2] border-[#0511F2] text-white shadow-lg shadow-blue-100'
+                                                : 'bg-white border-gray-100 text-gray-400 hover:border-blue-200'
                                                 }`}
                                         >
                                             {option.label}
@@ -533,66 +527,62 @@ export default function SchedulesPage() {
                                 </div>
                             </div>
 
-                            <div className="space-y-3 md:space-y-4">
+                            <div className="space-y-3">
                                 {dayKeys.map((day) => (
-                                    <div key={day} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 md:p-4 bg-gray-50 rounded-2xl">
-                                        <div className="flex-shrink-0">
-                                            <label className="flex items-center gap-2 cursor-pointer">
+                                    <div key={day} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white rounded-[2rem] border border-gray-100 hover:border-[#0511F2]/30 transition-all shadow-sm hover:shadow-md">
+                                        <div className="flex items-center gap-4">
+                                            <div className="relative inline-flex items-center cursor-pointer">
                                                 <input
                                                     type="checkbox"
                                                     checked={!weeklySchedule[day].closed}
                                                     onChange={(e) => updateDaySchedule(day, 'closed', !e.target.checked)}
-                                                    className="w-5 h-5 rounded-lg accent-pink-500"
+                                                    className="sr-only peer"
                                                 />
-                                                <span className="font-bold text-sm md:text-base text-gray-700 capitalize min-w-[80px]">{t(`day_${day}` as any)}</span>
-                                            </label>
+                                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0511F2]"></div>
+                                            </div>
+                                            <span className="font-black text-[10px] text-gray-900 uppercase tracking-widest min-w-[80px]">{t(`day_${day}` as any)}</span>
                                         </div>
 
                                         {!weeklySchedule[day].closed ? (
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <div className="flex items-center gap-1.5">
-                                                    <label className="text-[10px] md:text-xs text-gray-400 font-bold uppercase">{t('opens_at')}</label>
-                                                    <input
-                                                        type="time"
-                                                        value={weeklySchedule[day].open}
-                                                        onChange={(e) => updateDaySchedule(day, 'open', e.target.value)}
-                                                        className="px-2 md:px-3 py-1.5 md:py-2 border border-gray-200 rounded-xl text-xs md:text-sm font-bold text-gray-700 focus:ring-2 focus:ring-pink-500 outline-none"
-                                                    />
-                                                </div>
-                                                <span className="text-gray-300">-</span>
-                                                <div className="flex items-center gap-1.5">
-                                                    <label className="text-[10px] md:text-xs text-gray-400 font-bold uppercase">{t('closes_at')}</label>
-                                                    <input
-                                                        type="time"
-                                                        value={weeklySchedule[day].close}
-                                                        onChange={(e) => updateDaySchedule(day, 'close', e.target.value)}
-                                                        className="px-2 md:px-3 py-1.5 md:py-2 border border-gray-200 rounded-xl text-xs md:text-sm font-bold text-gray-700 focus:ring-2 focus:ring-pink-500 outline-none"
-                                                    />
-                                                </div>
+                                            <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
+                                                <input
+                                                    type="time"
+                                                    value={weeklySchedule[day].open}
+                                                    onChange={(e) => updateDaySchedule(day, 'open', e.target.value)}
+                                                    className="bg-transparent text-[11px] font-black text-gray-900 outline-none cursor-pointer"
+                                                />
+                                                <span className="text-gray-300 font-black text-[10px]">A</span>
+                                                <input
+                                                    type="time"
+                                                    value={weeklySchedule[day].close}
+                                                    onChange={(e) => updateDaySchedule(day, 'close', e.target.value)}
+                                                    className="bg-transparent text-[11px] font-black text-gray-900 outline-none cursor-pointer"
+                                                />
                                             </div>
                                         ) : (
-                                            <span className="text-sm text-gray-400 italic">{t('closed')}</span>
+                                            <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest px-4 py-2 bg-rose-50 rounded-xl border border-rose-100">CERRADO</span>
                                         )}
                                     </div>
                                 ))}
                             </div>
-
-                            <div className="mt-2 mb-18 md:mt-3 flex flex-col sm:flex-row gap-2">
-                                <button
-                                    onClick={() => setShowWeeklyModal(false)}
-                                    className="flex-1 px-6 py-2 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-colors"
-                                >
-                                    {t('cancel')}
-                                </button>
-                                <button
-                                    onClick={handleSaveWeeklySchedule}
-                                    disabled={savingSchedule}
-                                    className="flex-1 px-6 py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-2xl font-bold hover:shadow-lg transition-all disabled:opacity-50"
-                                >
-                                    {savingSchedule ? t('saving') : t('save_schedule')}
-                                </button>
-                            </div>
                         </div>
+
+                        <footer className="p-8 border-t border-gray-100 flex gap-4 bg-white sticky bottom-0 z-10">
+                            <button
+                                type="button"
+                                onClick={() => setShowWeeklyModal(false)}
+                                className="flex-1 admin-btn admin-btn-secondary"
+                            >
+                                CANCELAR
+                            </button>
+                            <button
+                                onClick={handleSaveWeeklySchedule}
+                                disabled={savingSchedule}
+                                className="flex-1 admin-btn admin-btn-primary shadow-lg shadow-pink-200"
+                            >
+                                {savingSchedule ? "GUARDANDO..." : "GUARDAR HORARIOS"}
+                            </button>
+                        </footer>
                     </div>
                 </div>
             )}

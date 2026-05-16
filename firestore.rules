@@ -15,14 +15,15 @@ service cloud.firestore {
     }
     
     function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      let path = /databases/$(database)/documents/users/$(request.auth.uid);
+      return exists(path) ? get(path).data : {"role": "none"};
     }
     
     function hasRole(role) {
       return isSignedIn() && !isAnonymous() && getUserData().role == role;
     }
     
-    // Role Hierarchy (from highest to lowest privilege)
+    // Role Hierarchy
     function isOwnerAdmin() {
       return hasRole('owneradmin');
     }
@@ -38,14 +39,50 @@ service cloud.firestore {
     function isEmploy() {
       return hasRole('employ');
     }
+    
+    // New pillar roles with lead-access (Growth, Eng, Cloud, CS)
+    function isGrowthRole() {
+      return isSignedIn() && !isAnonymous() && getUserData().role in
+        ['GROWTH_L0','GROWTH_L1','GROWTH_L2','GROWTH_L3','GROWTH_L4','GROWTH_L5','GROWTH_L6'];
+    }
+
+    function isEngineeringRole() {
+      return isSignedIn() && !isAnonymous() && getUserData().role in
+        ['ENG_L0','ENG_L1','ENG_L2','ENG_L3','ENG_L4'];
+    }
+
+    function isCloudRole() {
+      return isSignedIn() && !isAnonymous() && getUserData().role in
+        ['CLOUD_L0','CLOUD_L1','CLOUD_L2','CLOUD_L3','CLOUD_L4','CLOUD_L5'];
+    }
+
+    function isCSRole() {
+      return isSignedIn() && !isAnonymous() && getUserData().role in
+        ['CS_L0','CS_L1','CS_L2','CS_L3'];
+    }
+
+    // Any authenticated employee pillar with lead access
+    function isAnyEmployee() {
+      return isSignedIn() && getUserData().role in ['staff', 'admin', 'owneradmin', 'employ',
+         'GROWTH_L0','GROWTH_L1','GROWTH_L2','GROWTH_L3','GROWTH_L4','GROWTH_L5','GROWTH_L6',
+         'ENG_L0','ENG_L1','ENG_L2','ENG_L3','ENG_L4',
+         'CLOUD_L0','CLOUD_L1','CLOUD_L2','CLOUD_L3','CLOUD_L4','CLOUD_L5',
+         'CS_L0','CS_L1','CS_L2','CS_L3'];
+    }
+
+    // Roles that can access chat/messages (Growth, ENG_L4 Solutions Architect, CS)
+    function canAccessChats() {
+      return isAdmin() || hasRole('staff') || isEmploy() || isGrowthRole() || isCSRole()
+        || (isSignedIn() && !isAnonymous() && getUserData().role == 'ENG_L4');
+    }
 
     function canAccessWahaInbox() {
-      return isAdmin() || hasRole('staff') || isEmploy();
+      return canAccessChats();
     }
 
     function canReadWahaChatFields(data) {
       return isAdmin()
-        || ((hasRole('staff') || isEmploy())
+        || (canAccessChats()
             && (data.assignedTo == null || data.assignedTo == request.auth.uid));
     }
     
@@ -94,16 +131,16 @@ service cloud.firestore {
         return isDraft && hasValidBase && validKpis && validData;
       }
 
-      // BLOCK PUBLIC ACCESS
-      // Leads must ONLY be created via the secure API (Admin SDK)
-      allow create: if false;
+      // BLOCK direct public access
+      // Leads can be created by authenticated staff/employees via client SDK
+      allow create: if isAnyEmployee();
       
       // Prevent open scraping
-      allow get: if isStaff();
-      allow list: if isStaff();
+      allow get: if isAnyEmployee();
+      allow list: if isAnyEmployee();
       
-      // Only staff can update leads.
-      allow update: if isStaff();
+      // Only employees and above can update leads
+      allow update: if isAnyEmployee();
       
       // Only admins can delete leads
       allow delete: if isAdmin();
@@ -177,11 +214,12 @@ service cloud.firestore {
       // Anyone can create strictly validated bookings
       allow create: if isValidBooking();
       
-      // Staff can read all bookings
-      allow read: if isStaff();
+      // Staff and all employees can read all bookings
+      // Staff and all employees can read all bookings
+      allow read: if isAnyEmployee();
       
-      // Staff can update booking status and details
-      allow update: if isStaff();
+      // Staff and all employees can update booking status and details
+      allow update: if isAnyEmployee();
       
       // Only admins can delete bookings
       allow delete: if isAdmin();
@@ -191,23 +229,23 @@ service cloud.firestore {
     // USERS - User Profiles & Roles
     // ========================================
     match /users/{userId} {
-      // CRITICAL: Users MUST be able to read their own document BEFORE role checking
-      // Otherwise getUserData() in helper functions creates a circular dependency
-      // Staff can also read all user profiles (but this check happens AFTER self-read)
+      // CRITICAL: Users MUST be able to read their own document
       allow read: if isSignedIn() && request.auth.uid == userId;
       
-      // Additional read permission for staff to view all users
-      // This is separate to avoid circular dependency
-      allow read: if isSignedIn() && !isAnonymous() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'admin', 'owneradmin'];
+      // Additional read permission for all employee roles to view users
+      // This is necessary for the management panel and assignment dropdowns
+      allow list, get: if isSignedIn() && !isAnonymous() && isAnyEmployee();
       
       // Users can create their own profile during registration
       // Admins can create any user profile
       allow create: if (isSignedIn() && request.auth.uid == userId) || isAdmin();
       
-      // Users can update their own profile (except role field)
-      // Admins can update any profile including roles
+      // Users can update their own profile (EXCEPT their role field to prevent self-promotion)
+      // Admins can update any profile except owners, and cannot promote to owner
+      // Owners (OwnerAdmin) can update any profile without restrictions
       allow update: if (isSignedIn() && request.auth.uid == userId && request.resource.data.role == resource.data.role)
-                    || isAdmin();
+                    || (isOwnerAdmin())
+                    || (isAdmin() && resource.data.role != 'owneradmin' && request.resource.data.role != 'owneradmin');
       
       // Only owner admins can delete users
       allow delete: if isOwnerAdmin();
@@ -258,17 +296,12 @@ service cloud.firestore {
       function wahaAgentPatchValid() {
         let before = resource.data;
         let after = request.resource.data;
-        if (before.assignedTo == null) {
-          return after.assignedTo == null || after.assignedTo == request.auth.uid;
-        }
-        if (before.assignedTo == request.auth.uid) {
-          return after.assignedTo == request.auth.uid || after.assignedTo == null;
-        }
-        return false;
+        return (before.assignedTo == null && (after.assignedTo == null || after.assignedTo == request.auth.uid)) ||
+               (before.assignedTo == request.auth.uid && (after.assignedTo == request.auth.uid || after.assignedTo == null));
       }
 
       allow update: if isAdmin()
-        || (isSignedIn() && (hasRole('staff') || isEmploy())
+        || (isSignedIn() && canAccessChats()
             && wahaAgentPatchKeys() && wahaAgentPatchValid());
     }
 

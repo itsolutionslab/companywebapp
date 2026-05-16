@@ -171,6 +171,19 @@ export const deleteUser = async (uid: string) => {
     await deleteDoc(doc(db, "users", uid));
 };
 
+// Role Config
+export const getRoleConfig = async () => {
+    const docSnap = await getDoc(doc(db, "settings", "roles"));
+    if (docSnap.exists()) {
+        return docSnap.data();
+    }
+    return null;
+};
+
+export const updateRoleConfig = async (config: any) => {
+    await setDoc(doc(db, "settings", "roles"), config, { merge: true });
+};
+
 const statusMapping: Record<string, LeadStatus> = {
     'LEAD_NEW': 'NEW',
     'SCHEDULED': 'DISCOVERY_SCHEDULED',
@@ -276,6 +289,30 @@ export const addLeadEvent = async (leadId: string, event: Omit<LeadEvent, 'id'>)
         "audit_logs.updated_at": Timestamp.now()
     });
     return newEvent;
+};
+
+export const createLead = async (leadData: Partial<Lead>) => {
+    const leadsRef = collection(db, "leads");
+    const newLead = {
+        ...leadData,
+        lead_id: Math.random().toString(36).substr(2, 9), // Temporary, will be overwritten by doc id if using addDoc, but here we might want to specify it
+        status_flow: leadData.status_flow || { current: 'NEW', history: [] },
+        audit_logs: {
+            created_at: Timestamp.now(),
+            updated_at: Timestamp.now(),
+            ip: 'admin_action',
+            user_agent: 'admin_panel'
+        },
+        kpis: {
+            session_duration: 0,
+            clicks_count: 0
+        },
+        source_attribution: leadData.source_attribution || {
+            landing_page: 'admin_panel'
+        }
+    };
+    
+    return await addDoc(leadsRef, newLead);
 };
 
 export const updateLead = async (id: string, data: Partial<Lead>) => {

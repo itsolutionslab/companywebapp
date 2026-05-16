@@ -1,0 +1,337 @@
+/* BRECOMPERU Admin Premium Design System */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  /* BRECOMPERU Official Palette */
+  --admin-accent: #EE05F2;       /* Magenta Pink: CTA, Buttons */
+  --admin-primary: #0511F2;      /* Azul Profundo: Títulos, Enlaces */
+  --admin-secondary: #26A3BF;    /* Cyan Turquesa: Iconos, Highlights */
+  --admin-success: #6FD904;      /* Verde Lima: Éxito, Crecimiento */
+  --admin-warning: #EAF207;      /* Amarillo Limón: Energía, Acentos */
+  
+  /* Neutrals */
+  --admin-bg: #FFFFFF;
+  --admin-surface: #F8F9FA;
+  --admin-text-main: #121212;
+  --admin-text-muted: #4B5563;
+  --admin-text-light: #9CA3AF;
+  --admin-border: #E5E7EB;
+  
+  /* Spacing & Radii */
+  --admin-radius-sm: 12px;
+  --admin-radius-md: 18px;
+  --admin-radius-lg: 24px;
+  --admin-radius-xl: 2rem; /* Bordes redondeados grandes solicitados */
+  
+  /* Shadows */
+  --admin-shadow-sm: 0 4px 6px -1px rgba(5, 17, 242, 0.05);
+  --admin-shadow-md: 0 10px 15px -3px rgba(5, 17, 242, 0.08);
+  --admin-shadow-lg: 0 25px 50px -12px rgba(5, 17, 242, 0.12);
+  
+  /* Transitions */
+  --admin-transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Base Reset & Typography */
+.admin-body {
+  font-family: 'Inter', sans-serif;
+  color: var(--admin-text-main);
+  background-color: var(--admin-bg);
+  line-height: 1.6;
+}
+
+.admin-h1, .admin-h2, .admin-h3 {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  color: var(--admin-primary);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+/* Decorative Elements */
+.admin-decorator-line {
+  height: 4px;
+  background: var(--admin-warning);
+  width: 60px;
+  border-radius: 2px;
+  transform: skewX(-20deg);
+}
+
+/* Layout Containers */
+.admin-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Cards */
+.admin-card {
+  background: var(--admin-bg);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-xl);
+  padding: 2.5rem;
+  box-shadow: var(--admin-shadow-sm);
+  transition: var(--admin-transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, var(--admin-primary), var(--admin-secondary));
+  opacity: 0;
+  transition: var(--admin-transition);
+}
+
+.admin-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--admin-shadow-lg);
+  border-color: var(--admin-primary);
+}
+
+.admin-card:hover::before {
+  opacity: 1;
+}
+
+/* Inputs & Forms */
+.admin-input-group {
+  margin-bottom: 1.5rem;
+}
+
+.admin-label {
+  display: block;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--admin-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.6rem;
+  margin-left: 0.5rem;
+}
+
+.admin-input {
+  width: 100%;
+  background: var(--admin-surface);
+  border: 2px solid transparent;
+  border-radius: var(--admin-radius-md);
+  padding: 1.125rem 1.5rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--admin-text-main);
+  transition: var(--admin-transition);
+  outline: none;
+}
+
+.admin-input:focus {
+  background: var(--admin-bg);
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 4px rgba(5, 17, 242, 0.1);
+}
+
+/* Buttons (CTA) */
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 1.125rem 2.25rem;
+  border-radius: var(--admin-radius-md);
+  transition: var(--admin-transition);
+  cursor: pointer;
+  border: none;
+  gap: 0.75rem;
+}
+
+.admin-btn-primary {
+  background: var(--admin-accent);
+  color: white;
+  box-shadow: 0 8px 20px rgba(238, 5, 242, 0.3);
+}
+
+.admin-btn-primary:hover {
+  background: #d404d8;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 28px rgba(238, 5, 242, 0.4);
+}
+
+.admin-btn-secondary {
+  background: var(--admin-primary);
+  color: white;
+  box-shadow: 0 8px 20px rgba(5, 17, 242, 0.2);
+}
+
+.admin-btn-secondary:hover {
+  background: #040ed1;
+  transform: translateY(-2px) scale(1.02);
+}
+
+/* Badges */
+.admin-badge {
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.admin-badge-success { background: rgba(111, 217, 4, 0.1); color: var(--admin-success); }
+.admin-badge-primary { background: rgba(5, 17, 242, 0.1); color: var(--admin-primary); }
+
+/* Tables */
+.admin-table-container {
+  background: var(--admin-bg);
+  border-radius: var(--admin-radius-xl);
+  border: 1px solid var(--admin-border);
+  overflow: hidden;
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th {
+  background: var(--admin-surface);
+  padding: 1.5rem 2rem;
+  text-align: left;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--admin-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  border-bottom: 2px solid var(--admin-border);
+}
+
+.admin-table td {
+  padding: 1.75rem 2rem;
+  border-bottom: 1px solid var(--admin-border);
+  font-size: 0.95rem;
+  color: var(--admin-text-main);
+}
+
+.admin-table tr:hover td {
+  background: rgba(38, 163, 191, 0.04);
+}
+
+/* Modals */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 17, 242, 0.1);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1.5rem;
+}
+
+.admin-modal {
+  background: var(--admin-bg);
+  border-radius: var(--admin-radius-xl);
+  width: 100%;
+  max-width: 700px;
+  padding: 3.5rem;
+  box-shadow: var(--admin-shadow-lg);
+  border: 1px solid var(--admin-border);
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Sheet Modal (iOS Style) */
+.admin-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--admin-bg);
+  border-top-left-radius: 3rem;
+  border-top-right-radius: 3rem;
+  z-index: 250;
+  box-shadow: 0 -20px 60px rgba(5, 17, 242, 0.15);
+  padding: 2rem 0;
+}
+
+.admin-sheet-handle {
+  width: 50px;
+  height: 6px;
+  background: var(--admin-border);
+  border-radius: 3px;
+  margin: 0 auto 2.5rem;
+}
+
+/* Animations */
+@keyframes slideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Decorative Diagonal Lines */
+.diagonal-accent {
+  position: absolute;
+  top: -25px;
+  right: -25px;
+  width: 120px;
+  height: 120px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--admin-warning),
+    var(--admin-warning) 3px,
+    transparent 3px,
+    transparent 12px
+  );
+  opacity: 0.4;
+}
+
+/* Glass Effects */
+.admin-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(25px) saturate(200%);
+  border: 1px solid rgba(5, 17, 242, 0.1);
+}
+
+/* Status Indicators */
+.admin-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+
+.admin-status-dot-active { background-color: var(--admin-success); box-shadow: 0 0 12px var(--admin-success); }
+.admin-status-dot-pending { background-color: var(--admin-warning); box-shadow: 0 0 12px var(--admin-warning); }
+
+/* Scrollbar */
+.admin-scrollbar::-webkit-scrollbar { width: 6px; }
+.admin-scrollbar::-webkit-scrollbar-thumb { background: var(--admin-border); border-radius: 10px; }
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .admin-container { padding: 1.5rem; }
+  .admin-card { padding: 2rem; }
+  .admin-modal { padding: 2.5rem; }
+  .admin-h1 { font-size: 1.75rem; }
+  .admin-input { padding: 1rem 1.25rem; font-size: 16px; }
+  .admin-btn { width: 100%; padding: 1rem 1.5rem; }
+}

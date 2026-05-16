@@ -9,7 +9,8 @@ export type LeadStatus =
     | 'NEGOTIATION'
     | 'WON'
     | 'LOST'
-    | 'ON_HOLD';
+    | 'ON_HOLD'
+    | 'KICK_OFF';
 
 export interface LeadEvent {
     id: string;
@@ -23,7 +24,8 @@ export interface LeadEvent {
     | 'STATUS_CHANGED'
     | 'NOTE_ADDED'
     | 'REQUIREMENTS_DEFINED'
-    | 'REJECTED';
+    | 'REJECTED'
+    | 'KICK_OFF_STARTED';
     description: string;
     timestamp: any; // Firestore Timestamp
     created_by?: string; // Admin user ID
@@ -55,6 +57,7 @@ export interface LeadData {
     service_interests?: string[]; // New multiselect
     budget_range?: string; // Legacy?
     region?: string;
+    origin?: 'web_page' | 'admin_panel';
 }
 
 export interface LeadKPIs {

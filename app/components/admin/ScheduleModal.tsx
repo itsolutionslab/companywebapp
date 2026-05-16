@@ -67,41 +67,41 @@ export default function ScheduleModal({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-            <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in duration-300 border border-white/20">
-                <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+            <div className="admin-modal w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-500 shadow-2xl">
+                <header className="p-8 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
                     <div>
-                        <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight">{title}</h2>
-                        {subtitle && <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px] mt-1">{subtitle}</p>}
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight leading-none uppercase">{title}</h2>
+                        {subtitle && <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{subtitle}</p>}
                     </div>
-                    <button onClick={onClose} className="w-12 h-12 bg-white rounded-2xl border border-gray-100 flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-100 transition-all shadow-sm">✕</button>
-                </div>
+                    <button onClick={onClose} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all">✕</button>
+                </header>
 
                 <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
                     {/* Calendar Section */}
-                    <div className="w-full lg:w-3/5 p-8 border-r border-gray-50 overflow-y-auto bg-white">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Seleccionar Fecha</h3>
+                    <div className="w-full lg:w-[60%] p-8 border-r border-slate-50 overflow-y-auto bg-white no-scrollbar">
+                        <div className="flex justify-between items-center mb-8">
+                            <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">SELECCIONAR FECHA</h3>
                             <div className="flex gap-2">
                                 <button onClick={() => {
                                     const d = new Date(viewDate);
                                     d.setMonth(d.getMonth() - 1);
                                     setViewDate(d);
-                                }} className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-blue-500 transition-all">←</button>
-                                <span className="text-xs font-black uppercase tracking-widest min-w-[120px] text-center flex items-center justify-center">
-                                    {viewDate.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
+                                }} className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all shadow-sm">◀</button>
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] min-w-[140px] text-center flex items-center justify-center text-slate-900">
+                                    {viewDate.toLocaleString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase()}
                                 </span>
                                 <button onClick={() => {
                                     const d = new Date(viewDate);
                                     d.setMonth(d.getMonth() + 1);
                                     setViewDate(d);
-                                }} className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-blue-500 transition-all">→</button>
+                                }} className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all shadow-sm">▶</button>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-7 gap-2 text-center mb-2">
-                            {['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'].map(d => (
-                                <span key={d} className="text-[10px] font-black text-gray-300 uppercase">{d}</span>
+                        <div className="grid grid-cols-7 gap-2 text-center mb-4">
+                            {['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'].map(d => (
+                                <span key={d} className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{d}</span>
                             ))}
                         </div>
 
@@ -131,12 +131,12 @@ export default function ScheduleModal({
                                                 setSelectedTime(null);
                                             }}
                                             className={`h-14 rounded-2xl border transition-all flex flex-col items-center justify-center group ${isSelected
-                                                ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-100 scale-105'
-                                                : 'bg-white border-gray-100 hover:border-blue-200 text-gray-700'
+                                                ? 'bg-[#0511F2] border-[#0511F2] text-white shadow-xl shadow-blue-100 scale-105'
+                                                : 'bg-white border-slate-50 hover:border-[#0511F2]/20 text-slate-700'
                                                 }`}
                                         >
-                                            <span className={`text-xs font-black ${isSelected ? 'text-blue-100' : 'text-gray-300 group-hover:text-blue-400'}`}>{d}</span>
-                                            {isToday && <div className={`w-1 h-1 rounded-full mt-1 ${isSelected ? 'bg-white' : 'bg-blue-500'}`}></div>}
+                                            <span className={`text-sm font-black ${isSelected ? 'text-white' : 'text-slate-900 group-hover:text-[#0511F2]'}`}>{d}</span>
+                                            {isToday && <div className={`w-1 h-1 rounded-full mt-1 ${isSelected ? 'bg-white' : 'bg-[#0511F2]'}`}></div>}
                                         </button>
                                     );
                                 }
@@ -146,8 +146,8 @@ export default function ScheduleModal({
                     </div>
 
                     {/* Slots Section */}
-                    <div className="w-full lg:w-2/5 p-8 bg-gray-50/50 overflow-y-auto">
-                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6">Horarios Disponibles</h3>
+                    <div className="w-full lg:w-[40%] p-8 bg-slate-50/50 overflow-y-auto no-scrollbar border-t lg:border-t-0 border-slate-100">
+                        <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-8">HORARIOS DISPONIBLES</h3>
                         <div className="grid grid-cols-2 gap-3">
                             {timeSlots.length > 0 ? (
                                 timeSlots.map(time => {
@@ -158,11 +158,11 @@ export default function ScheduleModal({
                                             key={time}
                                             disabled={isOccupied}
                                             onClick={() => setSelectedTime(time)}
-                                            className={`py-3 px-4 rounded-xl border text-xs font-black transition-all ${isOccupied
-                                                ? 'bg-gray-100 border-gray-100 text-gray-300 cursor-not-allowed opacity-50'
+                                            className={`py-4 px-4 rounded-[1.5rem] border-2 text-[11px] font-black transition-all ${isOccupied
+                                                ? 'bg-white border-slate-100 text-slate-200 cursor-not-allowed opacity-50'
                                                 : isSelected
-                                                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-100'
-                                                    : 'bg-white border-gray-100 text-gray-600 hover:border-indigo-200 hover:text-indigo-600'
+                                                    ? 'bg-[#0511F2]/5 border-[#0511F2] text-[#0511F2] shadow-md shadow-blue-50'
+                                                    : 'bg-white border-slate-50 text-slate-600 hover:border-[#0511F2]/20 hover:text-[#0511F2]'
                                                 }`}
                                         >
                                             {time}
@@ -170,9 +170,9 @@ export default function ScheduleModal({
                                     );
                                 })
                             ) : (
-                                <div className="col-span-2 py-20 text-center">
-                                    <span className="text-4xl block mb-4">💤</span>
-                                    <p className="text-gray-400 font-bold italic text-sm">No hay horarios disponibles para este día.</p>
+                                <div className="col-span-2 py-20 text-center opacity-30 grayscale">
+                                    <span className="text-5xl block mb-6">🗓️</span>
+                                    <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Sin horarios disponibles</p>
                                 </div>
                             )}
                         </div>
@@ -180,28 +180,31 @@ export default function ScheduleModal({
                 </div>
 
                 {/* Modal Footer */}
-                <div className="p-8 border-t border-gray-50 flex items-center justify-between bg-white">
+                <footer className="p-8 border-t border-slate-50 flex flex-col sm:flex-row items-center justify-between bg-white gap-6">
                     <div className="flex items-center gap-4">
-                        {selectedDate && selectedTime && (
-                            <div className="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl border border-indigo-100 animate-in slide-in-from-left-4">
-                                <span className="text-xs font-black uppercase tracking-widest">
-                                    {new Date(selectedDate + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })} @ {selectedTime}
+                        {selectedDate && selectedTime ? (
+                            <div className="flex items-center gap-3 bg-[#0511F2]/5 text-[#0511F2] px-6 py-3 rounded-[1.5rem] border border-[#0511F2]/10 animate-in slide-in-from-left-4">
+                                <span className="text-xl">📅</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest">
+                                    {new Date(selectedDate + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} @ {selectedTime}
                                 </span>
                             </div>
+                        ) : (
+                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Selecciona una fecha y hora</span>
                         )}
                     </div>
-                    <div className="flex gap-4">
-                        <button onClick={onClose} className="px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all">Cancelar</button>
+                    <div className="flex gap-4 w-full sm:w-auto">
+                        <button onClick={onClose} className="flex-1 admin-btn admin-btn-secondary !py-4">CANCELAR</button>
                         <button
                             onClick={() => selectedTime && onSave(selectedDate, selectedTime)}
                             disabled={!selectedTime || isSaving}
-                            className="px-10 py-3 bg-blue-600 disabled:opacity-50 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-100 hover:scale-[1.05] active:scale-[0.95] transition-all flex items-center gap-2"
+                            className="flex-1 admin-btn admin-btn-primary !py-4 shadow-xl shadow-pink-100 flex items-center justify-center gap-3 min-w-[180px]"
                         >
                             {isSaving && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
-                            {t('save') || 'Guardar'}
+                            {isSaving ? 'GUARDANDO...' : 'CONFIRMAR'}
                         </button>
                     </div>
-                </div>
+                </footer>
             </div>
         </div>
     );
