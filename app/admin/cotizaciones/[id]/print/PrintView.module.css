@@ -1,0 +1,261 @@
+/* PrintView.module.css - Optimized for A4 Print */
+
+.printContainer {
+    background: white;
+    color: black;
+    font-family: 'Inter', sans-serif;
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 20mm;
+    box-sizing: border-box;
+    min-height: 297mm;
+}
+
+.loading, .error {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #666;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #0511F2;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+}
+
+.logoInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.logo {
+    font-size: 2rem;
+    font-weight: 900;
+    margin: 0;
+    color: #0511F2;
+    letter-spacing: -1px;
+}
+
+.logo span {
+    color: #111;
+}
+
+.logoInfo p {
+    margin: 5px 0 0 0;
+    font-size: 0.8rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.docInfo {
+    text-align: right;
+}
+
+.docInfo h2 {
+    margin: 0 0 10px 0;
+    font-size: 1.5rem;
+    color: #333;
+    letter-spacing: 2px;
+}
+
+.docInfo p {
+    margin: 2px 0;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+/* Client Section */
+.clientSection {
+    display: flex;
+    justify-content: space-between;
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    border: 1px solid #eee;
+}
+
+.clientInfo h3, .projectInfo h3 {
+    margin: 0 0 10px 0;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: #888;
+    letter-spacing: 1px;
+}
+
+.clientInfo p, .projectInfo p {
+    margin: 5px 0;
+    font-size: 0.95rem;
+}
+
+/* Context Section */
+.contextSection {
+    margin-bottom: 30px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #333;
+}
+
+.contextSection p {
+    margin-bottom: 10px;
+}
+
+.contextSection ul {
+    margin: 10px 0 10px 20px;
+}
+
+/* Items Table */
+.itemsSection {
+    margin-bottom: 30px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.table th {
+    background: #f0f0f0;
+    padding: 12px;
+    text-align: left;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #333;
+    border-bottom: 2px solid #ccc;
+}
+
+.table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.95rem;
+    color: #444;
+}
+
+.textCenter {
+    text-align: center !important;
+}
+
+.textRight {
+    text-align: right !important;
+}
+
+/* Totals */
+.totalsSection {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 50px;
+}
+
+.totalsBox {
+    width: 300px;
+    background: #fafafa;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.totalRow {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+    color: #555;
+}
+
+.grandTotal {
+    font-weight: bold;
+    color: #0511F2;
+    font-size: 1.2rem;
+    border-top: 2px solid #ddd;
+    padding-top: 15px;
+    margin-top: 10px;
+}
+
+/* Signatures & Footer */
+.footerSection {
+    margin-top: auto;
+    padding-top: 30px;
+}
+
+.signatures {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 40px;
+}
+
+.signatureBox, .signaturePlaceholder {
+    width: 250px;
+    text-align: center;
+}
+
+.signatureBox img {
+    max-width: 100%;
+    max-height: 100px;
+    border-bottom: 1px solid #333;
+    margin-bottom: 10px;
+}
+
+.signaturePlaceholder {
+    height: 100px;
+    border-bottom: 1px solid #333;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 10px;
+}
+
+.signatureBox p, .signaturePlaceholder p {
+    margin: 10px 0 0 0;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: #666;
+}
+
+.companyFooter {
+    text-align: center;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+    font-size: 0.75rem;
+    color: #888;
+}
+
+.validity {
+    margin-top: 5px;
+    font-weight: bold;
+    color: #555;
+}
+
+/* Print Specific Rules */
+@media print {
+    @page {
+        margin: 0;
+        size: A4 portrait;
+    }
+    
+    body {
+        margin: 0;
+        background: white;
+    }
+    
+    .printContainer {
+        margin: 0;
+        padding: 15mm;
+        box-shadow: none;
+    }
+
+    /* Hide any external UI like browser headers if possible */
+    ::-webkit-scrollbar {
+        display: none;
+    }
+}

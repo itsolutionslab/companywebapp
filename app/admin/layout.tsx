@@ -206,6 +206,9 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath, dy
     ];
 
     const menuItems = allMenuItems.filter(item => {
+        const isSuperAdmin = userRoleConfig?.pillar === 'ADMIN' || (userRoleConfig?.level || 0) >= 10;
+        if (isSuperAdmin) return true;
+        
         if (!userRoleConfig || !Array.isArray(userRoleConfig.allowedPaths)) return false;
         return userRoleConfig.allowedPaths.some((p: string) => item.path.startsWith(p));
     });

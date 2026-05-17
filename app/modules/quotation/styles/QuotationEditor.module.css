@@ -8,37 +8,109 @@
 
 @media (min-width: 1024px) {
     .editorContainer {
-        grid-template-columns: 1fr 380px;
+        grid-template-columns: 1fr 350px;
     }
 }
 
 .mainSection {
     display: flex;
     flex-direction: column;
-    gap: var(--space-lg);
+    gap: var(--space-xl);
+}
+
+.formSection {
+    background: white;
+    padding: var(--space-xl);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.sectionTitle {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: var(--color-primary);
+    border-bottom: 2px solid var(--color-bg-alt);
+    padding-bottom: var(--space-sm);
+    margin-bottom: var(--space-sm);
+}
+
+.grid2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+}
+
+@media (min-width: 768px) {
+    .grid2 {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.inputGroup label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+}
+
+.input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-alt);
+    font-weight: 500;
+    font-family: inherit;
+    transition: var(--transition-fast);
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(5, 17, 242, 0.1);
+}
+
+/* TipTap Editor Minimalist */
+.tiptapFormWrapper {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    min-height: 150px;
+    padding: var(--space-md);
+    background: var(--color-bg-alt);
+}
+
+.tiptapFormWrapper :focus {
+    outline: none;
 }
 
 .toolbar {
     display: flex;
     gap: var(--space-sm);
-    background: white;
+    background: var(--color-bg-alt);
     padding: var(--space-sm);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    position: sticky;
-    top: var(--space-md);
-    z-index: 100;
+    border-radius: var(--radius-sm);
     flex-wrap: wrap;
 }
 
 .toolbar button {
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--space-xs) var(--space-sm);
     border: 1px solid var(--color-border);
     background: white;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-xs);
     cursor: pointer;
     font-weight: 700;
-    transition: var(--transition-fast);
+    font-size: 0.8rem;
 }
 
 .toolbar button.active {
@@ -47,98 +119,87 @@
     border-color: var(--color-primary);
 }
 
-/* Paper Rendering - Document Look */
-.paper {
-    background: white;
-    min-height: 1120px; /* A4 Ratio approx */
-    padding: 3rem;
-    box-shadow: var(--shadow-lg);
-    border-radius: 2px;
+/* Table of Items */
+.itemsHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.itemsTable {
     display: flex;
     flex-direction: column;
-    position: relative;
+    gap: var(--space-sm);
+}
+
+.tableHeader {
+    display: grid;
+    grid-template-columns: 3fr 1fr 2fr 2fr 40px;
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--color-border);
+}
+
+.tableRow {
+    display: grid;
+    grid-template-columns: 3fr 1fr 2fr 2fr 40px;
+    gap: var(--space-sm);
+    align-items: center;
+    background: white;
+    padding: var(--space-sm);
+    border-radius: var(--radius-sm);
     border: 1px solid var(--color-border);
 }
 
-.paperHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding-bottom: 2rem;
-    margin-bottom: 2rem;
-    border-bottom: 2px solid var(--color-primary);
-}
-
-.logo {
-    font-size: 1.5rem;
-    font-weight: 900;
-    letter-spacing: -0.05em;
-    color: var(--color-primary);
-}
-
-.logo span {
-    color: var(--color-text-main);
-}
-
-.headerInfo {
-    text-align: right;
-    font-size: 0.75rem;
-    color: var(--color-text-muted);
-}
-
-.tiptapWrapper {
-    flex-grow: 1;
-}
-
-.tiptapWrapper :focus {
-    outline: none;
-}
-
-.signaturePreview {
-    margin-top: 3rem;
-    border-top: 1px solid var(--color-border);
-    padding-top: 1rem;
-    max-width: 250px;
-}
-
-.signaturePreview p {
-    font-size: 0.7rem;
+.rowTotal {
     font-weight: 800;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-    margin-bottom: 0.5rem;
+    color: var(--color-text-main);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
 }
 
-.signaturePreview img {
-    max-width: 100%;
-    height: auto;
-    filter: grayscale(1);
-}
-
-.signatureBadge {
-    font-size: 0.5rem;
-    font-weight: 900;
-    background: #e6fffa;
-    color: #38b2ac;
-    padding: 2px 6px;
+.deleteBtn {
+    background: #fff5f5;
+    color: #e53e3e;
+    border: 1px solid #feb2b2;
     border-radius: 4px;
-    display: inline-block;
-    margin-top: 0.5rem;
+    cursor: pointer;
+    font-weight: 900;
+    height: 100%;
 }
 
-.paperFooter {
-    margin-top: 4rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--color-border);
+.totalsSection {
+    margin-top: var(--space-lg);
+    border-top: 2px solid var(--color-border);
+    padding-top: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-sm);
+}
+
+.totalRow {
     display: flex;
     justify-content: space-between;
-    font-size: 0.65rem;
+    width: 300px;
+    font-size: 0.9rem;
     color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
 }
 
-/* Sidebar */
+.grandTotal {
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: var(--color-primary);
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-sm);
+}
+
+/* Sidebar Elements (Retained from previous) */
 .sidebar {
     display: flex;
     flex-direction: column;
@@ -172,6 +233,7 @@
     box-shadow: var(--shadow-md);
     position: sticky;
     top: var(--space-md);
+    border: 1px solid var(--color-primary);
 }
 
 .primaryBtn {
@@ -187,9 +249,35 @@
     transition: var(--transition-fast);
 }
 
-.primaryBtn:hover {
+.primaryBtn:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(5, 17, 242, 0.2);
+}
+
+.primaryBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.secondaryBtn {
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
+    border-radius: var(--radius-md);
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.dangerBtn {
+    width: 100%;
+    padding: 0.75rem;
+    background: #fff5f5;
+    border: 1px solid #feb2b2;
+    color: #e53e3e;
+    border-radius: var(--radius-md);
+    font-weight: 800;
+    cursor: pointer;
 }
 
 .downloadGroup {
@@ -217,98 +305,7 @@
     cursor: pointer;
 }
 
-.input {
-    width: 100%;
-    padding: 0.75rem;
-    margin-bottom: var(--space-sm);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-bg-alt);
-}
-
-.currencyToggle {
-    display: flex;
-    background: var(--color-bg-alt);
-    padding: 4px;
-    border-radius: var(--radius-sm);
-    margin-bottom: var(--space-sm);
-}
-
-.currencyToggle button {
-    flex: 1;
-    padding: 0.5rem;
-    border: none;
-    background: transparent;
-    font-weight: 900;
-    font-size: 0.7rem;
-    cursor: pointer;
-    border-radius: 4px;
-}
-
-.currencyToggle button.activeCurrency {
-    background: white;
-    box-shadow: var(--shadow-sm);
-    color: var(--color-primary);
-}
-
-.amountInput {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-}.auditList {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-}
-
-.auditItem {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--color-bg-alt);
-    padding: 0.5rem 0.75rem;
-    border-radius: var(--radius-sm);
-}
-
-.auditAction {
-    font-size: 0.6rem;
-    font-weight: 900;
-    color: var(--color-text-muted);
-}
-
-.auditUser {
-    font-size: 0.65rem;
-    font-weight: 700;
-    color: var(--color-primary);
-}
-
-.auditHint {
-    font-size: 0.55rem;
-    color: #999;
-    line-height: 1.4;
-    font-style: italic;
-    margin-top: 0.5rem;
-}
-
-.amountInput span {
-    font-weight: 900;
-    color: var(--color-primary);
-}
-
-.amountInput input {
-    flex-grow: 1;
-    padding: 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    font-weight: 800;
-}
-
-.hint {
-    font-size: 0.65rem;
-    color: var(--color-text-muted);
-    margin-top: 0.5rem;
-}
-
+/* Modals & Audit */
 .modal {
     position: fixed;
     inset: 0;
@@ -340,37 +337,51 @@
     border-radius: var(--radius-md);
 }
 
-.secondaryBtn {
-    width: 100%;
-    padding: 0.75rem;
-    background: white;
-    border: 1px solid var(--color-primary);
-    color: var(--color-primary);
-    border-radius: var(--radius-md);
-    font-weight: 800;
-    cursor: pointer;
-    margin-bottom: var(--space-sm);
+.auditList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
 }
 
-.dangerBtn {
-    width: 100%;
-    padding: 0.75rem;
-    background: #fff5f5;
-    border: 1px solid #feb2b2;
-    color: #e53e3e;
-    border-radius: var(--radius-md);
-    font-weight: 800;
-    cursor: pointer;
-    margin-bottom: var(--space-sm);
-}
-
-.disabledBtn {
-    width: 100%;
-    padding: 0.75rem;
+.auditItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     background: var(--color-bg-alt);
-    border: 1px solid var(--color-border);
-    color: #ccc;
-    border-radius: var(--radius-md);
-    font-weight: 800;
-    cursor: not-allowed;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-sm);
+}
+
+.auditAction {
+    font-size: 0.6rem;
+    font-weight: 900;
+    color: var(--color-text-muted);
+}
+
+.auditUser {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.signaturePreview {
+    max-width: 250px;
+}
+
+.signaturePreview img {
+    max-width: 100%;
+    height: auto;
+    filter: grayscale(1);
+    border-bottom: 2px solid var(--color-border);
+}
+
+.signatureBadge {
+    font-size: 0.6rem;
+    font-weight: 900;
+    background: #e6fffa;
+    color: #38b2ac;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 0.5rem;
 }

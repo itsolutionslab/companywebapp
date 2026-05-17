@@ -21,9 +21,9 @@ export default function SignatureBox({ onSave, onClear }: SignatureBoxProps) {
                 penColor: 'rgb(0, 0, 0)'
             });
 
-            signaturePadRef.current.onEnd = () => {
+            signaturePadRef.current.addEventListener("endStroke", () => {
                 setIsEmpty(false);
-            };
+            });
 
             // Responsive canvas
             const resizeCanvas = () => {

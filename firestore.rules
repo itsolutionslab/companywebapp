@@ -314,5 +314,26 @@ service cloud.firestore {
 
       allow create, update, delete: if false;
     }
+
+    // ========================================
+    // QUOTATIONS - Document Engine
+    // ========================================
+    match /quotations/{quotationId} {
+      allow read: if isAnyEmployee();
+      allow create, update: if isAnyEmployee();
+      allow delete: if isAdmin();
+
+      match /versions/{versionId} {
+        allow read, write: if isAnyEmployee();
+      }
+    }
+
+    // ========================================
+    // QUOTATION AUDIT LOGS - Traceability
+    // ========================================
+    match /quotation_audit_logs/{logId} {
+      allow read, create: if isAnyEmployee();
+      allow update, delete: if false;
+    }
   }
 }
