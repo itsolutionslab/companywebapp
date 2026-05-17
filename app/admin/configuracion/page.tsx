@@ -13,11 +13,10 @@ import { getRoleConfig, updateRoleConfig } from "@/lib/firebase";
 type Tab = 'seguridad' | 'roles' | 'acceso';
 
 const PILLAR_META: Record<Pillar, { label: string; color: string; bg: string; icon: string }> = {
-    ADMIN:            { label: 'Administración',      color: 'text-purple-700',  bg: 'bg-purple-50 border-purple-200',  icon: '👑' },
-    GROWTH:           { label: 'Pilar Growth',         color: 'text-green-700',   bg: 'bg-green-50 border-green-200',    icon: '📈' },
-    ENGINEERING:      { label: 'Pilar Engineering',    color: 'text-indigo-700',  bg: 'bg-indigo-50 border-indigo-200',  icon: '⚙️' },
-    CLOUD:            { label: 'Cloud & Infra',        color: 'text-sky-700',     bg: 'bg-sky-50 border-sky-200',        icon: '☁️' },
-    CUSTOMER_SUCCESS: { label: 'Customer Success',     color: 'text-teal-700',    bg: 'bg-teal-50 border-teal-200',      icon: '🤝' },
+    ADMIN:      { label: 'Administración',    color: 'text-purple-700',  bg: 'bg-purple-50 border-purple-200',  icon: '👑' },
+    GROW:       { label: 'Pilar Growth',      color: 'text-green-700',   bg: 'bg-green-50 border-green-200',    icon: '📈' },
+    OPERATIONS: { label: 'Pilar Engineering', color: 'text-indigo-700',  bg: 'bg-indigo-50 border-indigo-200',  icon: '⚙️' },
+    SUPPORT:    { label: 'Customer Success',  color: 'text-teal-700',    bg: 'bg-teal-50 border-teal-200',      icon: '🤝' },
 };
 
 const ALL_PATHS = [
@@ -183,10 +182,9 @@ export default function SettingsPage() {
         const c = ROLES_CONFIG[role.toUpperCase()] || ROLES_CONFIG[role.toLowerCase()];
         switch (c?.pillar) {
             case 'ADMIN': return 'bg-purple-100 text-purple-700';
-            case 'GROWTH': return 'bg-green-100 text-green-700';
-            case 'ENGINEERING': return 'bg-indigo-100 text-indigo-700';
-            case 'CLOUD': return 'bg-sky-100 text-sky-700';
-            case 'CUSTOMER_SUCCESS': return 'bg-teal-100 text-teal-700';
+            case 'GROW': return 'bg-green-100 text-green-700';
+            case 'OPERATIONS': return 'bg-indigo-100 text-indigo-700';
+            case 'SUPPORT': return 'bg-teal-100 text-teal-700';
             default: return 'bg-gray-100 text-gray-600';
         }
     };
@@ -364,7 +362,7 @@ export default function SettingsPage() {
                                                         ))}
                                                         <option value="staff">Personal General (Staff)</option>
                                                     </optgroup>
-                                                    {(['GROWTH','ENGINEERING','CLOUD','CUSTOMER_SUCCESS'] as Pillar[]).map(pillar => (
+                                                    {(['GROW','OPERATIONS','SUPPORT'] as Pillar[]).map(pillar => (
                                                         <optgroup key={pillar} label={PILLAR_META[pillar].label.toUpperCase()}>
                                                             {Object.values(ROLES_CONFIG).filter(r => r.pillar === pillar).map(r => (
                                                                 <option key={r.id} value={r.id}>{r.label}</option>
