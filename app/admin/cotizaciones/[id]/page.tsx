@@ -50,7 +50,7 @@ export default function CotizacionDetailPage({ params }: { params: Promise<{ id:
                 </div>
             </header>
 
-            <QuotationEditor initialData={data} quotationId={id} />
+            <QuotationEditor initialData={data} id={id} />
         </div>
     );
 }
