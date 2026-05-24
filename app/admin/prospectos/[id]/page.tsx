@@ -28,10 +28,20 @@ export default function LeadDetailPage() {
     const [newValue, setNewValue] = useState('');
     const [resolvedFileUrl, setResolvedFileUrl] = useState<string | null>(null);
     const [fileName, setFileName] = useState<string>('Documento de Proyecto');
+    const [expandedDomain, setExpandedDomain] = useState<'GROW' | 'OPERATIONS' | 'SUPPORT' | null>(null);
+    const [expandedTrackerDomain, setExpandedTrackerDomain] = useState<'GROW' | 'OPERATIONS' | 'SUPPORT' | null>(null);
 
     useEffect(() => {
         if (id) fetchLead();
     }, [id]);
+
+    useEffect(() => {
+        if (lead?.status_flow?.current) {
+            const currentDomain = statusSequence.find(s => s.key === lead.status_flow.current)?.domain;
+            if (currentDomain) setExpandedTrackerDomain(currentDomain);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [lead?.status_flow?.current]);
 
     useEffect(() => {
         if (lead?.data?.file_url) {
@@ -70,6 +80,22 @@ export default function LeadDetailPage() {
         try {
             const data = await getLeadById(id as string);
             setLead(data);
+            if (data?.status_flow?.current) {
+                const domainMap: Record<string, 'GROW' | 'OPERATIONS' | 'SUPPORT'> = {
+                    LEAD_NEW: 'GROW', QUALIFICATION: 'GROW', CONTACTED: 'GROW',
+                    DISCOVERY_SCHEDULED: 'GROW', DISCOVERY_COMPLETED: 'GROW',
+                    PROPOSAL_PREPARING: 'GROW', PROPOSAL_SENT: 'GROW',
+                    NEGOTIATION: 'GROW', WIN_CLOSED: 'GROW', LOST: 'GROW', ON_HOLD: 'GROW',
+                    HANDOFF: 'OPERATIONS', PROJECT_CREATED: 'OPERATIONS', KICK_OFF: 'OPERATIONS',
+                    INCEPTION_SPRINT_0: 'OPERATIONS', IN_EXECUTION: 'OPERATIONS',
+                    QA_UAT: 'OPERATIONS', DELIVERY: 'OPERATIONS', CLIENT_ACCEPTANCE: 'OPERATIONS',
+                    TECHNICAL_CLOSURE: 'OPERATIONS', ADMIN_CLOSURE: 'OPERATIONS', CLOSED: 'OPERATIONS',
+                    HYPERCARE: 'SUPPORT', ACTIVE_SUPPORT: 'SUPPORT', EVOLUTIVE: 'SUPPORT',
+                    RENEWAL: 'SUPPORT', ACCOUNT_EXPANDED: 'SUPPORT', ACCOUNT_CLOSED: 'SUPPORT',
+                };
+                const detectedDomain = domainMap[data.status_flow.current];
+                if (detectedDomain) setExpandedDomain(prev => prev || detectedDomain);
+            }
         } catch (error) {
             console.error("Error fetching lead:", error);
             showNotification("Error loading lead details", "error");
@@ -266,69 +292,60 @@ export default function LeadDetailPage() {
                     </div>
                 </div>
 
-                {/* Segmented Smart Stepper */}
-                <div className={styles.stepperContainer}>
-                    <div className={styles.stepperDomains}>
+                {/* Smart Tracker: Tabs + Horizontal Scroll */}
+                <div className={styles.trackerWrapper}>
+
+                    {/* Pestañas de Macrofases */}
+                    <div className={styles.domainTabs}>
                         {(['GROW', 'OPERATIONS', 'SUPPORT'] as const).map((domain) => {
+                            const isActive = expandedDomain === domain;
                             const isCurrentDomain = statusSequence[currentIdx]?.domain === domain;
-                            const isPastDomain = (domain === 'GROW' && statusSequence[currentIdx]?.domain !== 'GROW') ||
-                                (domain === 'OPERATIONS' && statusSequence[currentIdx]?.domain === 'SUPPORT');
-
                             return (
-                                <div key={domain} className={styles.domainBox}>
-                                    <span className={`${styles.domainLabel} ${isCurrentDomain ? styles.active : isPastDomain ? styles.past : ''}`}>
-                                        {domain === 'GROW' ? '📈 Grow' : domain === 'OPERATIONS' ? '⚙️ Operations' : '🤝 Support'}
-                                    </span>
-                                    <div className={`${styles.domainBar} ${isCurrentDomain ? styles.active : isPastDomain ? styles.past : ''}`}></div>
-                                </div>
+                                <button
+                                    key={domain}
+                                    onClick={() => setExpandedDomain(domain)}
+                                    className={`${styles.domainTab} ${isActive ? styles.tabActive : ''} ${isCurrentDomain ? styles.tabCurrent : ''}`}
+                                >
+                                    {domain === 'GROW' ? '📈 ' : domain === 'OPERATIONS' ? '⚙️ ' : '🤝 '}
+                                    {domain}
+                                </button>
                             );
                         })}
                     </div>
 
-                    <div className={styles.stepperTrack}>
-                        <div className={styles.lineBg}></div>
-                        <div
-                            className={styles.lineFill}
-                            style={{ width: `${(currentIdx / (statusSequence.length - 1)) * 100}%` }}
-                        ></div>
+                    {/* Carrusel Horizontal de Estados */}
+                    <div className={styles.horizontalScrollContainer}>
+                        <div className={styles.scrollTrack}>
+                            {statusSequence
+                                .filter(s => s.domain === expandedDomain)
+                                .map((step, index, filteredSteps) => {
+                                    const stepGlobalIdx = statusSequence.findIndex(s => s.key === step.key);
+                                    const isCompleted = stepGlobalIdx < currentIdx;
+                                    const isCurrent = stepGlobalIdx === currentIdx;
+                                    const isLast = index === filteredSteps.length - 1;
 
-                        {statusSequence.map((stage, idx) => {
-                            const isCompleted = idx <= currentIdx;
-                            const isCurrent = idx === currentIdx;
-                            const activeDomain = statusSequence[currentIdx]?.domain;
-                            const shouldShowLabel = stage.domain === activeDomain || isCurrent;
-
-                            return (
-                                <div key={stage.key} className={styles.step}>
-                                    <div className={`${styles.node} ${isCurrent ? styles.active : isCompleted ? styles.completed : ''}`}>
-                                        {isCompleted && !isCurrent ? (
-                                            <svg style={{ width: '12px', height: '12px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
-                                            </svg>
-                                        ) : (
-                                            <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: isCurrent ? 'white' : '#E5E7EB' }}></div>
-                                        )}
-                                    </div>
-
-                                    {shouldShowLabel && (
-                                        <span className={`${styles.label} ${isCurrent ? styles.active : ''}`}
-                                            style={{
-                                                transform: `translateY(${idx % 2 === 0 ? '0' : '6px'})`
-                                            }}>
-                                            {stage.label}
-                                        </span>
-                                    )}
-
-                                    <div className={styles.tooltip}>
-                                        <div className={styles.tooltipContent}>{stage.label}</div>
-                                        <div className={styles.tooltipArrow}></div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
+                                    return (
+                                        <div key={step.key} className={styles.stepNode}>
+                                            {!isLast && (
+                                                <div className={`${styles.connector} ${isCompleted ? styles.connectorCompleted : ''}`} />
+                                            )}
+                                            <div className={`${styles.circle} ${isCurrent ? styles.circleCurrent : isCompleted ? styles.circleCompleted : ''}`}>
+                                                {isCompleted && !isCurrent ? (
+                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                ) : null}
+                                            </div>
+                                            <div className={`${styles.stepLabel} ${isCurrent ? styles.labelCurrent : isCompleted ? styles.labelCompleted : ''}`}>
+                                                {step.label}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                        </div>{/* scrollTrack */}
+                    </div>{/* horizontalScrollContainer */}
+                </div>{/* trackerWrapper */}
+            </div>{/* headerSection */}
 
             <div className={styles.mainGrid}>
                 {/* Main Info Card */}
@@ -437,7 +454,7 @@ export default function LeadDetailPage() {
                     {/* Timeline Feed */}
                     <div className={styles.sectionCard}>
                         <h3 className="admin-h3" style={{ marginBottom: '2rem' }}>Línea de Tiempo</h3>
-                        
+
                         <div style={{ marginBottom: '2.5rem', background: 'var(--admin-surface)', padding: '1rem', borderRadius: '1.25rem' }}>
                             <textarea
                                 value={noteText}
@@ -504,12 +521,12 @@ export default function LeadDetailPage() {
                             <button className={styles.actionBtn} style={{ background: 'rgba(238, 5, 242, 0.05)', color: 'var(--admin-accent)' }}>
                                 📧 Enviar Propuesta
                             </button>
-                            <button 
+                            <button
                                 onClick={() => {
                                     setNewValue(lead.value_estimate?.toString() || '0');
                                     setIsUpdatingValue(!isUpdatingValue);
                                 }}
-                                className={styles.actionBtn} 
+                                className={styles.actionBtn}
                                 style={{ background: 'rgba(111, 217, 4, 0.05)', color: 'var(--admin-success)' }}
                             >
                                 💰 {isUpdatingValue ? 'Cerrar' : 'Actualizar Valor'}
@@ -533,64 +550,133 @@ export default function LeadDetailPage() {
 
                         <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             <label className={styles.kpiLabel}>Actualizar Pipeline</label>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxHeight: '500px', overflowY: 'auto', paddingRight: '0.25rem' }} className="admin-scrollbar">
-                                {/* GROW Domain */}
-                                <div>
-                                    <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Dominio GROW</h4>
-                                    <div className="grid grid-cols-1 gap-2">
-                                        {(['LEAD_NEW', 'QUALIFICATION', 'CONTACTED', 'DISCOVERY_SCHEDULED', 'DISCOVERY_COMPLETED', 'PROPOSAL_PREPARING', 'PROPOSAL_SENT', 'NEGOTIATION', 'WIN_CLOSED', 'LOST', 'ON_HOLD'] as LeadStatus[]).map((status) => (
-                                            <button
-                                                key={status}
-                                                onClick={() => handleStatusUpdate(status)}
-                                                disabled={lead.status_flow.current === status || isUpdating}
-                                                className={`w-full py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${lead.status_flow.current === status
-                                                    ? 'bg-[#0511F2] text-white border-[#0511F2] shadow-lg shadow-blue-100'
-                                                    : 'bg-white text-gray-400 border-gray-100 hover:border-[#0511F2]/20 hover:text-[#0511F2]'
-                                                }`}
-                                            >
-                                                {statusSequence.find(s => s.key === status)?.label || status.replace(/_/g, ' ')}
-                                            </button>
-                                        ))}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingRight: '0.25rem' }}>
+                                {/* GROW Accordion */}
+                                <div className={`border rounded-2xl overflow-hidden transition-all duration-300 ${expandedDomain === 'GROW' ? 'border-[#0511F2]/20 shadow-xl shadow-blue-900/5' : 'border-gray-100 hover:border-gray-200'}`}>
+                                    <button 
+                                        onClick={() => setExpandedDomain(expandedDomain === 'GROW' ? null : 'GROW')}
+                                        className={`w-full p-4 flex items-center justify-between text-left transition-colors ${expandedDomain === 'GROW' ? 'bg-[#0511F2]/5' : 'bg-white hover:bg-gray-50'}`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm transition-colors ${expandedDomain === 'GROW' ? 'bg-[#0511F2] text-white shadow-md shadow-blue-200' : 'bg-gray-100 text-gray-400'}`}>
+                                                📈
+                                            </div>
+                                            <div>
+                                                <h4 className={`text-[11px] font-black uppercase tracking-[0.2em] transition-colors ${expandedDomain === 'GROW' ? 'text-[#0511F2]' : 'text-gray-500'}`}>
+                                                    Dominio GROW
+                                                </h4>
+                                                <p className="text-[10px] text-gray-400 font-medium mt-0.5">Ventas y Comercial • 11 Etapas</p>
+                                            </div>
+                                        </div>
+                                        <div className={`transform transition-transform duration-300 text-gray-400 text-xs ${expandedDomain === 'GROW' ? 'rotate-180' : ''}`}>
+                                            ▼
+                                        </div>
+                                    </button>
+                                    
+                                    <div className={`transition-all duration-500 ease-in-out ${expandedDomain === 'GROW' ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+                                        <div className="p-4 bg-white border-t border-gray-100">
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {(['LEAD_NEW', 'QUALIFICATION', 'CONTACTED', 'DISCOVERY_SCHEDULED', 'DISCOVERY_COMPLETED', 'PROPOSAL_PREPARING', 'PROPOSAL_SENT', 'NEGOTIATION', 'WIN_CLOSED', 'LOST', 'ON_HOLD'] as LeadStatus[]).map((status) => (
+                                                    <button
+                                                        key={status}
+                                                        onClick={() => handleStatusUpdate(status)}
+                                                        disabled={lead.status_flow.current === status || isUpdating}
+                                                        className={`w-full py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${lead.status_flow.current === status
+                                                            ? 'bg-[#0511F2] text-white border-[#0511F2] shadow-lg shadow-blue-100'
+                                                            : 'bg-white text-gray-400 border-gray-100 hover:border-[#0511F2]/20 hover:text-[#0511F2]'
+                                                        }`}
+                                                    >
+                                                        {statusSequence.find(s => s.key === status)?.label || status.replace(/_/g, ' ')}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* OPERATIONS Domain */}
-                                <div>
-                                    <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Dominio OPERATIONS</h4>
-                                    <div className="grid grid-cols-1 gap-2">
-                                        {(['HANDOFF', 'PROJECT_CREATED', 'KICK_OFF', 'INCEPTION_SPRINT_0', 'IN_EXECUTION', 'QA_UAT', 'DELIVERY', 'CLIENT_ACCEPTANCE', 'TECHNICAL_CLOSURE', 'ADMIN_CLOSURE', 'CLOSED'] as LeadStatus[]).map((status) => (
-                                            <button
-                                                key={status}
-                                                onClick={() => handleStatusUpdate(status)}
-                                                disabled={lead.status_flow.current === status || isUpdating}
-                                                className={`w-full py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${lead.status_flow.current === status
-                                                    ? 'bg-[#26A3BF] text-white border-[#26A3BF] shadow-lg shadow-cyan-100'
-                                                    : 'bg-white text-gray-400 border-gray-100 hover:border-[#26A3BF]/20 hover:text-[#26A3BF]'
-                                                }`}
-                                            >
-                                                {statusSequence.find(s => s.key === status)?.label || status.replace(/_/g, ' ')}
-                                            </button>
-                                        ))}
+                                {/* OPERATIONS Accordion */}
+                                <div className={`border rounded-2xl overflow-hidden transition-all duration-300 ${expandedDomain === 'OPERATIONS' ? 'border-[#26A3BF]/20 shadow-xl shadow-cyan-900/5' : 'border-gray-100 hover:border-gray-200'}`}>
+                                    <button 
+                                        onClick={() => setExpandedDomain(expandedDomain === 'OPERATIONS' ? null : 'OPERATIONS')}
+                                        className={`w-full p-4 flex items-center justify-between text-left transition-colors ${expandedDomain === 'OPERATIONS' ? 'bg-[#26A3BF]/5' : 'bg-white hover:bg-gray-50'}`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm transition-colors ${expandedDomain === 'OPERATIONS' ? 'bg-[#26A3BF] text-white shadow-md shadow-cyan-200' : 'bg-gray-100 text-gray-400'}`}>
+                                                ⚙️
+                                            </div>
+                                            <div>
+                                                <h4 className={`text-[11px] font-black uppercase tracking-[0.2em] transition-colors ${expandedDomain === 'OPERATIONS' ? 'text-[#26A3BF]' : 'text-gray-500'}`}>
+                                                    Dominio OPERATIONS
+                                                </h4>
+                                                <p className="text-[10px] text-gray-400 font-medium mt-0.5">Delivery y Proyectos • 11 Etapas</p>
+                                            </div>
+                                        </div>
+                                        <div className={`transform transition-transform duration-300 text-gray-400 text-xs ${expandedDomain === 'OPERATIONS' ? 'rotate-180' : ''}`}>
+                                            ▼
+                                        </div>
+                                    </button>
+                                    
+                                    <div className={`transition-all duration-500 ease-in-out ${expandedDomain === 'OPERATIONS' ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+                                        <div className="p-4 bg-white border-t border-gray-100">
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {(['HANDOFF', 'PROJECT_CREATED', 'KICK_OFF', 'INCEPTION_SPRINT_0', 'IN_EXECUTION', 'QA_UAT', 'DELIVERY', 'CLIENT_ACCEPTANCE', 'TECHNICAL_CLOSURE', 'ADMIN_CLOSURE', 'CLOSED'] as LeadStatus[]).map((status) => (
+                                                    <button
+                                                        key={status}
+                                                        onClick={() => handleStatusUpdate(status)}
+                                                        disabled={lead.status_flow.current === status || isUpdating}
+                                                        className={`w-full py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${lead.status_flow.current === status
+                                                            ? 'bg-[#26A3BF] text-white border-[#26A3BF] shadow-lg shadow-cyan-100'
+                                                            : 'bg-white text-gray-400 border-gray-100 hover:border-[#26A3BF]/20 hover:text-[#26A3BF]'
+                                                        }`}
+                                                    >
+                                                        {statusSequence.find(s => s.key === status)?.label || status.replace(/_/g, ' ')}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* SUPPORT Domain */}
-                                <div>
-                                    <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Dominio SUPPORT</h4>
-                                    <div className="grid grid-cols-1 gap-2">
-                                        {(['HYPERCARE', 'ACTIVE_SUPPORT', 'EVOLUTIVE', 'RENEWAL', 'ACCOUNT_EXPANDED', 'ACCOUNT_CLOSED'] as LeadStatus[]).map((status) => (
-                                            <button
-                                                key={status}
-                                                onClick={() => handleStatusUpdate(status)}
-                                                disabled={lead.status_flow.current === status || isUpdating}
-                                                className={`w-full py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${lead.status_flow.current === status
-                                                    ? 'bg-[#EE05F2] text-white border-[#EE05F2] shadow-lg shadow-pink-100'
-                                                    : 'bg-white text-gray-400 border-gray-100 hover:border-[#EE05F2]/20 hover:text-[#EE05F2]'
-                                                }`}
-                                            >
-                                                {statusSequence.find(s => s.key === status)?.label || status.replace(/_/g, ' ')}
-                                            </button>
-                                        ))}
+                                {/* SUPPORT Accordion */}
+                                <div className={`border rounded-2xl overflow-hidden transition-all duration-300 ${expandedDomain === 'SUPPORT' ? 'border-[#EE05F2]/20 shadow-xl shadow-pink-900/5' : 'border-gray-100 hover:border-gray-200'}`}>
+                                    <button 
+                                        onClick={() => setExpandedDomain(expandedDomain === 'SUPPORT' ? null : 'SUPPORT')}
+                                        className={`w-full p-4 flex items-center justify-between text-left transition-colors ${expandedDomain === 'SUPPORT' ? 'bg-[#EE05F2]/5' : 'bg-white hover:bg-gray-50'}`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm transition-colors ${expandedDomain === 'SUPPORT' ? 'bg-[#EE05F2] text-white shadow-md shadow-pink-200' : 'bg-gray-100 text-gray-400'}`}>
+                                                🤝
+                                            </div>
+                                            <div>
+                                                <h4 className={`text-[11px] font-black uppercase tracking-[0.2em] transition-colors ${expandedDomain === 'SUPPORT' ? 'text-[#EE05F2]' : 'text-gray-500'}`}>
+                                                    Dominio SUPPORT
+                                                </h4>
+                                                <p className="text-[10px] text-gray-400 font-medium mt-0.5">Postventa y Mant. • 6 Etapas</p>
+                                            </div>
+                                        </div>
+                                        <div className={`transform transition-transform duration-300 text-gray-400 text-xs ${expandedDomain === 'SUPPORT' ? 'rotate-180' : ''}`}>
+                                            ▼
+                                        </div>
+                                    </button>
+                                    
+                                    <div className={`transition-all duration-500 ease-in-out ${expandedDomain === 'SUPPORT' ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+                                        <div className="p-4 bg-white border-t border-gray-100">
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {(['HYPERCARE', 'ACTIVE_SUPPORT', 'EVOLUTIVE', 'RENEWAL', 'ACCOUNT_EXPANDED', 'ACCOUNT_CLOSED'] as LeadStatus[]).map((status) => (
+                                                    <button
+                                                        key={status}
+                                                        onClick={() => handleStatusUpdate(status)}
+                                                        disabled={lead.status_flow.current === status || isUpdating}
+                                                        className={`w-full py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${lead.status_flow.current === status
+                                                            ? 'bg-[#EE05F2] text-white border-[#EE05F2] shadow-lg shadow-pink-100'
+                                                            : 'bg-white text-gray-400 border-gray-100 hover:border-[#EE05F2]/20 hover:text-[#EE05F2]'
+                                                        }`}
+                                                    >
+                                                        {statusSequence.find(s => s.key === status)?.label || status.replace(/_/g, ' ')}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
