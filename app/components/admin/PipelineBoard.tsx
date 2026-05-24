@@ -37,13 +37,13 @@ export default function PipelineBoard({ leads, statuses, onStatusChange }: Pipel
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 10,
+                distance: 5,
             },
         }),
         useSensor(TouchSensor, {
             activationConstraint: {
-                delay: 300,
-                tolerance: 8,
+                delay: 150,
+                tolerance: 10,
             },
         }),
         useSensor(KeyboardSensor, {

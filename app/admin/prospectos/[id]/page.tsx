@@ -443,7 +443,7 @@ export default function LeadDetailPage() {
                                 value={noteText}
                                 onChange={(e) => setNoteText(e.target.value)}
                                 placeholder="Escribe una actualización..."
-                                className="admin-input"
+                                className={styles.iosInput}
                                 style={{ minHeight: '100px', resize: 'none', marginBottom: '1rem' }}
                             />
                             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -521,7 +521,7 @@ export default function LeadDetailPage() {
                                         type="number"
                                         value={newValue}
                                         onChange={(e) => setNewValue(e.target.value)}
-                                        className="admin-input"
+                                        className={styles.iosInput}
                                         style={{ marginBottom: '0.5rem' }}
                                     />
                                     <button onClick={handleUpdateValue} className="admin-btn admin-btn-primary" style={{ width: '100%', padding: '0.75rem' }}>

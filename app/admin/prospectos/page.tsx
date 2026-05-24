@@ -394,87 +394,87 @@ export default function ProspectosPage() {
 
             {/* Create Prospect Modal */}
             {isCreating && (
-                <div className={styles.modalOverlay}>
-                    <div className={styles.modalContent}>
+                <div className={styles.modalOverlay} onClick={() => setIsCreating(false)}>
+                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                         <div className="diagonal-accent" style={{ opacity: 0.1 }}></div>
 
                         <div className={styles.modalHeader}>
+                            <div className={styles.modalHeaderAccent} />
                             <div>
-                                <div className="admin-decorator-line" style={{ width: '4rem', marginBottom: '1rem' }}></div>
-                                <h2 className="admin-modal-title">Capturar Nuevo Lead</h2>
-                                <p className="admin-modal-subtitle">Inicia el flujo de preventa manualmente</p>
+                                <h2 className="admin-modal-title" style={{ fontSize: '1.05rem', marginBottom: '2px' }}>Capturar Nuevo Lead</h2>
+                                <p className="admin-modal-subtitle" style={{ fontSize: '12px', margin: 0 }}>Inicia el flujo de preventa manualmente</p>
                             </div>
-                            <button onClick={() => setIsCreating(false)} className={styles.modalClose}>✕</button>
+                            <button type="button" onClick={() => setIsCreating(false)} className={styles.modalClose}>✕</button>
                         </div>
 
                         <form onSubmit={handleCreateLead} className={styles.formContainer}>
                             <div className={styles.formGrid}>
-                                <div className="admin-input-group">
-                                    <label className="admin-label">Nombre del Contacto</label>
+                                <div className={styles.inputGroup}>
+                                    <label className={styles.inputLabel}>Nombre del Contacto</label>
                                     <input
                                         type="text"
                                         required
                                         placeholder="Ej. Juan Pérez"
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                        className="admin-input"
+                                        className={styles.input}
                                     />
                                 </div>
-                                <div className="admin-input-group">
-                                    <label className="admin-label">Nombre de Empresa</label>
+                                <div className={styles.inputGroup}>
+                                    <label className={styles.inputLabel}>Nombre de Empresa</label>
                                     <input
                                         type="text"
                                         placeholder="Ej. Brecomp"
                                         value={formData.company}
                                         onChange={e => setFormData({ ...formData, company: e.target.value })}
-                                        className="admin-input"
+                                        className={styles.input}
                                     />
                                 </div>
                             </div>
 
                             <div className={styles.formGrid} style={{ marginTop: '1.5rem' }}>
-                                <div className="admin-input-group">
-                                    <label className="admin-label">Email Corporativo</label>
+                                <div className={styles.inputGroup}>
+                                    <label className={styles.inputLabel}>Email Corporativo</label>
                                     <input
                                         type="email"
                                         placeholder="juan@empresa.com"
                                         value={formData.email}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                        className="admin-input"
+                                        className={styles.input}
                                     />
                                 </div>
-                                <div className="admin-input-group">
-                                    <label className="admin-label">WhatsApp de Contacto</label>
+                                <div className={styles.inputGroup}>
+                                    <label className={styles.inputLabel}>WhatsApp de Contacto</label>
                                     <input
                                         type="tel"
-                                        placeholder="+51 9XX XXX XXX"
+                                        placeholder="+51 9.. ... ..."
                                         value={formData.phone}
                                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                        className="admin-input"
+                                        className={styles.input}
                                     />
                                 </div>
                             </div>
 
                             <div className={styles.formGrid} style={{ marginTop: '1.5rem' }}>
-                                <div className="admin-input-group">
-                                    <label className="admin-label">Modelo de Entrega</label>
+                                <div className={styles.inputGroup}>
+                                    <label className={styles.inputLabel}>Modelo de Entrega</label>
                                     <select
                                         value={formData.delivery_model}
                                         onChange={e => setFormData({ ...formData, delivery_model: e.target.value as DeliveryModel })}
-                                        className="admin-input"
+                                        className={styles.input}
                                     >
-                                        <option value="ADVISORY">🧠 ADVISORY</option>
-                                        <option value="IMPLEMENTATION">⚙️ IMPLEMENTATION</option>
-                                        <option value="MANAGED_SERVICES">🛠️ MANAGED SERVICES</option>
-                                        <option value="STAFF_AUGMENTATION">👥 STAFF AUGMENTATION</option>
+                                        <option value="ADVISORY">ADVISORY</option>
+                                        <option value="IMPLEMENTATION">IMPLEMENTATION</option>
+                                        <option value="MANAGED_SERVICES">MANAGED SERVICES</option>
+                                        <option value="STAFF_AUGMENTATION">STAFF AUGMENTATION</option>
                                     </select>
                                 </div>
-                                <div className="admin-input-group">
-                                    <label className="admin-label">Capacidad</label>
+                                <div className={styles.inputGroup}>
+                                    <label className={styles.inputLabel}>Capacidad</label>
                                     <select
                                         value={formData.capability}
                                         onChange={e => setFormData({ ...formData, capability: e.target.value as Capability })}
-                                        className="admin-input"
+                                        className={styles.input}
                                     >
                                         <option value="SOFTWARE">💻 Software & Apps</option>
                                         <option value="AI">🤖 IA & Data Science</option>
@@ -488,52 +488,50 @@ export default function ProspectosPage() {
                                 </div>
                             </div>
 
-                            <div className="admin-input-group" style={{ marginTop: '1.5rem' }}>
-                                <label className="admin-label">Necesidad / Dolor Detectado</label>
+                            <div className={styles.inputGroup} style={{ marginTop: '1.5rem' }}>
+                                <label className={styles.inputLabel}>Necesidad / Dolor Detectado</label>
                                 <textarea
                                     rows={3}
                                     placeholder="¿Qué problema estamos resolviendo?"
                                     value={formData.project_desc}
                                     onChange={e => setFormData({ ...formData, project_desc: e.target.value })}
-                                    className="admin-input"
+                                    className={styles.input}
                                     style={{ resize: 'vertical', minHeight: '80px' }}
                                 />
                             </div>
 
-                            <div className="admin-input-group" style={{ marginTop: '1.5rem' }}>
-                                <label className="admin-label">Asignar a (Pilar Destino)</label>
+                            <div className={styles.inputGroup} style={{ marginTop: '1.5rem' }}>
+                                <label className={styles.inputLabel}>Asignar a (Pilar Destino)</label>
                                 <select
                                     value={formData.targetDomain}
                                     onChange={e => setFormData({ ...formData, targetDomain: e.target.value as Domain })}
-                                    className="admin-input"
+                                    className={styles.input}
                                 >
                                     {targetDomainOptions.map(domain => (
                                         <option key={domain} value={domain}>
-                                            {domain === 'GROW' ? '📈 GROW (Ventas / Comercial)' : 
-                                             domain === 'OPERATIONS' ? '⚙️ OPERATIONS (Delivery)' : 
-                                             '🤝 SUPPORT (Postventa / Mant.)'}
+                                            {domain === 'GROW' ? '📈 GROW (Ventas / Comercial)' :
+                                                domain === 'OPERATIONS' ? '⚙️ OPERATIONS (Delivery)' :
+                                                    '🤝 SUPPORT (Postventa / Mant.)'}
                                         </option>
                                     ))}
                                 </select>
-                                <p className="admin-modal-subtitle" style={{ margin: '8px 0 0 0' }}>
+                                <p className={styles.inputHint}>
                                     Al asignar, el Lead comenzará en el primer estado de ese dominio.
                                 </p>
                             </div>
 
-                            <div className="admin-form-actions" style={{ marginTop: '2rem' }}>
+                            <div className={styles.formActions} style={{ marginTop: '1.5rem' }}>
                                 <button
                                     type="button"
                                     onClick={() => setIsCreating(false)}
-                                    className="admin-btn admin-btn-secondary"
-                                    style={{ flex: 1 }}
+                                    className={styles.btnSecondary}
                                 >
                                     DESCARTAR
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={createLoading}
-                                    className="admin-btn admin-btn-primary"
-                                    style={{ flex: 2 }}
+                                    className={styles.btnPrimary}
                                 >
                                     {createLoading ? '...' : 'GUARDAR EN PIPELINE'}
                                 </button>

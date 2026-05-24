@@ -1,11 +1,11 @@
 /* Lead Card Component Styles */
 .leadCard {
-  background: var(--admin-bg);
+  background: #ffffff;
   padding: 1.25rem;
-  border-radius: var(--admin-radius-xl);
-  border: 1px solid var(--admin-border);
-  box-shadow: 0 10px 30px rgba(5, 17, 242, 0.03);
-  transition: var(--admin-transition);
+  border-radius: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   cursor: grab;
   position: relative;
   overflow: hidden;
@@ -14,14 +14,15 @@
 }
 
 .leadCard:hover {
-  box-shadow: var(--admin-shadow-lg);
-  border-color: rgba(5, 17, 242, 0.2);
+  box-shadow: 0 10px 24px rgba(5, 17, 242, 0.08);
+  border-color: rgba(5, 17, 242, 0.15);
   transform: translateY(-4px);
 }
 
 .leadCard:active {
   cursor: grabbing;
-  transform: scale(0.98);
+  transform: scale(0.96);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .cardHeader {
