@@ -77,7 +77,8 @@ export default function AdminLayout({
                 setUser(null);
                 setRole(null);
                 if (!isLoginPage) {
-                    router.push("/admin/ingreso");
+                    const loginPath = typeof window !== 'undefined' && (window.location.hostname.startsWith('admin.') || window.location.hostname.startsWith('management.') || window.location.hostname.startsWith('landing.')) ? '/ingreso' : '/admin/ingreso';
+                    router.push(loginPath);
                 }
                 setLoading(false);
             }
@@ -91,7 +92,8 @@ export default function AdminLayout({
 
     const handleLogout = async () => {
         await signOut(auth);
-        router.push("/admin/ingreso");
+        const loginPath = typeof window !== 'undefined' && (window.location.hostname.startsWith('admin.') || window.location.hostname.startsWith('management.') || window.location.hostname.startsWith('landing.')) ? '/ingreso' : '/admin/ingreso';
+        router.push(loginPath);
     };
 
     if (loading) {
@@ -216,7 +218,7 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath, dy
     const langOptions = ['en', 'es'];
 
     const getCleanPath = (path: string) => {
-        const isSubdomain = typeof window !== 'undefined' && window.location.hostname.startsWith('admin.');
+        const isSubdomain = typeof window !== 'undefined' && (window.location.hostname.startsWith('admin.') || window.location.hostname.startsWith('management.') || window.location.hostname.startsWith('landing.'));
         return isSubdomain ? path.replace('/admin', '') : path;
     };
 

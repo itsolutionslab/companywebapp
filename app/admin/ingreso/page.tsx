@@ -43,7 +43,8 @@ export default function LoginPage() {
             }
 
             await signInWithEmailAndPassword(auth, email, password);
-            router.push("/admin/panel");
+            const isSubdomain = typeof window !== 'undefined' && (window.location.hostname.startsWith('admin.') || window.location.hostname.startsWith('management.') || window.location.hostname.startsWith('landing.'));
+            router.push(isSubdomain ? "/panel" : "/admin/panel");
         } catch (err: any) {
             setError("Incorrect credentials or connection error.");
         } finally {
