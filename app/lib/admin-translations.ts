@@ -28,7 +28,7 @@ export type TranslationKey =
     | 'status_started' | 'status_testing' | 'status_finished' | 'status_delivered' | 'status_closed' | 'status_lost'
     | 'security_integrity' | 'last_modified' | 'reactivate' | 'reschedule' | 'slot_unavailable'
     | 'filter_date' | 'filter_range' | 'select_date' | 'select_range'
-    | 'cotizaciones' | 'new_quotation' | 'quotation_id' | 'client' | 'total' | 'status_draft' | 'status_sent' | 'status_signed' | 'status_expired';
+    | 'cotizaciones' | 'new_quotation' | 'quotation_id' | 'client' | 'total' | 'status' | 'status_draft' | 'status_sent' | 'status_signed' | 'status_expired';
 
 export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, string>>> = {
     en: {
@@ -217,6 +217,7 @@ export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, stri
         quotation_id: 'Quotation ID',
         client: 'Client',
         total: 'Total',
+        status: 'Status',
         status_draft: 'Draft',
         status_sent: 'Sent',
         status_signed: 'Signed',
@@ -408,6 +409,7 @@ export const adminTranslations: Record<Lang, Partial<Record<TranslationKey, stri
         quotation_id: 'ID Cotización',
         client: 'Cliente',
         total: 'Total',
+        status: 'Estado',
         status_draft: 'Borrador',
         status_sent: 'Enviada',
         status_signed: 'Firmada',

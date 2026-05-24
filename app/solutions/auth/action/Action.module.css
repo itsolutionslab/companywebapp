@@ -1,0 +1,329 @@
+.container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #F8F9FA;
+    padding: 1rem;
+    animation: fadeIn 0.7s ease-in-out;
+}
+
+.modal {
+    width: 100%;
+    max-width: 400px;
+    background: #ffffff;
+    padding: 2rem 1.5rem;
+    border-radius: 1.5rem;
+    box-shadow: 0 10px 25px -5px rgba(5, 17, 242, 0.1), 0 8px 10px -6px rgba(5, 17, 242, 0.1);
+    border: 1px solid #f3f4f6;
+    position: relative;
+    overflow: hidden;
+}
+
+@media (min-width: 768px) {
+    .modal {
+        padding: 2.5rem;
+        max-width: 450px;
+    }
+}
+
+.diagonalAccent {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent 45%, rgba(5, 17, 242, 0.03) 50%, transparent 55%);
+    transform: rotate(-15deg);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 10;
+}
+
+.logoContainer {
+    width: 5rem;
+    height: 5rem;
+    background-color: #0511F2;
+    border-radius: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem auto;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 20px -5px rgba(5, 17, 242, 0.3);
+    transition: transform 0.5s ease;
+}
+
+.logoContainer:hover {
+    transform: scale(1.05);
+}
+
+.logoText {
+    color: white;
+    font-weight: 900;
+    font-size: 2rem;
+}
+
+.logoAccent {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 2rem;
+    height: 2rem;
+    background-color: #EAF207;
+    transform: translate(1rem, -1rem) rotate(45deg);
+}
+
+.decoratorLine {
+    width: 2rem;
+    height: 4px;
+    background-color: #0511F2;
+    margin: 0 auto 1rem auto;
+    border-radius: 2px;
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #0511F2;
+    letter-spacing: -0.05em;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+}
+
+@media (min-width: 768px) {
+    .title {
+        font-size: 1.75rem;
+    }
+}
+
+.subtitle {
+    font-size: 0.65rem;
+    font-weight: 900;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+    .subtitle {
+        font-size: 0.75rem;
+    }
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: relative;
+    z-index: 10;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.inputWrapper {
+    position: relative;
+}
+
+.input {
+    width: 100%;
+    padding: 1rem 3rem 1rem 1.25rem;
+    font-size: 1rem;
+    color: #1f2937;
+    background-color: #f9fafb;
+    border: 2px solid #e5e7eb;
+    border-radius: 1rem;
+    transition: all 0.2s ease;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.input:focus {
+    border-color: #0511F2;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(5, 17, 242, 0.1);
+}
+
+.input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: #f3f4f6;
+}
+
+.togglePasswordBtn {
+    position: absolute;
+    right: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.togglePasswordBtn:hover:not(:disabled) {
+    color: #0511F2;
+}
+
+.togglePasswordBtn:disabled {
+    cursor: not-allowed;
+}
+
+.icon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.messageBox {
+    padding: 1rem 1.5rem;
+    border-radius: 1rem;
+    font-size: 0.7rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.messageError {
+    background-color: #fff1f2;
+    border: 1px solid #ffe4e6;
+    color: #e11d48;
+}
+
+.messageSuccess {
+    background-color: #ecfdf5;
+    border: 1px solid #d1fae5;
+    color: #059669;
+}
+
+.submitBtn {
+    width: 100%;
+    padding: 1.25rem;
+    background-color: #0511F2;
+    color: white;
+    font-weight: 800;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border: none;
+    border-radius: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 15px -3px rgba(5, 17, 242, 0.2);
+}
+
+.submitBtn:hover:not(:disabled) {
+    background-color: #040ca3;
+    transform: translateY(-2px);
+    box-shadow: 0 15px 20px -3px rgba(5, 17, 242, 0.3);
+}
+
+.submitBtn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.submitBtn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.backLinkContainer {
+    text-align: center;
+    padding-top: 0.5rem;
+}
+
+.backLink {
+    background: none;
+    border: none;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.backLink:hover {
+    color: #0511F2;
+}
+
+.footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid #f3f4f6;
+    text-align: center;
+    position: relative;
+    z-index: 10;
+}
+
+.footerText {
+    font-size: 0.6rem;
+    font-weight: 900;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+}
+
+.spinnerContainer {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #F8F9FA;
+}
+
+.spinner {
+    width: 4rem;
+    height: 4rem;
+    border: 4px solid #0511F2;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
