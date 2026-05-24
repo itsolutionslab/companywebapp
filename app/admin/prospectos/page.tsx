@@ -34,7 +34,7 @@ export default function ProspectosPage() {
         phone: '',
         company: '',
         project_desc: '',
-        start_kickoff: false,
+        targetDomain: 'GROW' as Domain,
         delivery_model: 'ADVISORY' as DeliveryModel,
         capability: 'SOFTWARE' as Capability
     });
@@ -133,11 +133,26 @@ export default function ProspectosPage() {
         return 'admin-badge-gray';
     };
 
+    const getInitialStatusForDomain = (domain: Domain): LeadStatus => {
+        switch (domain) {
+            case 'GROW': return 'LEAD_NEW';
+            case 'OPERATIONS': return 'HANDOFF';
+            case 'SUPPORT': return 'HYPERCARE';
+            default: return 'LEAD_NEW';
+        }
+    };
+
+    const targetDomainOptions = useMemo(() => {
+        if (activeDomain === 'GROW') return ['GROW', 'OPERATIONS', 'SUPPORT'] as Domain[];
+        if (activeDomain === 'OPERATIONS') return ['OPERATIONS', 'SUPPORT'] as Domain[];
+        return ['SUPPORT'] as Domain[];
+    }, [activeDomain]);
+
     const handleCreateLead = async (e: React.FormEvent) => {
         e.preventDefault();
         setCreateLoading(true);
         try {
-            const newStatus: LeadStatus = formData.start_kickoff ? 'KICK_OFF' : 'LEAD_NEW';
+            const newStatus = getInitialStatusForDomain(formData.targetDomain);
 
             const leadToCreate: Partial<Lead> = {
                 data: {
@@ -173,7 +188,7 @@ export default function ProspectosPage() {
                 phone: '',
                 company: '',
                 project_desc: '',
-                start_kickoff: false,
+                targetDomain: activeDomain,
                 delivery_model: 'ADVISORY' as DeliveryModel,
                 capability: 'SOFTWARE' as Capability
             });
@@ -211,7 +226,10 @@ export default function ProspectosPage() {
             <div className={styles.actionBar}>
                 <div className={styles.controlsGroup}>
                     <button
-                        onClick={() => setIsCreating(true)}
+                        onClick={() => {
+                            setFormData(prev => ({ ...prev, targetDomain: activeDomain }));
+                            setIsCreating(true);
+                        }}
                         className="admin-btn admin-btn-primary"
                     >
                         <span>➕</span>
@@ -482,14 +500,24 @@ export default function ProspectosPage() {
                                 />
                             </div>
 
-                            <div className="admin-form-toggle-card" style={{ marginTop: '1.5rem' }} onClick={() => setFormData({ ...formData, start_kickoff: !formData.start_kickoff })}>
-                                <div>
-                                    <h4 className="admin-label" style={{ margin: 0, fontSize: '13px' }}>Salto Directo a Kick-off</h4>
-                                    <p className="admin-modal-subtitle" style={{ margin: '4px 0 0 0' }}>El proyecto ya ha sido vendido previamente</p>
-                                </div>
-                                <div className={`admin-toggle-switch ${formData.start_kickoff ? 'active' : ''}`}>
-                                    <div className="admin-toggle-knob" />
-                                </div>
+                            <div className="admin-input-group" style={{ marginTop: '1.5rem' }}>
+                                <label className="admin-label">Asignar a (Pilar Destino)</label>
+                                <select
+                                    value={formData.targetDomain}
+                                    onChange={e => setFormData({ ...formData, targetDomain: e.target.value as Domain })}
+                                    className="admin-input"
+                                >
+                                    {targetDomainOptions.map(domain => (
+                                        <option key={domain} value={domain}>
+                                            {domain === 'GROW' ? '📈 GROW (Ventas / Comercial)' : 
+                                             domain === 'OPERATIONS' ? '⚙️ OPERATIONS (Delivery)' : 
+                                             '🤝 SUPPORT (Postventa / Mant.)'}
+                                        </option>
+                                    ))}
+                                </select>
+                                <p className="admin-modal-subtitle" style={{ margin: '8px 0 0 0' }}>
+                                    Al asignar, el Lead comenzará en el primer estado de ese dominio.
+                                </p>
                             </div>
 
                             <div className="admin-form-actions" style={{ marginTop: '2rem' }}>
