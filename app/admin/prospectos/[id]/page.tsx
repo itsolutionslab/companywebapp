@@ -3,12 +3,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getLeadById, updateLead, onAvailabilityUpdate, getBusinessSettings } from "@/lib/firebase";
+import { getLeadById, updateLead, onAvailabilityUpdate, getBusinessSettings, db, addLeadEvent } from "@/lib/firebase";
 import { Lead, LeadStatus } from "@/types/tracking";
 import { useTranslation } from "@/components/admin/LanguageContext";
 import { useNotification } from "@/components/admin/NotificationContext";
 import { getTimeSlotsForDate } from "@/lib/timeSlots";
 import ScheduleModal from "@/components/admin/ScheduleModal";
+import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, Timestamp } from "firebase/firestore";
+import QuotationEditor from "@/modules/quotation/components/QuotationEditor";
 
 import styles from "./ProspectoDetail.module.css";
 
@@ -30,6 +32,74 @@ export default function LeadDetailPage() {
     const [fileName, setFileName] = useState<string>('Documento de Proyecto');
     const [expandedDomain, setExpandedDomain] = useState<'GROW' | 'OPERATIONS' | 'SUPPORT' | null>(null);
     const [expandedTrackerDomain, setExpandedTrackerDomain] = useState<'GROW' | 'OPERATIONS' | 'SUPPORT' | null>(null);
+
+    // Quotations State
+    const [quotations, setQuotations] = useState<any[]>([]);
+    const [allQuotations, setAllQuotations] = useState<any[]>([]);
+    const [quotationSearch, setQuotationSearch] = useState('');
+    const [showQuotationResults, setShowQuotationResults] = useState(false);
+    const [showQuotationsListModal, setShowQuotationsListModal] = useState(false);
+
+    // Fetch quotations linked to this lead
+    useEffect(() => {
+        if (!id) return;
+        const q = query(collection(db, "quotations"), where("leadId", "==", id));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setQuotations(list);
+        });
+        return () => unsubscribe();
+    }, [id]);
+
+    // Fetch all quotations to support linking existing ones
+    useEffect(() => {
+        const q = query(collection(db, "quotations"), orderBy("date", "desc"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setAllQuotations(list);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    const handleLinkQuotation = async (quotationDocId: string) => {
+        try {
+            const docRef = doc(db, "quotations", quotationDocId);
+            await updateDoc(docRef, { leadId: id });
+            
+            // Add a log event to the lead
+            await addLeadEvent(id as string, {
+                type: 'NOTE_ADDED',
+                description: `Cotización vinculada.`,
+                timestamp: Timestamp.now()
+            } as any);
+
+            showNotification("Cotización vinculada correctamente", "success");
+            setQuotationSearch('');
+            setShowQuotationResults(false);
+        } catch (error: any) {
+            console.error("Link quotation error:", error);
+            showNotification(`Error: ${error.message}`, "error");
+        }
+    };
+
+    const handleUnlinkQuotation = async (quotationDocId: string) => {
+        try {
+            const docRef = doc(db, "quotations", quotationDocId);
+            await updateDoc(docRef, { leadId: null });
+
+            // Add a log event to the lead
+            await addLeadEvent(id as string, {
+                type: 'NOTE_ADDED',
+                description: `Cotización desvinculada.`,
+                timestamp: Timestamp.now()
+            } as any);
+
+            showNotification("Cotización desvinculada correctamente", "success");
+        } catch (error: any) {
+            console.error("Unlink quotation error:", error);
+            showNotification(`Error: ${error.message}`, "error");
+        }
+    };
 
     useEffect(() => {
         if (id) fetchLead();
@@ -451,6 +521,120 @@ export default function LeadDetailPage() {
                         </section>
                     </div>
 
+                    {/* Cotizaciones Vinculadas */}
+                    <div className={styles.sectionCard}>
+                        <h3 className="admin-h3" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-accent)' }}></span>
+                            Cotizaciones Vinculadas
+                        </h3>
+
+                        {/* Search and Link Existing */}
+                        <div style={{ marginBottom: '2rem', position: 'relative' }}>
+                            <label className="admin-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Vincular Cotización Existente</label>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <input 
+                                    type="text" 
+                                    value={quotationSearch} 
+                                    onChange={(e) => {
+                                        setQuotationSearch(e.target.value);
+                                        setShowQuotationResults(true);
+                                    }}
+                                    onFocus={() => setShowQuotationResults(true)}
+                                    placeholder="Buscar por código o cliente..." 
+                                    className={styles.iosInput}
+                                    style={{ flexGrow: 1 }}
+                                />
+                                {quotationSearch.trim() && (
+                                    <button 
+                                        onClick={async () => {
+                                            const found = allQuotations.find(q => q.quotationId?.toLowerCase() === quotationSearch.trim().toLowerCase());
+                                            if (found) {
+                                                await handleLinkQuotation(found.id);
+                                            } else {
+                                                showNotification("No se encontró cotización con ese código exacto.", "warning");
+                                            }
+                                        }}
+                                        className="admin-btn admin-btn-secondary"
+                                        style={{ padding: '0.75rem 1rem', fontSize: '10px' }}
+                                    >
+                                        Vincular
+                                    </button>
+                                )}
+                            </div>
+
+                            {showQuotationResults && quotationSearch.trim() && (
+                                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid var(--admin-border)', borderRadius: '1rem', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', zIndex: 100, maxHeight: '200px', overflowY: 'auto', marginTop: '5px' }}>
+                                    {allQuotations
+                                        .filter(q => q.leadId !== id)
+                                        .filter(q => 
+                                            q.quotationId?.toLowerCase().includes(quotationSearch.toLowerCase()) || 
+                                            q.clientName?.toLowerCase().includes(quotationSearch.toLowerCase())
+                                        )
+                                        .map(q => (
+                                            <div 
+                                                key={q.id}
+                                                onClick={() => handleLinkQuotation(q.id)}
+                                                style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--admin-surface)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-surface)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                            >
+                                                <div>
+                                                    <strong style={{ color: 'var(--admin-primary)', fontSize: '0.85rem' }}>{q.quotationId}</strong>
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--admin-text-muted)', marginLeft: '0.5rem' }}>({q.clientName})</span>
+                                                </div>
+                                                <span style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>
+                                                    {q.currency} {((q.totalCents || q.total || 0) / 100).toFixed(2)}
+                                                </span>
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+                            )}
+                        </div>
+
+                        {/* List of linked quotations */}
+                        {quotations.length === 0 ? (
+                            <p style={{ color: 'var(--admin-text-muted)', fontSize: '0.875rem', fontStyle: 'italic', margin: 0 }}>
+                                No hay cotizaciones vinculadas a este prospecto.
+                            </p>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {quotations.map((q) => (
+                                    <div 
+                                        key={q.id} 
+                                        style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'space-between', 
+                                            padding: '1rem', 
+                                            background: 'var(--admin-surface)', 
+                                            borderRadius: '1rem', 
+                                            border: '1px solid var(--admin-border)' 
+                                        }}
+                                    >
+                                        <div onClick={() => router.push(`/admin/cotizaciones/${q.id}`)} style={{ cursor: 'pointer', flexGrow: 1 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <strong style={{ color: 'var(--admin-primary)', fontSize: '0.9rem' }}>{q.quotationId}</strong>
+                                                <span className="admin-badge" style={{ fontSize: '8px', padding: '0.15rem 0.4rem', textTransform: 'uppercase' }}>
+                                                    {q.status}
+                                                </span>
+                                            </div>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--admin-text-muted)', margin: '0.25rem 0 0' }}>
+                                                Monto: {q.currency} {((q.totalCents || q.total || 0) / 100).toFixed(2)} | Fecha: {q.date?.toDate ? new Date(q.date.toDate()).toLocaleDateString() : new Date(q.date).toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                        <button 
+                                            onClick={() => handleUnlinkQuotation(q.id)}
+                                            style={{ padding: '0.4rem 0.8rem', background: '#fee2e2', color: '#ef4444', fontSize: '9px', fontWeight: 'bold', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                                        >
+                                            DESVINCULAR
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     {/* Timeline Feed */}
                     <div className={styles.sectionCard}>
                         <h3 className="admin-h3" style={{ marginBottom: '2rem' }}>Línea de Tiempo</h3>
@@ -485,7 +669,7 @@ export default function LeadDetailPage() {
                                     <div className={styles.eventContent}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                                             <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--admin-text-light)', textTransform: 'uppercase' }}>
-                                                {event.type.replace(/_/g, ' ')}
+                                                {(event.type || event.event_type || 'NOTE_ADDED').replace(/_/g, ' ')}
                                             </span>
                                             <span style={{ fontSize: '9px', fontWeight: 'bold', color: 'var(--admin-text-light)' }}>
                                                 {new Date(event.timestamp?.toDate?.() || event.timestamp).toLocaleDateString()}
@@ -518,9 +702,52 @@ export default function LeadDetailPage() {
                             <button onClick={() => setShowScheduleModal(true)} className={styles.actionBtn} style={{ background: 'rgba(5, 17, 242, 0.05)', color: 'var(--admin-primary)' }}>
                                 🗓️ Agendar Discovery
                             </button>
-                            <button className={styles.actionBtn} style={{ background: 'rgba(238, 5, 242, 0.05)', color: 'var(--admin-accent)' }}>
-                                📧 Enviar Propuesta
-                            </button>
+                            <div style={{ display: 'flex', gap: '0.5rem', width: '100%', alignItems: 'center' }}>
+                                <button 
+                                    onClick={() => router.push(`/admin/cotizaciones/nueva?leadId=${lead.lead_id}`)} 
+                                    className={styles.actionBtn} 
+                                    style={{ 
+                                        background: 'rgba(238, 5, 242, 0.05)', 
+                                        color: 'var(--admin-accent)',
+                                        flexGrow: 1,
+                                        margin: 0
+                                    }}
+                                >
+                                    📄 Crear Cotización
+                                </button>
+                                <div 
+                                    onClick={() => setShowQuotationsListModal(true)}
+                                    title="Ver lista de cotizaciones de este prospecto"
+                                    style={{ 
+                                        background: 'rgba(238, 5, 242, 0.08)', 
+                                        color: 'var(--admin-accent)', 
+                                        minWidth: '42px', 
+                                        height: '42px', 
+                                        borderRadius: '12px', 
+                                        display: 'flex', 
+                                        flexDirection: 'column',
+                                        alignItems: 'center', 
+                                        justifyContent: 'center', 
+                                        fontWeight: '900', 
+                                        fontSize: '0.9rem',
+                                        border: '1px solid rgba(238, 5, 242, 0.15)',
+                                        flexShrink: 0,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease-in-out'
+                                    }}
+                                    onMouseEnter={e => {
+                                        e.currentTarget.style.background = 'rgba(238, 5, 242, 0.15)';
+                                        e.currentTarget.style.transform = 'scale(1.05)';
+                                    }}
+                                    onMouseLeave={e => {
+                                        e.currentTarget.style.background = 'rgba(238, 5, 242, 0.08)';
+                                        e.currentTarget.style.transform = 'scale(1)';
+                                    }}
+                                >
+                                    <span style={{ fontSize: '0.55rem', textTransform: 'uppercase', fontWeight: '800', lineHeight: 1, opacity: 0.8, marginBottom: '2px', letterSpacing: '0.05em' }}>Doc</span>
+                                    <span style={{ lineHeight: 1 }}>{quotations.length}</span>
+                                </div>
+                            </div>
                             <button
                                 onClick={() => {
                                     setNewValue(lead.value_estimate?.toString() || '0');
@@ -706,6 +933,117 @@ export default function LeadDetailPage() {
                 subtitle={`Prospecto: ${lead.data.name}`}
                 isSaving={isSavingSchedule}
             />
+
+            {/* Quotations List Modal */}
+            {showQuotationsListModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+                    <div className="animate-slide-up" style={{ background: 'white', borderRadius: '1.5rem', width: '100%', maxWidth: '500px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)', overflow: 'hidden', border: '1px solid var(--admin-border)' }}>
+                        {/* Header */}
+                        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--admin-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--admin-surface)' }}>
+                            <div>
+                                <h3 style={{ fontSize: '0.85rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--admin-primary)', margin: 0 }}>Cotizaciones del Prospecto</h3>
+                                <p style={{ fontSize: '0.7rem', color: 'var(--admin-text-muted)', margin: '0.2rem 0 0', fontWeight: '600' }}>{lead.data.name} • {quotations.length} {quotations.length === 1 ? 'documento' : 'documentos'}</p>
+                            </div>
+                            <button 
+                                onClick={() => setShowQuotationsListModal(false)}
+                                style={{ background: 'white', border: '1px solid var(--admin-border)', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s' }}
+                                onMouseEnter={e => { e.currentTarget.style.background = '#f3f4f6'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'white'; }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Body - List container */}
+                        <div style={{ padding: '1.25rem 1.5rem', overflowY: 'auto', flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            {quotations.length === 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2.5rem 1rem', textAlign: 'center' }}>
+                                    <span style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>📄</span>
+                                    <h4 style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--admin-text-main)', margin: '0 0 0.25rem 0' }}>Sin cotizaciones vinculadas</h4>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--admin-text-muted)', maxWidth: '280px', margin: '0 0 1.25rem 0', lineHeight: 1.4 }}>Aún no has generado propuestas económicas para este prospecto.</p>
+                                    <button 
+                                        onClick={() => {
+                                            setShowQuotationsListModal(false);
+                                            router.push(`/admin/cotizaciones/nueva?leadId=${lead.lead_id}`);
+                                        }}
+                                        className="admin-btn admin-btn-primary"
+                                        style={{ padding: '0.55rem 1.25rem', fontSize: '0.75rem' }}
+                                    >
+                                        + Crear Primera Cotización
+                                    </button>
+                                </div>
+                            ) : (
+                                quotations.map((q) => (
+                                    <div 
+                                        key={q.id} 
+                                        style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'space-between', 
+                                            padding: '0.85rem 1rem', 
+                                            background: 'var(--admin-surface)', 
+                                            borderRadius: '1rem', 
+                                            border: '1px solid var(--admin-border)'
+                                        }}
+                                    >
+                                        <div style={{ flexGrow: 1, cursor: 'pointer' }} onClick={() => {
+                                            setShowQuotationsListModal(false);
+                                            router.push(`/admin/cotizaciones/${q.id}`);
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.15rem' }}>
+                                                <strong style={{ color: 'var(--admin-primary)', fontSize: '0.8rem' }}>{q.quotationId || 'Sin Código'}</strong>
+                                                <span style={{ 
+                                                    fontSize: '7px', 
+                                                    padding: '0.1rem 0.35rem', 
+                                                    textTransform: 'uppercase',
+                                                    fontWeight: '900',
+                                                    borderRadius: '4px',
+                                                    background: q.status === 'APPROVED' ? '#e6fffa' : '#fff5f5',
+                                                    color: q.status === 'APPROVED' ? '#0d9488' : '#ef4444'
+                                                }}>
+                                                    {q.status}
+                                                </span>
+                                            </div>
+                                            <p style={{ fontSize: '0.7rem', color: 'var(--admin-text-muted)', margin: 0, fontWeight: '600' }}>
+                                                Total: <span style={{ color: 'var(--admin-text-main)', fontWeight: '800' }}>{q.currency} {((q.totalCents || q.total || 0) / 100).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                            </p>
+                                            <p style={{ fontSize: '0.6rem', color: 'var(--admin-text-light)', margin: '0.1rem 0 0 0' }}>
+                                                Fecha: {q.date?.toDate ? new Date(q.date.toDate()).toLocaleDateString() : new Date(q.date).toLocaleDateString()}
+                                            </p>
+                                        </div>
+
+                                        <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                                            <button 
+                                                onClick={() => {
+                                                    setShowQuotationsListModal(false);
+                                                    router.push(`/admin/cotizaciones/${q.id}`);
+                                                }}
+                                                style={{ padding: '0.35rem 0.65rem', background: 'white', color: 'var(--admin-primary)', border: '1px solid var(--admin-border)', fontSize: '0.7rem', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.15s' }}
+                                                onMouseEnter={e => { e.currentTarget.style.background = '#f9fafb'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.background = 'white'; }}
+                                            >
+                                                Ver
+                                            </button>
+                                            <button 
+                                                onClick={() => {
+                                                    if (confirm("¿Estás seguro de desvincular esta cotización del prospecto?")) {
+                                                        handleUnlinkQuotation(q.id);
+                                                    }
+                                                }}
+                                                style={{ padding: '0.35rem 0.5rem', background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', fontSize: '0.7rem', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.15s' }}
+                                                onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.background = '#fef2f2'; }}
+                                            >
+                                                🗑️
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

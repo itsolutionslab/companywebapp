@@ -12,19 +12,30 @@ import { useRouter } from 'next/navigation';
 import SignatureBox from '@/shared/ui/SignatureBox';
 import { logQuotationEvent } from '../services/AuditService';
 import { QuotationData, Currency, QuotationStatus, QuotationItem } from '../types/quotation';
+import { Lead } from '@/types/tracking';
+import { onLeadsUpdate, addLeadEvent } from '@/lib/firebase';
 
 interface Props {
     initialData?: Partial<QuotationData>;
     id?: string;
+    initialLeadId?: string;
+    onSaveSuccess?: (quotationId: string) => void;
+    onClose?: () => void;
 }
 
-export default function QuotationEditor({ initialData, id }: Props) {
+export default function QuotationEditor({ initialData, id, initialLeadId, onSaveSuccess, onClose }: Props) {
     const { t } = useTranslation();
     const { showNotification } = useNotification();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [savedId, setSavedId] = useState<string | null>(id || null);
     
+    // Lead Link State
+    const [leads, setLeads] = useState<Lead[]>([]);
+    const [leadId, setLeadId] = useState(initialData?.leadId || initialLeadId || '');
+    const [leadSearch, setLeadSearch] = useState('');
+    const [showLeadResults, setShowLeadResults] = useState(false);
+
     // Form State
     const [clientName, setClientName] = useState(initialData?.clientName || '');
     const [clientEmail, setClientEmail] = useState(initialData?.clientEmail || '');
@@ -44,6 +55,51 @@ export default function QuotationEditor({ initialData, id }: Props) {
     const subtotal = items.reduce((sum, item) => sum + item.totalCents, 0);
     const tax = Math.round(subtotal * 0.18);
     const total = subtotal + tax;
+
+    // Fetch leads for linking
+    useEffect(() => {
+        const unsubscribe = onLeadsUpdate((data) => {
+            setLeads(data);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    // Auto-prefill if initialLeadId is provided and leads are loaded
+    useEffect(() => {
+        if (initialLeadId && leads.length > 0) {
+            const found = leads.find(l => l.lead_id === initialLeadId);
+            if (found) {
+                setLeadId(found.lead_id);
+                setClientName(found.data?.name || '');
+                setClientEmail(found.data?.email || '');
+                if (found.data?.project_desc) {
+                    setProjectTitle(found.data.project_desc.substring(0, 50));
+                }
+            }
+        }
+    }, [initialLeadId, leads]);
+
+    const matchedLeads = leadSearch.trim()
+        ? leads.filter(l => 
+            l.data?.name?.toLowerCase().includes(leadSearch.toLowerCase()) ||
+            l.data?.email?.toLowerCase().includes(leadSearch.toLowerCase()) ||
+            l.data?.company?.toLowerCase().includes(leadSearch.toLowerCase()) ||
+            l.lead_id.toLowerCase().includes(leadSearch.toLowerCase())
+          )
+        : [];
+
+    const selectedLead = leads.find(l => l.lead_id === leadId);
+
+    const handleSelectLead = (l: Lead) => {
+        setLeadId(l.lead_id);
+        setClientName(l.data?.name || '');
+        setClientEmail(l.data?.email || '');
+        if (l.data?.project_desc) {
+            setProjectTitle(l.data.project_desc.substring(0, 50));
+        }
+        setLeadSearch('');
+        setShowLeadResults(false);
+    };
 
     const editor = useEditor({
         extensions: [StarterKit],
@@ -106,6 +162,7 @@ export default function QuotationEditor({ initialData, id }: Props) {
             totalCents: total,
             status,
             context: editor.getJSON(),
+            leadId: leadId || undefined,
             ...(signature ? {
                 signature: {
                     type: 'manual',
@@ -139,10 +196,34 @@ export default function QuotationEditor({ initialData, id }: Props) {
                 snapshotAt: Timestamp.now()
             });
 
+            if (leadId) {
+                try {
+                    await addLeadEvent(leadId, {
+                        event_type: 'custom',
+                        description: `Cotización ${quotationData.quotationId} guardada. Estado: ${status}`,
+                        timestamp: Timestamp.now(),
+                        metadata: {
+                            quotationId: quotationData.quotationId,
+                            totalCents: total,
+                            currency
+                        }
+                    } as any);
+                } catch (eventError) {
+                    console.error("Failed to add event to lead:", eventError);
+                }
+            }
+
             setSavedId(finalId!);
 
             if (isManualAction) showNotification("Cotización guardada con éxito", "success");
-            if (!id) router.push(`/admin/cotizaciones/${finalId}`);
+            
+            if (onSaveSuccess) {
+                onSaveSuccess(finalId!);
+            } else if (leadId) {
+                router.push(`/admin/prospectos/${leadId}`);
+            } else if (!id) {
+                router.push(`/admin/cotizaciones/${finalId}`);
+            }
             
         } catch (error) {
             console.error("Save error:", error);
@@ -181,6 +262,66 @@ export default function QuotationEditor({ initialData, id }: Props) {
                 
                 <div className={styles.formSection}>
                     <h2 className={styles.sectionTitle}>Información General</h2>
+
+                    {/* Link to Lead / Prospecto */}
+                    <div className={styles.inputGroup} style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem', marginBottom: '0.5rem' }}>
+                        <label>Vincular a Prospecto (Lead)</label>
+                        {selectedLead ? (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(5, 17, 242, 0.05)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(5, 17, 242, 0.1)' }}>
+                                <div>
+                                    <strong style={{ color: 'var(--color-primary)', fontSize: '0.9rem' }}>{selectedLead.data?.name}</strong>
+                                    {selectedLead.data?.company && ` - ${selectedLead.data.company}`}
+                                    <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
+                                        ID: {selectedLead.lead_id} | Email: {selectedLead.data?.email || 'No especificado'}
+                                    </span>
+                                </div>
+                                <button 
+                                    type="button" 
+                                    onClick={() => setLeadId('')}
+                                    style={{ background: 'transparent', border: 'none', color: '#e53e3e', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}
+                                >
+                                    Desvincular
+                                </button>
+                            </div>
+                        ) : (
+                            <div style={{ position: 'relative' }}>
+                                <input 
+                                    className={styles.input} 
+                                    value={leadSearch} 
+                                    onChange={e => {
+                                        setLeadSearch(e.target.value);
+                                        setShowLeadResults(true);
+                                    }} 
+                                    onFocus={() => setShowLeadResults(true)}
+                                    placeholder="Buscar prospecto por nombre, email, empresa o ID..." 
+                                />
+                                {showLeadResults && matchedLeads.length > 0 && (
+                                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 100, maxHeight: '200px', overflowY: 'auto', marginTop: '4px' }}>
+                                        {matchedLeads.map(l => (
+                                            <div 
+                                                key={l.lead_id}
+                                                onClick={() => handleSelectLead(l)}
+                                                style={{ padding: '0.75rem', borderBottom: '1px solid var(--color-bg-alt)', cursor: 'pointer', transition: 'background 0.2s' }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-alt)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                            >
+                                                <div style={{ fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--color-text-main)' }}>{l.data?.name}</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                                                    {l.data?.company ? `${l.data.company} | ` : ''}{l.data?.email} | ID: {l.lead_id}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {showLeadResults && leadSearch.trim() && matchedLeads.length === 0 && (
+                                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 100, padding: '0.75rem', fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>
+                                        No se encontraron prospectos coincidentes
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
                     <div className={styles.grid2}>
                         <div className={styles.inputGroup}>
                             <label>Nombre del Cliente / Empresa *</label>
@@ -221,42 +362,60 @@ export default function QuotationEditor({ initialData, id }: Props) {
                         <h2 className={styles.sectionTitle}>Tabla de Servicios</h2>
                         <button className={styles.secondaryBtn} onClick={addItem}>+ Añadir Servicio</button>
                     </div>
-                    
-                    <div className={styles.itemsTable}>
+                         <div className={styles.itemsTable}>
                         <div className={styles.tableHeader}>
                             <span>Descripción</span>
                             <span>Cant.</span>
                             <span>Precio Unitario</span>
-                            <span>Total</span>
+                            <span style={{ textAlign: 'right' }}>Total</span>
                             <span></span>
                         </div>
                         {items.map((item, index) => (
                             <div key={item.id} className={styles.tableRow}>
-                                <input 
-                                    className={styles.input} 
-                                    placeholder="Consultoría TI..." 
-                                    value={item.description} 
-                                    onChange={e => handleItemChange(index, 'description', e.target.value)} 
-                                />
-                                <input 
-                                    className={styles.input} 
-                                    type="number" 
-                                    min="1" 
-                                    value={item.quantity} 
-                                    onChange={e => handleItemChange(index, 'quantity', parseInt(e.target.value) || 0)} 
-                                />
-                                <input 
-                                    className={styles.input} 
-                                    type="number" 
-                                    placeholder="Precio base ej: 10000" 
-                                    value={item.unitPriceCents} 
-                                    onChange={e => handleItemChange(index, 'unitPriceCents', parseInt(e.target.value) || 0)} 
-                                    title="Monto en céntimos enteros (ej. 10000 = 100.00)"
-                                />
-                                <div className={styles.rowTotal}>
-                                    {formatCurrency(item.totalCents)}
+                                <div className={styles.rowField} data-label="Descripción del Servicio">
+                                    <input 
+                                        className={styles.rowInput} 
+                                        placeholder="Consultoría TI o producto..." 
+                                        value={item.description} 
+                                        onChange={e => handleItemChange(index, 'description', e.target.value)} 
+                                        required
+                                    />
                                 </div>
-                                <button className={styles.deleteBtn} onClick={() => removeItem(index)}>X</button>
+                                <div className={styles.rowField} data-label="Cant.">
+                                    <input 
+                                        className={styles.rowInput} 
+                                        type="number" 
+                                        min="1" 
+                                        value={item.quantity} 
+                                        onChange={e => handleItemChange(index, 'quantity', parseInt(e.target.value) || 0)} 
+                                    />
+                                </div>
+                                <div className={styles.rowField} data-label="Precio Unitario">
+                                    <input 
+                                        className={styles.rowInput} 
+                                        type="number" 
+                                        placeholder="0.00" 
+                                        value={item.unitPriceCents ? (item.unitPriceCents / 100) : ''} 
+                                        onChange={e => {
+                                            const val = parseFloat(e.target.value) || 0;
+                                            handleItemChange(index, 'unitPriceCents', Math.round(val * 100));
+                                        }} 
+                                    />
+                                </div>
+                                <div className={styles.rowField} data-label="Total">
+                                    <div className={styles.rowTotalValue}>
+                                        {formatCurrency(item.totalCents)}
+                                    </div>
+                                </div>
+                                <div className={styles.rowAction}>
+                                    <button 
+                                        type="button"
+                                        className={styles.rowDeleteBtn} 
+                                        onClick={() => removeItem(index)}
+                                    >
+                                        🗑️
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>

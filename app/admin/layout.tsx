@@ -27,6 +27,12 @@ export default function AdminLayout({
     const currentAdminPath = pathname.startsWith('/admin') ? pathname : `/admin${pathname}`;
     const isLoginPage = currentAdminPath === "/admin/ingreso";
 
+    // Determine if we're on a known subdomain (client-side only, safe for SSR)
+    const isSubdomain = typeof window !== 'undefined' &&
+        ['admin.', 'management.', 'landing.'].some(prefix =>
+            window.location.hostname.startsWith(prefix)
+        );
+
     useEffect(() => {
         let unsubscribeRole: (() => void) | null = null;
 
@@ -77,7 +83,7 @@ export default function AdminLayout({
                 setUser(null);
                 setRole(null);
                 if (!isLoginPage) {
-                    const loginPath = typeof window !== 'undefined' && (window.location.hostname.startsWith('admin.') || window.location.hostname.startsWith('management.') || window.location.hostname.startsWith('landing.')) ? '/ingreso' : '/admin/ingreso';
+                    const loginPath = isSubdomain ? '/ingreso' : '/admin/ingreso';
                     router.push(loginPath);
                 }
                 setLoading(false);
@@ -92,7 +98,7 @@ export default function AdminLayout({
 
     const handleLogout = async () => {
         await signOut(auth);
-        const loginPath = typeof window !== 'undefined' && (window.location.hostname.startsWith('admin.') || window.location.hostname.startsWith('management.') || window.location.hostname.startsWith('landing.')) ? '/ingreso' : '/admin/ingreso';
+        const loginPath = isSubdomain ? '/ingreso' : '/admin/ingreso';
         router.push(loginPath);
     };
 
@@ -217,10 +223,9 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath, dy
 
     const langOptions = ['en', 'es'];
 
-    const getCleanPath = (path: string) => {
-        const isSubdomain = typeof window !== 'undefined' && (window.location.hostname.startsWith('admin.') || window.location.hostname.startsWith('management.') || window.location.hostname.startsWith('landing.'));
-        return isSubdomain ? path.replace('/admin', '') : path;
-    };
+    // getCleanPath: nav links always use /admin/* paths regardless of subdomain.
+    // Subdomain detection only affects login/logout redirects (handled in AdminLayout).
+    const getCleanPath = (path: string) => path;
 
     return (
         <div className="h-screen bg-[#F8F9FA] flex flex-col md:flex-row overflow-hidden pb-20 md:pb-0 font-body">

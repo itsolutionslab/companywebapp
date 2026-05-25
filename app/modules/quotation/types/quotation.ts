@@ -27,6 +27,7 @@ export interface QuotationData {
     totalCents: number;
     status: QuotationStatus;
     context: any; // Tiptap JSON for scope/notes
+    leadId?: string; // Linked prospecto ID
     signature?: {
         type: 'manual' | 'crypto';
         data: string; // Base64 for manual, Hash for crypto

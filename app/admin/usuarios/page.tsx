@@ -9,6 +9,7 @@ import { UserProfile } from "@/types/booking";
 import { useTranslation } from "@/components/admin/LanguageContext";
 import { useNotification } from "@/components/admin/NotificationContext";
 import { ROLES_CONFIG, Pillar } from "@/config/roles_config";
+import styles from "./UsersPage.module.css";
 
 export default function UsersPage() {
     const { t } = useTranslation();
@@ -26,7 +27,6 @@ export default function UsersPage() {
     const [role, setRole] = useState<UserProfile['role']>('staff');
     const [createLoading, setCreateLoading] = useState(false);
     const [message, setMessage] = useState("");
-    const [showLogoutWarning, setShowLogoutWarning] = useState(false);
 
     // Delete Modal State
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -62,21 +62,21 @@ export default function UsersPage() {
         return currentLevel > targetLevel || currentUserRole === 'owneradmin';
     };
 
-    const getRoleBadgeStyle = (role: string) => {
+    const getRoleAvatarClass = (role: string) => {
         const config = ROLES_CONFIG[role.toUpperCase()] || ROLES_CONFIG[role.toLowerCase()];
         const pillar = config?.pillar;
 
         switch (pillar) {
             case 'ADMIN':
-                return role === 'owneradmin' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' : 'bg-blue-600 text-white';
+                return styles.avatarAdmin;
             case 'GROW':
-                return 'bg-[#0511F2] text-white';
+                return styles.avatarGrow;
             case 'OPERATIONS':
-                return 'bg-[#26A3BF] text-white';
+                return styles.avatarOperations;
             case 'SUPPORT':
-                return 'bg-[#EE05F2] text-white';
+                return styles.avatarSupport;
             default:
-                return 'bg-gray-400 text-white';
+                return styles.avatarDefault;
         }
     };
     
@@ -120,7 +120,6 @@ export default function UsersPage() {
         setMessage("");
 
         try {
-            // Create a secondary Firebase app instance to avoid logging out the current admin
             const tempApp = initializeApp(firebaseConfig, "TempApp" + Date.now());
             const tempAuth = getAuth(tempApp);
 
@@ -142,9 +141,6 @@ export default function UsersPage() {
             setEmail("");
             setPassword("");
             setIsCreating(false);
-
-            // Close the temp app
-            // Note: tempApp.delete() is not strictly necessary but good practice
         } catch (error: any) {
             showNotification(`Error: ${error.message}`, 'error');
         } finally {
@@ -228,28 +224,24 @@ export default function UsersPage() {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center h-96 gap-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0511F2]"></div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest animate-pulse">Sincronizando Usuarios...</p>
+            <div className={styles.loadingContainer}>
+                <div className={styles.spinner}></div>
+                <p className={styles.loadingText}>Sincronizando Usuarios...</p>
             </div>
         );
     }
 
-    // Check if user is allowed to be on this page at all (client-side)
     const isAuthorized = currentUserRole === 'owneradmin' || currentUserRole === 'admin' || getRoleLevel(currentUserRole) >= 5;
     
     if (!isAuthorized) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 animate-in fade-in zoom-in duration-700">
-                <div className="w-24 h-24 bg-rose-50 rounded-[2.5rem] flex items-center justify-center text-4xl shadow-xl shadow-rose-900/5 border border-rose-100 mb-8 relative">
-                    🚫
-                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center text-white text-[10px] font-black">!</div>
-                </div>
+            <div className={styles.unauthorizedContainer}>
+                <div className={styles.unauthorizedIconBox}>🚫</div>
                 <div>
-                    <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter mb-4 font-heading">Protocolo de Seguridad</h2>
-                    <div className="bg-gray-50 rounded-[2rem] p-6 border border-gray-100 max-w-sm mx-auto mb-8">
-                        <p className="text-gray-500 text-[11px] font-bold uppercase tracking-[0.1em] leading-relaxed">
-                            Tu nivel de acceso actual (<span className="text-[#0511F2]">{getRoleLabel(currentUserRole)}</span>) no cumple con los requisitos del protocolo para gestionar la estructura de usuarios de la organización.
+                    <h2 className={styles.unauthorizedTitle}>Protocolo de Seguridad</h2>
+                    <div className={styles.unauthorizedCard}>
+                        <p className={styles.unauthorizedText}>
+                            Tu nivel de acceso actual ({getRoleLabel(currentUserRole)}) no cumple con los requisitos del protocolo para gestionar la estructura de usuarios de la organización.
                         </p>
                     </div>
                 </div>
@@ -258,26 +250,26 @@ export default function UsersPage() {
     }
 
     return (
-        <div className="space-y-12 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+        <div className={styles.usersContainer}>
             {/* Header - Mobile Optimized */}
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 px-2 relative">
-                <div>
-                    <div className="admin-decorator-line mb-4"></div>
-                    <h1 className="admin-h1 text-4xl mb-2">Gestión de Usuarios</h1>
-                    <p className="admin-subtitle text-gray-500 font-medium">Control de acceso y jerarquías del panel administrativo</p>
+            <div className={styles.headerSection}>
+                <div className={styles.headerTitleWrapper}>
+                    <div className={styles.decoratorLine}></div>
+                    <h1 className={styles.title}>Gestión de Usuarios</h1>
+                    <p className={styles.subtitle}>Control de acceso y jerarquías del panel administrativo</p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-4">
+                <div className={styles.headerActions}>
                     <button
                         onClick={() => window.location.href = '/admin/usuarios/permisos'}
-                        className="admin-btn admin-btn-secondary uppercase"
+                        className={`${styles.btn} ${styles.btnSecondary}`}
                     >
                         <span>🛡️</span>
                         GESTIONAR PERMISOS
                     </button>
                     <button
                         onClick={() => setIsCreating(true)}
-                        className="admin-btn admin-btn-primary shadow-xl shadow-pink-200 uppercase"
+                        className={`${styles.btn} ${styles.btnPrimary}`}
                     >
                         <span>➕</span>
                         NUEVO USUARIO
@@ -286,33 +278,33 @@ export default function UsersPage() {
             </div>
 
             {/* Search and Bulk Actions */}
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-                <div className="relative w-full md:max-w-md">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            <div className={styles.searchFilterBar}>
+                <div className={styles.searchWrapper}>
+                    <span className={styles.searchIcon}>🔍</span>
                     <input
                         type="text"
                         placeholder="Buscar usuarios por nombre o correo..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="admin-input pl-12"
+                        className={styles.searchInput}
                     />
                 </div>
 
-                <div className="flex gap-3 w-full md:w-auto">
+                <div className={styles.bulkActions}>
                     {selectedUsers.size > 0 && (
                         <button
                             onClick={() => {
                                 setEditingUser(null);
                                 setIsEditingRole(true);
                             }}
-                            className="flex-1 md:flex-none admin-btn bg-[#0511F2] text-white shadow-lg shadow-blue-100"
+                            className={`${styles.btn} ${styles.btnPrimary}`}
                         >
                             EDITAR ROL ({selectedUsers.size})
                         </button>
                     )}
                     <button
                         onClick={() => selectAllUsers(filteredUsers)}
-                        className="flex-1 md:flex-none admin-btn admin-btn-secondary"
+                        className={`${styles.btn} ${styles.btnSecondary}`}
                     >
                         {selectedUsers.size === filteredUsers.length ? 'DESELECCIONAR TODO' : 'SELECCIONAR TODO'}
                     </button>
@@ -321,16 +313,14 @@ export default function UsersPage() {
 
             {/* Notification Bar */}
             {message && (
-                <div className={`p-5 rounded-[1.5rem] text-xs font-black uppercase tracking-widest border animate-in slide-in-from-top-2 ${message.includes('✅') ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
-                    <div className="flex items-center gap-3">
-                        <span className="text-lg">{message.includes('✅') ? '✨' : '⚠️'}</span>
-                        {message}
-                    </div>
+                <div className={`${styles.notificationBar} ${message.includes('✅') ? styles.notificationSuccess : styles.notificationError}`}>
+                    <span>{message.includes('✅') ? '✨' : '⚠️'}</span>
+                    {message}
                 </div>
             )}
 
             {/* Users List - Premium Card Layout */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className={styles.usersGrid}>
                 {filteredUsers.map((user) => {
                     const canModify = canModifyUser(user.role);
                     const isSelf = user.uid === currentUserUid;
@@ -339,74 +329,73 @@ export default function UsersPage() {
                     return (
                         <div
                             key={user.uid}
-                            className={`admin-card group hover:shadow-xl hover:shadow-[#0511F2]/5 transition-all relative overflow-hidden ${isSelected ? 'ring-2 ring-[#0511F2] bg-blue-50/30' : ''}`}
+                            className={`${styles.userCard} ${isSelected ? styles.userCardSelected : ''}`}
                         >
-                            <div className="diagonal-accent !opacity-[0.03]"></div>
+                            <div className={styles.diagonalAccent}></div>
                             
                             {/* Selection Checkbox */}
                             {canModify && !isSelf && (
-                                <div className="absolute top-4 right-14 z-20">
+                                <div className={styles.checkboxWrapper}>
                                     <button
                                         onClick={() => toggleUserSelection(user.uid)}
-                                        className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-[#0511F2] border-[#0511F2] text-white' : 'bg-white border-gray-200 text-transparent hover:border-[#0511F2]'}`}
+                                        className={`${styles.checkboxBtn} ${isSelected ? styles.checkboxBtnSelected : ''}`}
                                     >
-                                        <span className="text-[10px]">✓</span>
+                                        ✓
                                     </button>
                                 </div>
                             )}
 
-                            <div className="flex items-start gap-4 relative z-10">
+                            <div className={styles.cardContent}>
                                 {/* Avatar with dynamic gradient based on role */}
-                                <div className={`w-14 h-14 rounded-[1.5rem] flex items-center justify-center text-white font-black text-xl shadow-md transition-transform group-hover:scale-110 group-hover:rotate-3 ${getRoleBadgeStyle(user.role)}`}>
+                                <div className={`${styles.avatar} ${getRoleAvatarClass(user.role)}`}>
                                     {user.full_name?.charAt(0).toUpperCase() || 'U'}
                                 </div>
 
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-start justify-between gap-2 mb-1">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="font-black text-[#0511F2] text-lg truncate tracking-tight uppercase font-heading">
-                                                    {user.full_name}
-                                                </h3>
-                                                {isSelf && (
-                                                    <span className="text-[9px] bg-[#EAF207] text-gray-900 px-2 py-0.5 rounded-md font-black uppercase tracking-tighter shadow-sm">Tú</span>
-                                                )}
-                                            </div>
-                                            <p className="text-[11px] text-gray-400 font-bold tracking-tight truncate">{user.email}</p>
-                                        </div>
-
-                                        <div className="flex gap-1">
-                                            <button
-                                                disabled={!canModify || isSelf}
-                                                onClick={() => {
-                                                    setEditingUser(user);
-                                                    setNewRole(user.role);
-                                                    setIsEditingRole(true);
-                                                }}
-                                                className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-300 hover:text-white hover:bg-[#0511F2] hover:shadow-lg transition-all disabled:opacity-20 disabled:cursor-not-allowed flex-shrink-0"
-                                            >
-                                                <span className="text-xl">✏️</span>
-                                            </button>
-                                            <button
-                                                disabled={!canModify || isSelf}
-                                                onClick={() => handleDeleteClick(user)}
-                                                className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-300 hover:text-white hover:bg-[#EE05F2] hover:shadow-lg hover:shadow-pink-200 transition-all disabled:opacity-20 disabled:cursor-not-allowed flex-shrink-0"
-                                            >
-                                                <span className="text-xl">🗑️</span>
-                                            </button>
-                                        </div>
+                                <div className={styles.userDetails}>
+                                    <div className={styles.nameRow}>
+                                        <h3 className={styles.userName}>
+                                            {user.full_name}
+                                        </h3>
+                                        {isSelf && (
+                                            <span className={styles.selfBadge}>Tú</span>
+                                        )}
                                     </div>
+                                    <p className={styles.userEmail}>{user.email}</p>
 
                                     {/* Role Badge */}
-                                    <div className="mt-4 flex items-center justify-between">
-                                        <span className={`admin-badge ${getRoleBadgeStyle(user.role).includes('text-white') ? '!bg-gray-900 !text-white' : ''}`}>
+                                    <div className={styles.roleFooter}>
+                                        <span className={`${styles.roleBadge} ${getRoleAvatarClass(user.role) === styles.avatarAdmin ? styles.roleBadgeAdmin : ''}`}>
                                             {getRoleLabel(user.role)}
                                         </span>
-                                        <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
+                                        <span className={styles.levelLabel}>
                                             Lvl {getRoleLevel(user.role)}
                                         </span>
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* Actions overlay buttons inside iOS style card top right */}
+                            <div className={styles.cardActions}>
+                                <button
+                                    disabled={!canModify || isSelf}
+                                    onClick={() => {
+                                        setEditingUser(user);
+                                        setNewRole(user.role);
+                                        setIsEditingRole(true);
+                                    }}
+                                    className={styles.actionIconBtn}
+                                    title="Editar Rol"
+                                >
+                                    ✏️
+                                </button>
+                                <button
+                                    disabled={!canModify || isSelf}
+                                    onClick={() => handleDeleteClick(user)}
+                                    className={`${styles.actionIconBtn} ${styles.actionIconBtnDelete}`}
+                                    title="Eliminar Usuario"
+                                >
+                                    🗑️
+                                </button>
                             </div>
                         </div>
                     );
@@ -415,77 +404,77 @@ export default function UsersPage() {
 
             {/* Create User Modal */}
             {isCreating && (
-                <div className="admin-modal-overlay animate-in fade-in duration-300">
-                    <div className="admin-modal animate-in zoom-in-95 duration-300 max-w-xl !p-8 relative overflow-hidden">
-                        <div className="diagonal-accent !opacity-10"></div>
-                        <div className="flex justify-between items-start mb-8 relative z-10">
-                            <div>
-                                <div className="admin-decorator-line mb-3 w-12"></div>
-                                <h2 className="text-2xl font-black text-[#0511F2] tracking-tighter uppercase font-heading">Crear Nuevo Miembro</h2>
-                                <p className="text-gray-400 text-[11px] font-black uppercase tracking-[0.2em] mt-2">Otorga acceso al ecosistema administrativo</p>
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modal}>
+                        <div className={styles.diagonalAccent} style={{ opacity: 0.1 }}></div>
+                        <div className={styles.modalHeader}>
+                            <div className={styles.modalTitleWrapper}>
+                                <h2 className={styles.modalTitle}>Crear Nuevo Miembro</h2>
+                                <p className={styles.modalSubtitle}>Acceso al ecosistema administrativo</p>
                             </div>
                             <button 
                                 onClick={() => setIsCreating(false)} 
-                                className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-400 hover:text-[#EE05F2] hover:bg-pink-50 transition-all border border-transparent hover:border-pink-100"
+                                className={styles.modalCloseBtn}
                             >
-                                <span className="text-xl">✕</span>
+                                ✕
                             </button>
                         </div>
 
-                        <form onSubmit={handleCreateUser} className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div className="admin-input-group">
-                                    <label className="admin-label">Nombre Completo</label>
+                        <form onSubmit={handleCreateUser} className={styles.form}>
+                            <div className={styles.formGrid}>
+                                <div className={styles.inputGroup}>
+                                    <label className={styles.label}>Nombre Completo</label>
                                     <input
                                         type="text"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                         required
                                         placeholder="Ej: Alessandro Rossi"
-                                        className="admin-input"
+                                        className={styles.input}
                                     />
                                 </div>
 
-                                <div className="admin-input-group">
-                                    <label className="admin-label">Email de Acceso</label>
+                                <div className={styles.inputGroup}>
+                                    <label className={styles.label}>Email de Acceso</label>
                                     <input
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
                                         placeholder="usuario@empresa.com"
-                                        className="admin-input"
+                                        className={styles.input}
                                     />
                                 </div>
                             </div>
 
-                            <div className="admin-input-group">
-                                <label className="admin-label">Contraseña Temporal</label>
-                                <div className="relative">
+                            <div className={styles.inputGroup}>
+                                <label className={styles.label}>Contraseña Temporal</label>
+                                <div className={styles.passwordInputWrapper}>
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
                                         placeholder="Mínimo 8 caracteres"
-                                        className="admin-input pr-12"
+                                        className={styles.input}
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-[#0511F2] transition-colors"
+                                        className={styles.passwordToggle}
                                     >
                                         {showPassword ? '👁️' : '🔒'}
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="admin-input-group">
-                                <label className="admin-label">Rol y Pilar Asignado</label>
+                            <div className={styles.inputGroup}>
+                                <label className={styles.label}>Rol y Pilar Asignado</label>
                                 <select
                                     value={role}
                                     onChange={(e) => setRole(e.target.value as UserProfile['role'])}
-                                    className="admin-input cursor-pointer"
+                                    className={styles.input}
+                                    style={{ cursor: 'pointer' }}
                                 >
                                     <optgroup label="ADMINISTRACIÓN ESTRATÉGICA">
                                         <option value="admin">Administrador (Full Access)</option>
@@ -515,24 +504,20 @@ export default function UsersPage() {
                                 </select>
                             </div>
 
-                            <div className="flex gap-4 pt-4">
+                            <div className={styles.modalActions}>
                                 <button
                                     type="button"
                                     onClick={() => setIsCreating(false)}
-                                    className="flex-1 admin-btn admin-btn-secondary"
+                                    className={`${styles.btn} ${styles.btnSecondary}`}
                                 >
                                     CANCELAR
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={createLoading}
-                                    className="flex-[2] admin-btn admin-btn-primary shadow-xl shadow-pink-200"
+                                    className={`${styles.btn} ${styles.btnPrimary}`}
                                 >
-                                    {createLoading ? (
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    ) : (
-                                        'CREAR USUARIO'
-                                    )}
+                                    {createLoading ? '...' : 'CREAR USUARIO'}
                                 </button>
                             </div>
                         </form>
@@ -542,17 +527,16 @@ export default function UsersPage() {
 
             {/* Edit Role Modal */}
             {isEditingRole && (
-                <div className="admin-modal-overlay animate-in fade-in duration-300">
-                    <div className="admin-modal max-w-xl !p-8 relative overflow-hidden animate-in zoom-in-95 duration-300">
-                        <div className="diagonal-accent !opacity-10"></div>
-                        <div className="flex justify-between items-start mb-8 relative z-10">
-                            <div>
-                                <div className="admin-decorator-line mb-3 w-12"></div>
-                                <h2 className="text-2xl font-black text-[#0511F2] tracking-tighter uppercase font-heading">
-                                    {editingUser ? 'Editar Rol de Usuario' : `Editar Roles en Masa (${selectedUsers.size})`}
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modal}>
+                        <div className={styles.diagonalAccent} style={{ opacity: 0.1 }}></div>
+                        <div className={styles.modalHeader}>
+                            <div className={styles.modalTitleWrapper}>
+                                <h2 className={styles.modalTitle}>
+                                    {editingUser ? 'Editar Rol' : `Editar Roles (${selectedUsers.size})`}
                                 </h2>
-                                <p className="text-gray-400 text-[11px] font-black uppercase tracking-[0.2em] mt-2">
-                                    {editingUser ? `Usuario: ${editingUser.full_name}` : 'Asigna un nuevo rol a todos los usuarios seleccionados'}
+                                <p className={styles.modalSubtitle}>
+                                    {editingUser ? `Usuario: ${editingUser.full_name}` : 'Asigna un nuevo rol a la selección'}
                                 </p>
                             </div>
                             <button 
@@ -560,19 +544,20 @@ export default function UsersPage() {
                                     setIsEditingRole(false);
                                     setEditingUser(null);
                                 }} 
-                                className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-400 hover:text-[#EE05F2] hover:bg-pink-50 transition-all border border-transparent hover:border-pink-100"
+                                className={styles.modalCloseBtn}
                             >
-                                <span className="text-xl">✕</span>
+                                ✕
                             </button>
                         </div>
 
-                        <div className="space-y-6 relative z-10">
-                            <div className="admin-input-group">
-                                <label className="admin-label">Seleccionar Nuevo Rol</label>
+                        <div className={styles.form}>
+                            <div className={styles.inputGroup}>
+                                <label className={styles.label}>Seleccionar Nuevo Rol</label>
                                 <select
                                     value={newRole}
                                     onChange={(e) => setNewRole(e.target.value as UserProfile['role'])}
-                                    className="admin-input cursor-pointer"
+                                    className={styles.input}
+                                    style={{ cursor: 'pointer' }}
                                 >
                                     <optgroup label="ADMINISTRACIÓN ESTRATÉGICA">
                                         {getRoleLevel(currentUserRole) > 10 || currentUserRole === 'owneradmin' ? (
@@ -608,32 +593,28 @@ export default function UsersPage() {
                                             ))}
                                     </optgroup>
                                 </select>
-                                <p className="mt-2 text-[9px] font-bold text-gray-400 uppercase tracking-widest italic">
+                                <p className={styles.helpText}>
                                     * Solo puedes asignar roles con nivel inferior al tuyo.
                                 </p>
                             </div>
 
-                            <div className="flex gap-4 pt-4">
+                            <div className={styles.modalActions}>
                                 <button
                                     type="button"
                                     onClick={() => {
                                         setIsEditingRole(false);
                                         setEditingUser(null);
                                     }}
-                                    className="flex-1 admin-btn admin-btn-secondary"
+                                    className={`${styles.btn} ${styles.btnSecondary}`}
                                 >
                                     CANCELAR
                                 </button>
                                 <button
                                     onClick={handleUpdateRoles}
                                     disabled={editLoading}
-                                    className="flex-[2] admin-btn admin-btn-primary shadow-xl shadow-pink-200"
+                                    className={`${styles.btn} ${styles.btnPrimary}`}
                                 >
-                                    {editLoading ? (
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    ) : (
-                                        'GUARDAR CAMBIOS'
-                                    )}
+                                    {editLoading ? '...' : 'GUARDAR CAMBIOS'}
                                 </button>
                             </div>
                         </div>
@@ -643,34 +624,34 @@ export default function UsersPage() {
 
             {/* Delete Confirmation Modal */}
             {showDeleteModal && userToDelete && (
-                <div className="admin-modal-overlay animate-in fade-in duration-300">
-                    <div className="admin-modal max-w-md text-center !p-10 animate-in zoom-in-95 duration-300">
-                        <div className="w-20 h-20 bg-rose-50 border border-rose-100 text-rose-500 rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-4xl shadow-inner">
+                <div className={styles.modalOverlay}>
+                    <div className={`${styles.modal} ${styles.modalDelete}`}>
+                        <div className={styles.deleteIconBox}>
                             🗑️
                         </div>
-                        <h3 className="text-2xl font-black text-[#0511F2] tracking-tighter uppercase font-heading mb-4">¿Eliminar Usuario?</h3>
-                        <div className="bg-gray-50 rounded-[1.5rem] p-5 mb-6 border border-gray-100">
-                            <p className="font-black text-gray-900 text-lg uppercase font-heading">{userToDelete.full_name}</p>
-                            <p className="text-xs text-gray-400 font-bold tracking-tight mt-1">{userToDelete.email}</p>
+                        <h3 className={styles.modalTitle} style={{ marginBottom: '1rem' }}>¿Eliminar Usuario?</h3>
+                        <div className={styles.deleteTargetBox}>
+                            <p className={styles.deleteTargetName}>{userToDelete.full_name}</p>
+                            <p className={styles.deleteTargetEmail}>{userToDelete.email}</p>
                         </div>
-                        <p className="text-[10px] text-rose-500 font-black uppercase tracking-[0.2em] mb-8 bg-rose-50 inline-block px-3 py-1.5 rounded-md border border-rose-100">
+                        <p className={styles.deleteWarning}>
                             ⚠️ Esta acción no se puede deshacer
                         </p>
 
-                        <div className="flex gap-3">
+                        <div className={styles.modalActions}>
                             <button
                                 onClick={() => {
                                     setShowDeleteModal(false);
                                     setUserToDelete(null);
                                 }}
-                                className="flex-1 admin-btn admin-btn-secondary"
+                                className={`${styles.btn} ${styles.btnSecondary}`}
                             >
                                 CANCELAR
                             </button>
                             <button
                                 onClick={confirmDelete}
                                 disabled={deleteLoading}
-                                className="flex-1 admin-btn bg-rose-500 text-white hover:bg-rose-600 shadow-lg shadow-rose-200"
+                                className={`${styles.btn} ${styles.btnDanger}`}
                             >
                                 {deleteLoading ? '...' : 'ELIMINAR'}
                             </button>

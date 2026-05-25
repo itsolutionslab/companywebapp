@@ -405,6 +405,7 @@ export default function SettingsPage() {
                         {(Object.entries(groupedRoles) as [Pillar, RoleInfo[]][]).map(([pillar, roles]) => {
                             const meta = PILLAR_META[pillar];
                             if (pillar === 'ADMIN') return null;
+                            if (!meta) return null; // pillar desconocido — ignorar
                             return (
                                 <div key={pillar} className="admin-card !p-6 border-l-8 relative overflow-hidden" style={{ borderLeftColor: meta.color.includes('purple') ? '#EE05F2' : meta.color.includes('green') ? '#6FD904' : meta.color.includes('indigo') ? '#0511F2' : meta.color.includes('sky') ? '#26A3BF' : '#EAF207' }}>
                                     <div className="diagonal-accent !opacity-[0.03]"></div>
