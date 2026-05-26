@@ -83,7 +83,7 @@ export default function AdminLayout({
                 setUser(null);
                 setRole(null);
                 if (!isLoginPage) {
-                    const loginPath = isSubdomain ? '/ingreso' : '/admin/ingreso';
+                    const loginPath = '/admin/ingreso';
                     router.push(loginPath);
                 }
                 setLoading(false);
@@ -98,7 +98,7 @@ export default function AdminLayout({
 
     const handleLogout = async () => {
         await signOut(auth);
-        const loginPath = isSubdomain ? '/ingreso' : '/admin/ingreso';
+        const loginPath = '/admin/ingreso';
         router.push(loginPath);
     };
 

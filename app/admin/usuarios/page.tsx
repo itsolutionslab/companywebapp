@@ -11,6 +11,10 @@ import { useNotification } from "@/components/admin/NotificationContext";
 import { ROLES_CONFIG, Pillar } from "@/config/roles_config";
 import styles from "./UsersPage.module.css";
 
+const uniqueRoles = Object.entries(ROLES_CONFIG)
+    .filter(([key, r]) => key === r.id)
+    .map(([_, r]) => r);
+
 export default function UsersPage() {
     const { t } = useTranslation();
     const { showNotification } = useNotification();
@@ -485,19 +489,19 @@ export default function UsersPage() {
                                     </optgroup>
                                     
                                     <optgroup label="DOMINIO GROW">
-                                        {Object.values(ROLES_CONFIG).filter(r => r.pillar === 'GROW').map(r => (
+                                        {uniqueRoles.filter(r => r.pillar === 'GROW').map(r => (
                                             <option key={r.id} value={r.id}>{r.label}</option>
                                         ))}
                                     </optgroup>
 
                                     <optgroup label="DOMINIO OPERATIONS">
-                                        {Object.values(ROLES_CONFIG).filter(r => r.pillar === 'OPERATIONS').map(r => (
+                                        {uniqueRoles.filter(r => r.pillar === 'OPERATIONS').map(r => (
                                             <option key={r.id} value={r.id}>{r.label}</option>
                                         ))}
                                     </optgroup>
 
                                     <optgroup label="DOMINIO SUPPORT">
-                                        {Object.values(ROLES_CONFIG).filter(r => r.pillar === 'SUPPORT').map(r => (
+                                        {uniqueRoles.filter(r => r.pillar === 'SUPPORT').map(r => (
                                             <option key={r.id} value={r.id}>{r.label}</option>
                                         ))}
                                     </optgroup>
@@ -570,7 +574,7 @@ export default function UsersPage() {
                                     </optgroup>
                                     
                                     <optgroup label="DOMINIO GROW">
-                                        {Object.values(ROLES_CONFIG)
+                                        {uniqueRoles
                                             .filter(r => r.pillar === 'GROW' && (getRoleLevel(currentUserRole) > r.level || currentUserRole === 'owneradmin'))
                                             .map(r => (
                                                 <option key={r.id} value={r.id}>{r.label}</option>
@@ -578,7 +582,7 @@ export default function UsersPage() {
                                     </optgroup>
 
                                     <optgroup label="DOMINIO OPERATIONS">
-                                        {Object.values(ROLES_CONFIG)
+                                        {uniqueRoles
                                             .filter(r => r.pillar === 'OPERATIONS' && (getRoleLevel(currentUserRole) > r.level || currentUserRole === 'owneradmin'))
                                             .map(r => (
                                                 <option key={r.id} value={r.id}>{r.label}</option>
@@ -586,7 +590,7 @@ export default function UsersPage() {
                                     </optgroup>
 
                                     <optgroup label="DOMINIO SUPPORT">
-                                        {Object.values(ROLES_CONFIG)
+                                        {uniqueRoles
                                             .filter(r => r.pillar === 'SUPPORT' && (getRoleLevel(currentUserRole) > r.level || currentUserRole === 'owneradmin'))
                                             .map(r => (
                                                 <option key={r.id} value={r.id}>{r.label}</option>
