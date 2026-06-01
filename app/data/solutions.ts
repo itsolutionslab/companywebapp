@@ -32,6 +32,10 @@ export const SOLUTIONS: SolutionDemo[] = [
                 "file": "exporter/custom/andina-corp/essential.html"
             },
             {
+                "name": "Exporter Custom Cepde Cooperativas",
+                "file": "exporter/custom/cepde/cooperativas.html"
+            },
+            {
                 "name": "Exporter Standard Essential",
                 "file": "exporter/standard/essential.html"
             },
