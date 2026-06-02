@@ -99,6 +99,10 @@ export interface Lead {
     };
     events?: LeadEvent[]; // Chronological events
     owner_id?: string; // Assigned admin UID
+    created_by?: string; // Creator UID
+    created_by_name?: string; // Creator Name
+    dev_team?: string; // Assigned development team name
+    solutions_architect_id?: string; // Assigned Solutions Architect UID
     value_estimate?: number; // Estimated project value
     audit_logs: {
         created_at: any; // Firestore Timestamp

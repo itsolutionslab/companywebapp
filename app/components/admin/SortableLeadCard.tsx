@@ -8,9 +8,10 @@ import styles from "./SortableLeadCard.module.css";
 
 interface SortableLeadCardProps {
     lead: Lead;
+    onAssignClick?: (lead: Lead) => void;
 }
 
-export function SortableLeadCard({ lead }: SortableLeadCardProps) {
+export function SortableLeadCard({ lead, onAssignClick }: SortableLeadCardProps) {
     const {
         attributes,
         listeners,
@@ -69,26 +70,54 @@ export function SortableLeadCard({ lead }: SortableLeadCardProps) {
                         </p>
                     </div>
 
-                    <div className={styles.cardFooter}>
-                        <div className={styles.meta}>
-                            <div className={styles.iconBox}>
-                                {lead.data?.capability === 'SOFTWARE' && '💻'}
-                                {lead.data?.capability === 'AI' && '🤖'}
-                                {lead.data?.capability === 'MARKETING' && '📣'}
-                                {lead.data?.capability === 'CLOUD' && '☁️'}
-                                {lead.data?.capability === 'ERP' && '🏢'}
-                                {lead.data?.capability === 'DATA' && '📊'}
-                                {lead.data?.capability === 'PMO' && '📋'}
-                                {lead.data?.capability === 'AUTOMATION' && '⚡'}
+                    <div className={styles.cardFooter} style={{ flexDirection: 'column', gap: '0.5rem', alignItems: 'stretch' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div className={styles.meta}>
+                                <div className={styles.iconBox}>
+                                    {lead.data?.capability === 'SOFTWARE' && '💻'}
+                                    {lead.data?.capability === 'AI' && '🤖'}
+                                    {lead.data?.capability === 'MARKETING' && '📣'}
+                                    {lead.data?.capability === 'CLOUD' && '☁️'}
+                                    {lead.data?.capability === 'ERP' && '🏢'}
+                                    {lead.data?.capability === 'DATA' && '📊'}
+                                    {lead.data?.capability === 'PMO' && '📋'}
+                                    {lead.data?.capability === 'AUTOMATION' && '⚡'}
+                                </div>
+                                <span className={styles.region}>
+                                    {lead.data?.region || 'GLOBAL'}
+                                </span>
                             </div>
-                            <span className={styles.region}>
-                                {lead.data?.region || 'GLOBAL'}
-                            </span>
+                            <div style={{ textAlign: 'right' }}>
+                                <span className={styles.dateBadge}>
+                                    {new Date(lead.audit_logs.created_at?.toDate?.() || lead.audit_logs.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                                </span>
+                            </div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                            <span className={styles.dateBadge}>
-                                {new Date(lead.audit_logs.created_at?.toDate?.() || lead.audit_logs.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', fontSize: '10px' }}>
+                            <span style={{ color: 'var(--admin-secondary)', fontStyle: 'italic' }}>
+                                {lead.created_by_name ? `Creado por: ${lead.created_by_name}` : 'Sin creador'}
                             </span>
+                            {onAssignClick && (
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        onAssignClick(lead);
+                                    }}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.1)',
+                                        border: '1px solid rgba(255,255,255,0.2)',
+                                        borderRadius: '4px',
+                                        padding: '2px 6px',
+                                        color: '#fff',
+                                        cursor: 'pointer',
+                                        fontSize: '9px'
+                                    }}
+                                >
+                                    👤 Asignar
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -171,6 +171,16 @@ export const deleteUser = async (uid: string) => {
     await deleteDoc(doc(db, "users", uid));
 };
 
+export const getStaffUsers = async () => {
+    try {
+        const querySnapshot = await getDocs(collection(db, "users"));
+        return querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+    } catch (e) {
+        console.warn("[Firestore] Could not load users list");
+        return [];
+    }
+};
+
 // Role Config
 export const getRoleConfig = async () => {
     const docSnap = await getDoc(doc(db, "settings", "roles"));
@@ -212,6 +222,10 @@ const normalizeLeadData = (raw: any): Lead => {
     if (!lead.events) lead.events = [];
     if (!lead.source_attribution) lead.source_attribution = {};
     if (!lead.owner_id) lead.owner_id = null;
+    if (!lead.created_by) lead.created_by = null;
+    if (!lead.created_by_name) lead.created_by_name = null;
+    if (!lead.dev_team) lead.dev_team = null;
+    if (!lead.solutions_architect_id) lead.solutions_architect_id = null;
     if (!lead.value_estimate) lead.value_estimate = 0;
 
     // Map old status to new if necessary

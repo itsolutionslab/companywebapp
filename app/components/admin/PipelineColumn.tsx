@@ -15,9 +15,10 @@ interface PipelineColumnProps {
         textColor?: string;
     };
     leads: Lead[];
+    onAssignClick?: (lead: Lead) => void;
 }
 
-export function PipelineColumn({ stage, leads }: PipelineColumnProps) {
+export function PipelineColumn({ stage, leads, onAssignClick }: PipelineColumnProps) {
     const { setNodeRef, isOver } = useDroppable({
         id: stage.key,
     });
@@ -55,7 +56,7 @@ export function PipelineColumn({ stage, leads }: PipelineColumnProps) {
                 <SortableContext items={leads.map(l => l.lead_id)} strategy={verticalListSortingStrategy}>
                     <div className={styles.cardsStack}>
                         {leads.map((lead) => (
-                            <SortableLeadCard key={lead.lead_id} lead={lead} />
+                            <SortableLeadCard key={lead.lead_id} lead={lead} onAssignClick={onAssignClick} />
                         ))}
                     </div>
                 </SortableContext>

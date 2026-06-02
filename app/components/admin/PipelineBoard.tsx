@@ -28,9 +28,10 @@ interface PipelineBoardProps {
     leads: Lead[];
     statuses: LeadStatus[];
     onStatusChange: (leadId: string, newStatus: LeadStatus) => Promise<void>;
+    onAssignClick?: (lead: Lead) => void;
 }
 
-export default function PipelineBoard({ leads, statuses, onStatusChange }: PipelineBoardProps) {
+export default function PipelineBoard({ leads, statuses, onStatusChange, onAssignClick }: PipelineBoardProps) {
     const { t } = useTranslation();
     const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -153,6 +154,7 @@ export default function PipelineBoard({ leads, statuses, onStatusChange }: Pipel
                         key={stage.key}
                         stage={stage}
                         leads={getLeadsInStage(stage.key)}
+                        onAssignClick={onAssignClick}
                     />
                 ))}
             </div>
@@ -174,7 +176,7 @@ export default function PipelineBoard({ leads, statuses, onStatusChange }: Pipel
                         zIndex: 1000,
                         cursor: 'grabbing'
                     }}>
-                        <SortableLeadCard lead={activeLead} />
+                        <SortableLeadCard lead={activeLead} onAssignClick={onAssignClick} />
                     </div>
                 ) : null}
             </DragOverlay>

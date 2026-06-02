@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { onLeadsUpdate, updateLead, createLead, auth, db } from "@/lib/firebase";
+import { onLeadsUpdate, updateLead, createLead, auth, db, getStaffUsers } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { Lead, LeadStatus, DeliveryModel, Capability } from "@/types/tracking";
 import { ROLES_CONFIG } from "@/config/roles_config";
@@ -27,6 +27,16 @@ export default function ProspectosPage() {
     const [isCreating, setIsCreating] = useState(false);
     const [createLoading, setCreateLoading] = useState(false);
 
+    const [currentUserData, setCurrentUserData] = useState<{uid: string, name: string} | null>(null);
+    const [staffUsers, setStaffUsers] = useState<any[]>([]);
+    const [isAssigning, setIsAssigning] = useState(false);
+    const [assignLead, setAssignLead] = useState<Lead | null>(null);
+    const [assignFormData, setAssignFormData] = useState({
+        owner_id: '',
+        solutions_architect_id: '',
+        dev_team: ''
+    });
+
     // Form State
     const [formData, setFormData] = useState({
         name: '',
@@ -49,6 +59,12 @@ export default function ProspectosPage() {
             setLoading(false);
         });
 
+        const loadUsers = async () => {
+            const users = await getStaffUsers();
+            setStaffUsers(users);
+        };
+        loadUsers();
+
         const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
             if (user) {
                 try {
@@ -63,6 +79,8 @@ export default function ProspectosPage() {
                             setUserRole(roleId);
                             setUserPillar(config.pillar as any);
                             setUserLevel(config.level);
+
+                            setCurrentUserData({ uid: user.uid, name: userDoc.data().name || user.displayName || 'Usuario' });
 
                             if (config.pillar === 'GROW' || config.pillar === 'OPERATIONS' || config.pillar === 'SUPPORT') {
                                 setActiveDomain(config.pillar as Domain);
@@ -107,6 +125,14 @@ export default function ProspectosPage() {
 
             const currentStatus = normalizeStatus(lead.status_flow?.current);
             const matchesDomain = domainStatuses[activeDomain].includes(currentStatus);
+
+            const isGlobalAdmin = userLevel >= 10;
+            const matchesVisibility = isGlobalAdmin || 
+                lead.created_by === currentUserData?.uid || 
+                lead.owner_id === currentUserData?.uid || 
+                lead.solutions_architect_id === currentUserData?.uid;
+
+            if (!matchesVisibility) return false;
 
             const searchTermLower = searchTerm.toLowerCase();
             const name = (lead.data?.name || "").toLowerCase();
@@ -155,6 +181,9 @@ export default function ProspectosPage() {
             const newStatus = getInitialStatusForDomain(formData.targetDomain);
 
             const leadToCreate: Partial<Lead> = {
+                created_by: currentUserData?.uid || '',
+                created_by_name: currentUserData?.name || '',
+                owner_id: currentUserData?.uid || '',
                 data: {
                     name: formData.name,
                     email: formData.email,
@@ -313,6 +342,15 @@ export default function ProspectosPage() {
                     onStatusChange={async (leadId, newStatus) => {
                         await updateLead(leadId, { status_flow: { current: newStatus, history: [] } });
                         showNotification("Estado actualizado", "success");
+                    }}
+                    onAssignClick={(lead) => {
+                        setAssignLead(lead);
+                        setAssignFormData({
+                            owner_id: lead.owner_id || '',
+                            solutions_architect_id: lead.solutions_architect_id || '',
+                            dev_team: lead.dev_team || ''
+                        });
+                        setIsAssigning(true);
                     }}
                 />
             ) : (
@@ -535,6 +573,72 @@ export default function ProspectosPage() {
                                 >
                                     {createLoading ? '...' : 'GUARDAR EN PIPELINE'}
                                 </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Assignment Modal */}
+            {isAssigning && assignLead && (
+                <div className={styles.modalOverlay} onClick={() => setIsAssigning(false)}>
+                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <div>
+                                <h2 className="admin-modal-title" style={{ fontSize: '1.05rem', marginBottom: '2px' }}>Asignar Responsables</h2>
+                                <p className="admin-modal-subtitle" style={{ fontSize: '12px', margin: 0 }}>Asigna quién podrá ver y gestionar este prospecto.</p>
+                            </div>
+                            <button type="button" onClick={() => setIsAssigning(false)} className={styles.modalClose}>✕</button>
+                        </div>
+                        <form onSubmit={async (e) => {
+                            e.preventDefault();
+                            await updateLead(assignLead.lead_id, {
+                                owner_id: assignFormData.owner_id || "",
+                                solutions_architect_id: assignFormData.solutions_architect_id || "",
+                                dev_team: assignFormData.dev_team || ""
+                            });
+                            showNotification("Asignación actualizada", "success");
+                            setIsAssigning(false);
+                        }} className={styles.formContainer}>
+                            <div className={styles.inputGroup} style={{ marginTop: '1rem' }}>
+                                <label className={styles.inputLabel}>Dueño / Autor (Ventas/Admin)</label>
+                                <select 
+                                    className={styles.input} 
+                                    value={assignFormData.owner_id} 
+                                    onChange={e => setAssignFormData({...assignFormData, owner_id: e.target.value})}
+                                >
+                                    <option value="">-- Sin Asignar --</option>
+                                    {staffUsers.map(u => (
+                                        <option key={u.uid} value={u.uid}>{u.name || u.email || u.uid}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className={styles.inputGroup} style={{ marginTop: '1rem' }}>
+                                <label className={styles.inputLabel}>Arquitecto de Soluciones</label>
+                                <select 
+                                    className={styles.input} 
+                                    value={assignFormData.solutions_architect_id} 
+                                    onChange={e => setAssignFormData({...assignFormData, solutions_architect_id: e.target.value})}
+                                >
+                                    <option value="">-- Sin Asignar --</option>
+                                    {staffUsers.map(u => (
+                                        <option key={u.uid} value={u.uid}>{u.name || u.email || u.uid}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className={styles.inputGroup} style={{ marginTop: '1rem' }}>
+                                <label className={styles.inputLabel}>Equipo de Desarrollo</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="Ej. Squad Alpha, Team Gamma..."
+                                    className={styles.input} 
+                                    value={assignFormData.dev_team} 
+                                    onChange={e => setAssignFormData({...assignFormData, dev_team: e.target.value})}
+                                />
+                            </div>
+                            <div className={styles.formActions} style={{ marginTop: '1.5rem' }}>
+                                <button type="button" onClick={() => setIsAssigning(false)} className={styles.btnSecondary}>CANCELAR</button>
+                                <button type="submit" className={styles.btnPrimary}>GUARDAR ASIGNACIÓN</button>
                             </div>
                         </form>
                     </div>
