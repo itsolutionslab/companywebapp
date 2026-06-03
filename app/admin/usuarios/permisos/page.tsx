@@ -19,6 +19,7 @@ export default function PermissionsPage() {
     const availablePaths = [
         { path: '/admin/panel', label: 'Dashboard / Panel', icon: '📊' },
         { path: '/admin/prospectos', label: 'Prospectos / Leads', icon: '🎯' },
+        { path: '/admin/funnels', label: 'Funnels / Captación', icon: '🚀' },
         { path: '/admin/mensajes', label: 'Mensajes / WhatsApp', icon: '💬' },
         { path: '/admin/reservas', label: 'Reservas / Bookings', icon: '🤝' },
         { path: '/admin/horarios', label: 'Horarios / Calendario', icon: '⏰' },

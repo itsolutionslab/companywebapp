@@ -1,0 +1,341 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8f9fa;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Header */
+.header {
+  background-color: #ffffff;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.headerInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 900;
+  font-size: 1.25rem;
+  color: #0511f2;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.logo span {
+  color: #ee05f2;
+}
+
+/* Hero Section */
+.hero {
+  position: relative;
+  background-color: #0511f2;
+  color: #ffffff;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .hero {
+    padding: 5rem 2rem;
+  }
+}
+
+.heroBg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.4;
+  mix-blend-mode: overlay;
+  z-index: 1;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 10;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.heroTitle {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 900;
+  font-size: 2rem;
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 768px) {
+  .heroTitle {
+    font-size: 3.5rem;
+  }
+}
+
+.heroDescription {
+  font-size: 1rem;
+  line-height: 1.6;
+  opacity: 0.9;
+  font-weight: 400;
+  white-space: pre-line;
+}
+
+@media (min-width: 768px) {
+  .heroDescription {
+    font-size: 1.25rem;
+  }
+}
+
+/* Main Content & Form */
+.main {
+  flex: 1;
+  padding: 2rem 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+@media (min-width: 768px) {
+  .main {
+    padding: 4rem 2rem;
+  }
+}
+
+.formCard {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 600px;
+  border-radius: 24px;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 25px 50px -12px rgba(5, 17, 242, 0.15);
+  border: 1px solid #e5e7eb;
+  position: relative;
+  margin-top: -2rem; /* Overlap hero slightly */
+  z-index: 20;
+}
+
+@media (min-width: 768px) {
+  .formCard {
+    padding: 3.5rem;
+    margin-top: -4rem;
+  }
+}
+
+.formTitle {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: #121212;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.formSubtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.requiredAsterisk {
+  color: #ee05f2;
+  margin-left: 0.25rem;
+}
+
+.input {
+  width: 100%;
+  background-color: #f9fafb;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  color: #111827;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.input:focus {
+  background-color: #ffffff;
+  border-color: #0511f2;
+  box-shadow: 0 0 0 4px rgba(5, 17, 242, 0.1);
+}
+
+.textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* File Upload */
+.uploadBox {
+  border: 2px dashed #d1d5db;
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  background-color: #f9fafb;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.uploadBox:hover {
+  border-color: #0511f2;
+  background-color: rgba(5, 17, 242, 0.02);
+}
+
+.uploadIcon {
+  font-size: 1.5rem;
+}
+
+.uploadText {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.uploadFileName {
+  font-size: 0.75rem;
+  color: #0511f2;
+  font-weight: 700;
+  margin-top: 0.5rem;
+}
+
+/* Submit Button */
+.submitBtn {
+  width: 100%;
+  background-color: #ee05f2;
+  color: #ffffff;
+  border: none;
+  border-radius: 16px;
+  padding: 1.25rem;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  box-shadow: 0 10px 25px -5px rgba(238, 5, 242, 0.4);
+}
+
+.submitBtn:hover:not(:disabled) {
+  background-color: #d404d8;
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px -5px rgba(238, 5, 242, 0.5);
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Success State */
+.successState {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.successIcon {
+  width: 5rem;
+  height: 5rem;
+  background-color: #dcfce7;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin: 0 auto 1.5rem;
+}
+
+.successTitle {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: #0511f2;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+.successMessage {
+  font-size: 1rem;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+/* Error/Not Found State */
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  padding: 2rem;
+  background-color: #f8f9fa;
+}
+
+.errorTitle {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  color: #111827;
+  margin-bottom: 1rem;
+}
+
+.errorMessage {
+  font-size: 1.125rem;
+  color: #6b7280;
+}

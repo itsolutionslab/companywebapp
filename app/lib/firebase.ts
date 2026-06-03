@@ -388,4 +388,83 @@ export const updateLead = async (id: string, data: Partial<Lead>) => {
     await updateDoc(leadRef, updateData);
 };
 
+export const onFunnelsUpdate = (callback: (data: any[]) => void) => {
+    const q = query(collection(db, "funnels"), orderBy("created_at", "desc"));
+    return onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        callback(data);
+    }, (error) => {
+        if (!error.message.includes('permission')) {
+            console.error("[Firestore] Error in onFunnelsUpdate listener:", error);
+        } else {
+            console.warn("[Firestore] Permission denied or rules not propagated yet for funnels.");
+        }
+        callback([]);
+    });
+};
+
+export const createFunnel = async (data: any) => {
+    const funnelsRef = collection(db, "funnels");
+    const newFunnel = {
+        ...data,
+        status: 'NUEVO_INGRESO',
+        created_at: Timestamp.now(),
+        updated_at: Timestamp.now(),
+        source: 'internal'
+    };
+    return await addDoc(funnelsRef, newFunnel);
+};
+
+export const updateFunnel = async (id: string, data: any) => {
+    const funnelRef = doc(db, "funnels", id);
+    const updateData = {
+        ...data,
+        updated_at: Timestamp.now()
+    };
+    await updateDoc(funnelRef, updateData);
+};
+
+export const onCampaignsUpdate = (callback: (data: any[]) => void) => {
+    const q = query(collection(db, "campaigns"), orderBy("created_at", "desc"));
+    return onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        callback(data);
+    }, (error) => {
+        if (!error.message.includes('permission')) {
+            console.error("[Firestore] Error in onCampaignsUpdate listener:", error);
+        } else {
+            console.warn("[Firestore] Permission denied for campaigns.");
+        }
+        callback([]);
+    });
+};
+
+export const getCampaignBySlug = async (slug: string) => {
+    const q = query(collection(db, "campaigns"), where("slug", "==", slug));
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+        return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+    }
+    return null;
+};
+
+export const createCampaign = async (data: any) => {
+    const campaignsRef = collection(db, "campaigns");
+    const newCampaign = {
+        ...data,
+        created_at: Timestamp.now(),
+        updated_at: Timestamp.now()
+    };
+    return await addDoc(campaignsRef, newCampaign);
+};
+
+export const updateCampaign = async (id: string, data: any) => {
+    const campaignRef = doc(db, "campaigns", id);
+    const updateData = {
+        ...data,
+        updated_at: Timestamp.now()
+    };
+    await updateDoc(campaignRef, updateData);
+};
+
 export { app, db, storage, auth };

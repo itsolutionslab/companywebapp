@@ -147,6 +147,24 @@ service cloud.firestore {
     }
     
     // ========================================
+    // CAMPAIGNS - Funnels & Landing Pages
+    // ========================================
+    match /campaigns/{campaignId} {
+      allow read: if true;
+      allow write: if isAnyEmployee();
+    }
+
+    // ========================================
+    // FUNNELS - Sales Pipeline (Submissions)
+    // ========================================
+    match /funnels/{funnelId} {
+      allow read: if isAnyEmployee();
+      // Public create access to allow visitors to submit the funnel form
+      allow create: if true;
+      allow update, delete: if isAnyEmployee();
+    }
+
+    // ========================================
     // INTERACTIONS - Analytics & Tracking
     // ========================================
     match /interactions/{interactionId} {

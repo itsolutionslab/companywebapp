@@ -16,29 +16,29 @@ export const ROLES_CONFIG: Record<string, RoleInfo> = {
         pillar: 'ADMIN',
         label: 'Administrador',
         level: 10,
-        allowedPaths: ['/admin/panel', '/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas', '/admin/horarios', '/admin/usuarios', '/admin/configuracion']
+        allowedPaths: ['/admin/panel', '/admin/prospectos', '/admin/funnels', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas', '/admin/horarios', '/admin/usuarios', '/admin/configuracion']
     },
     'owner': {
         id: 'owner',
         pillar: 'ADMIN',
         label: 'Owner',
         level: 11,
-        allowedPaths: ['/admin/panel', '/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas', '/admin/horarios', '/admin/usuarios', '/admin/configuracion']
+        allowedPaths: ['/admin/panel', '/admin/prospectos', '/admin/funnels', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas', '/admin/horarios', '/admin/usuarios', '/admin/configuracion']
     },
     'owneradmin': {
         id: 'owneradmin',
         pillar: 'ADMIN',
         label: 'Owner',
         level: 11,
-        allowedPaths: ['/admin/panel', '/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas', '/admin/horarios', '/admin/usuarios', '/admin/configuracion']
+        allowedPaths: ['/admin/panel', '/admin/prospectos', '/admin/funnels', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas', '/admin/horarios', '/admin/usuarios', '/admin/configuracion']
     },
     // GROW (Comercial + Marketing + Preventa)
-    'GROW_L0': { id: 'GROW_L0', pillar: 'GROW', label: 'Intern de Crecimiento', level: 0, allowedPaths: ['/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
-    'GROW_L1': { id: 'GROW_L1', pillar: 'GROW', label: 'SDR (Sales Development Rep)', level: 1, allowedPaths: ['/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
-    'GROW_L2': { id: 'GROW_L2', pillar: 'GROW', label: 'BDR (Business Development Rep)', level: 2, allowedPaths: ['/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
-    'GROW_L3': { id: 'GROW_L3', pillar: 'GROW', label: 'Account Executive', level: 3, allowedPaths: ['/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
-    'GROW_L4': { id: 'GROW_L4', pillar: 'GROW', label: 'Solutions Consultant', level: 4, allowedPaths: ['/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
-    'GROW_L5': { id: 'GROW_L5', pillar: 'GROW', label: 'Growth Lead', level: 5, allowedPaths: ['/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
+    'GROW_L0': { id: 'GROW_L0', pillar: 'GROW', label: 'Intern de Crecimiento', level: 0, allowedPaths: ['/admin/prospectos', '/admin/funnels', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
+    'GROW_L1': { id: 'GROW_L1', pillar: 'GROW', label: 'SDR (Sales Development Rep)', level: 1, allowedPaths: ['/admin/prospectos', '/admin/funnels', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
+    'GROW_L2': { id: 'GROW_L2', pillar: 'GROW', label: 'BDR (Business Development Rep)', level: 2, allowedPaths: ['/admin/prospectos', '/admin/funnels', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
+    'GROW_L3': { id: 'GROW_L3', pillar: 'GROW', label: 'Account Executive', level: 3, allowedPaths: ['/admin/prospectos', '/admin/funnels', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
+    'GROW_L4': { id: 'GROW_L4', pillar: 'GROW', label: 'Solutions Consultant', level: 4, allowedPaths: ['/admin/prospectos', '/admin/funnels', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
+    'GROW_L5': { id: 'GROW_L5', pillar: 'GROW', label: 'Growth Lead', level: 5, allowedPaths: ['/admin/prospectos', '/admin/funnels', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
     
     // OPERATIONS (Delivery + Ingeniería + Project Management)
     'OPS_L0': { id: 'OPS_L0', pillar: 'OPERATIONS', label: 'Engineering Intern', level: 0, allowedPaths: ['/admin/prospectos', '/admin/cotizaciones', '/admin/panel'] },
@@ -55,15 +55,15 @@ export const ROLES_CONFIG: Record<string, RoleInfo> = {
     'SUP_L3': { id: 'SUP_L3', pillar: 'SUPPORT', label: 'CS Manager', level: 3, allowedPaths: ['/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes'] },
     
     // CONSULTORIA & ESTRATEGIA (Cross-Domain)
-    'CONSULTOR': { id: 'CONSULTOR', pillar: 'OPERATIONS', label: 'Consultor Senior (Cross-Domain)', level: 6, allowedPaths: ['/admin/panel', '/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
+    'CONSULTOR': { id: 'CONSULTOR', pillar: 'OPERATIONS', label: 'Consultor Senior (Cross-Domain)', level: 6, allowedPaths: ['/admin/panel', '/admin/prospectos', '/admin/funnels', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
 
     // --- ALIASES PARA COMPATIBILIDAD (Legacy) ---
-    'GROWTH_L0': { id: 'GROW_L0', pillar: 'GROW', label: 'Intern de Crecimiento', level: 0, allowedPaths: ['/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
-    'GROWTH_L1': { id: 'GROW_L1', pillar: 'GROW', label: 'SDR (Sales Development Rep)', level: 1, allowedPaths: ['/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
-    'GROWTH_L2': { id: 'GROW_L2', pillar: 'GROW', label: 'BDR (Business Development Rep)', level: 2, allowedPaths: ['/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
-    'GROWTH_L3': { id: 'GROW_L3', pillar: 'GROW', label: 'Account Executive', level: 3, allowedPaths: ['/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
-    'GROWTH_L4': { id: 'GROW_L4', pillar: 'GROW', label: 'Solutions Consultant', level: 4, allowedPaths: ['/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
-    'GROWTH_L5': { id: 'GROW_L5', pillar: 'GROW', label: 'Growth Lead', level: 5, allowedPaths: ['/admin/prospectos', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
+    'GROWTH_L0': { id: 'GROW_L0', pillar: 'GROW', label: 'Intern de Crecimiento', level: 0, allowedPaths: ['/admin/prospectos', '/admin/funnels', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
+    'GROWTH_L1': { id: 'GROW_L1', pillar: 'GROW', label: 'SDR (Sales Development Rep)', level: 1, allowedPaths: ['/admin/prospectos', '/admin/funnels', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
+    'GROWTH_L2': { id: 'GROW_L2', pillar: 'GROW', label: 'BDR (Business Development Rep)', level: 2, allowedPaths: ['/admin/prospectos', '/admin/funnels', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
+    'GROWTH_L3': { id: 'GROW_L3', pillar: 'GROW', label: 'Account Executive', level: 3, allowedPaths: ['/admin/prospectos', '/admin/funnels', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
+    'GROWTH_L4': { id: 'GROW_L4', pillar: 'GROW', label: 'Solutions Consultant', level: 4, allowedPaths: ['/admin/prospectos', '/admin/funnels', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
+    'GROWTH_L5': { id: 'GROW_L5', pillar: 'GROW', label: 'Growth Lead', level: 5, allowedPaths: ['/admin/prospectos', '/admin/funnels', '/admin/cotizaciones', '/admin/mensajes', '/admin/reservas'] },
     
     'ENG_L0': { id: 'OPS_L0', pillar: 'OPERATIONS', label: 'Engineering Intern', level: 0, allowedPaths: ['/admin/prospectos', '/admin/cotizaciones', '/admin/panel'] },
     'ENG_L1': { id: 'OPS_L1', pillar: 'OPERATIONS', label: 'Junior Developer', level: 1, allowedPaths: ['/admin/prospectos', '/admin/cotizaciones', '/admin/panel'] },

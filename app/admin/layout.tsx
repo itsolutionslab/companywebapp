@@ -221,6 +221,7 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath, dy
 
     const allMenuItems = [
         { name: t('dashboard') || 'Panel', path: '/admin/panel', icon: '📊' },
+        { name: 'Funnels', path: '/admin/funnels', icon: '⚡' },
         { name: t('prospectos') || 'Pipeline Maestro', path: '/admin/prospectos', icon: '🎯' },
         { name: t('cotizaciones') || 'Cotizaciones', path: '/admin/cotizaciones', icon: '📄' },
         { name: t('chats') || 'Mensajes', path: '/admin/mensajes', icon: '💬' },
