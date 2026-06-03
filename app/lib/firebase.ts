@@ -182,6 +182,40 @@ export const getStaffUsers = async () => {
 };
 
 // Role Config
+export const updateUserTeam = async (uid: string, team_id: string | null) => {
+    const userRef = doc(db, "users", uid);
+    await updateDoc(userRef, { team_id });
+};
+
+// Teams
+export const getTeams = async () => {
+    try {
+        const querySnapshot = await getDocs(collection(db, "teams"));
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (e) {
+        console.warn("[Firestore] Could not load teams list");
+        return [];
+    }
+};
+
+export const createTeam = async (teamData: any) => {
+    const newTeam = {
+        ...teamData,
+        created_at: Timestamp.now()
+    };
+    return await addDoc(collection(db, "teams"), newTeam);
+};
+
+export const updateTeam = async (id: string, data: any) => {
+    const teamRef = doc(db, "teams", id);
+    await updateDoc(teamRef, data);
+};
+
+export const deleteTeam = async (id: string) => {
+    await deleteDoc(doc(db, "teams", id));
+};
+
+// Role Config
 export const getRoleConfig = async () => {
     const docSnap = await getDoc(doc(db, "settings", "roles"));
     if (docSnap.exists()) {

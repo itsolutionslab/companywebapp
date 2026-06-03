@@ -91,6 +91,38 @@ export interface LeadKPIs {
     pages_visited?: number;
 }
 
+export interface LeadDocument {
+    id: string;
+    name: string;
+    url: string;
+    uploaded_at: string | any; // Timestamp
+    uploaded_by: string; // User UID
+    uploaded_by_name: string; // User Name
+    restricted_for_operations: boolean;
+    restricted_for_support: boolean;
+    label?: string; // e.g. "Contrato", "Requisitos"
+    category: 'BUSINESS' | 'TECHNICAL'; // 'BUSINESS' oculta para devs, 'TECHNICAL' visible
+}
+
+export interface LeadAuditLog {
+    id: string;
+    action: 'EDIT_DETAILS' | 'ADD_DOCUMENT' | 'ASSIGN_ROLE' | 'TOGGLE_RESTRICTION' | 'ADD_REMINDER';
+    timestamp: any;
+    user_id: string;
+    user_name: string;
+    details: string;
+}
+
+export interface LeadReminder {
+    id: string;
+    scheduled_for: any; // Timestamp
+    created_at: any; // Timestamp
+    created_by: string;
+    created_by_name: string;
+    note?: string;
+    status: 'pending' | 'completed';
+}
+
 export interface Lead {
     lead_id: string; // UUID
     status_flow: {
@@ -98,6 +130,9 @@ export interface Lead {
         history: StatusHistory[];
     };
     events?: LeadEvent[]; // Chronological events
+    documents?: LeadDocument[]; // Attached documents
+    reminders?: LeadReminder[]; // Scheduled reminders
+    action_logs?: LeadAuditLog[];
     owner_id?: string; // Assigned admin UID
     created_by?: string; // Creator UID
     created_by_name?: string; // Creator Name

@@ -335,5 +335,13 @@ service cloud.firestore {
       allow read, create: if isAnyEmployee();
       allow update, delete: if false;
     }
+
+    // ========================================
+    // TEAMS - Organizational Structure
+    // ========================================
+    match /teams/{teamId} {
+      allow read: if isAnyEmployee();
+      allow write: if isAdmin();
+    }
   }
 }

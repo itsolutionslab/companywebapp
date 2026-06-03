@@ -786,3 +786,40 @@ select.input option {
     max-width: 100%;
   }
 }
+
+/* --- Reminder Glowing Animation --- */
+@keyframes spin-gradient {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.reminderAlertActive {
+  position: relative;
+  z-index: 1; /* Ensure card is above pseudo-element */
+}
+
+.reminderAlertActive::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: conic-gradient(from 0deg, transparent 60%, var(--admin-primary) 80%, var(--admin-warning) 100%);
+  border-radius: 1.6rem; /* Match leadCard radius + padding */
+  z-index: -1;
+  animation: spin-gradient 2s linear infinite;
+  mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  padding: 2px;
+}

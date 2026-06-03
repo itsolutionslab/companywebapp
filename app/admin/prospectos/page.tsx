@@ -57,6 +57,7 @@ export default function ProspectosPage() {
 
     const [userRole, setUserRole] = useState<string | null>(null);
     const [userPillar, setUserPillar] = useState<Domain | 'ADMIN' | null>(null);
+    const [userSecondaryPillars, setUserSecondaryPillars] = useState<Domain[]>([]);
     const [userLevel, setUserLevel] = useState<number>(0);
 
     useEffect(() => {
@@ -84,6 +85,7 @@ export default function ProspectosPage() {
                         if (config) {
                             setUserRole(roleId);
                             setUserPillar(config.pillar as any);
+                            setUserSecondaryPillars((config.secondaryPillars as Domain[]) || []);
                             setUserLevel(config.level);
 
                             setCurrentUserData({ uid: user.uid, name: userDoc.data().name || user.displayName || 'Usuario' });
@@ -355,7 +357,7 @@ export default function ProspectosPage() {
             <div className={styles.toolbarRow}>
                 <div className={styles.tabsCompact}>
                     {(['GROW', 'OPERATIONS', 'SUPPORT'] as Domain[]).map((domain) => {
-                        const isLocked = !canSwitchDomain && userPillar !== domain;
+                        const isLocked = !canSwitchDomain && userPillar !== domain && !userSecondaryPillars.includes(domain);
                         return (
                             <button
                                 key={domain}
@@ -669,7 +671,15 @@ export default function ProspectosPage() {
             )}
 
             {/* Assignment Modal */}
-            {isAssigning && assignLead && (
+            {isAssigning && assignLead && (() => {
+                const isGlobalAdmin = userLevel >= 10;
+                const isGrowLeadOrAbove = userPillar === 'GROW' && userLevel >= 5;
+                const isHighLevelOps = userLevel >= 6;
+                const canEditOwnerAndArchitect = isGlobalAdmin || isGrowLeadOrAbove || isHighLevelOps;
+                const isSolutionsArchitect = (userPillar === 'OPERATIONS' && userLevel === 4);
+                const canEditDevTeam = canEditOwnerAndArchitect || isSolutionsArchitect;
+
+                return (
                 <div className={styles.modalOverlay} onClick={() => setIsAssigning(false)}>
                     <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
@@ -695,6 +705,8 @@ export default function ProspectosPage() {
                                     className={styles.input} 
                                     value={assignFormData.owner_id} 
                                     onChange={e => setAssignFormData({...assignFormData, owner_id: e.target.value})}
+                                    disabled={!canEditOwnerAndArchitect}
+                                    style={{ opacity: canEditOwnerAndArchitect ? 1 : 0.6, cursor: canEditOwnerAndArchitect ? 'pointer' : 'not-allowed' }}
                                 >
                                     <option value="">-- Sin Asignar --</option>
                                     {growUsers.map(u => (
@@ -708,6 +720,8 @@ export default function ProspectosPage() {
                                     className={styles.input} 
                                     value={assignFormData.solutions_architect_id} 
                                     onChange={e => setAssignFormData({...assignFormData, solutions_architect_id: e.target.value})}
+                                    disabled={!canEditOwnerAndArchitect}
+                                    style={{ opacity: canEditOwnerAndArchitect ? 1 : 0.6, cursor: canEditOwnerAndArchitect ? 'pointer' : 'not-allowed' }}
                                 >
                                     <option value="">-- Sin Asignar --</option>
                                     {architectUsers.map(u => (
@@ -723,16 +737,21 @@ export default function ProspectosPage() {
                                     className={styles.input} 
                                     value={assignFormData.dev_team} 
                                     onChange={e => setAssignFormData({...assignFormData, dev_team: e.target.value})}
+                                    disabled={!canEditDevTeam}
+                                    style={{ opacity: canEditDevTeam ? 1 : 0.6, cursor: canEditDevTeam ? 'text' : 'not-allowed' }}
                                 />
                             </div>
                             <div className={styles.formActions} style={{ marginTop: '1.5rem' }}>
                                 <button type="button" onClick={() => setIsAssigning(false)} className={styles.btnSecondary}>CANCELAR</button>
-                                <button type="submit" className={styles.btnPrimary}>GUARDAR ASIGNACIÓN</button>
+                                {canEditDevTeam && (
+                                    <button type="submit" className={styles.btnPrimary}>GUARDAR ASIGNACIÓN</button>
+                                )}
                             </div>
                         </form>
                     </div>
                 </div>
-            )}
+                );
+            })()}
         </div>
     );
 }

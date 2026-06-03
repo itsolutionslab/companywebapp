@@ -106,83 +106,122 @@ export default function PermissionsPage() {
     }, {} as Record<string, RoleInfo[]>);
 
     return (
-        <div className="space-y-12 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+        <div className="space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-8 duration-700 px-2 max-w-7xl mx-auto">
             {/* Header */}
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 px-2">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-100 pb-4">
                 <div>
-                    <div className="admin-decorator-line mb-4"></div>
-                    <h1 className="admin-h1 text-4xl mb-2">Matriz de Accesos</h1>
-                    <p className="admin-subtitle text-gray-500 font-medium">Configura qué secciones puede ver cada rol del sistema</p>
+                    <h1 className="text-2xl font-black text-[#0511F2] tracking-tight uppercase mb-1">Matriz de Accesos</h1>
+                    <p className="text-sm text-gray-500 font-medium">Configura qué secciones puede ver cada rol del sistema</p>
                 </div>
 
-                <div className="flex gap-4">
+                <div className="flex gap-3 w-full sm:w-auto">
                     <button
                         onClick={() => window.history.back()}
-                        className="admin-btn admin-btn-secondary"
+                        className="flex-1 sm:flex-none px-4 py-2 text-sm rounded-lg border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition"
                     >
-                        VOLVER
+                        Volver
                     </button>
                     <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="admin-btn admin-btn-primary shadow-xl shadow-pink-200 uppercase"
+                        className="flex-1 sm:flex-none px-4 py-2 text-sm rounded-lg bg-[#0511F2] text-white font-bold hover:bg-blue-700 transition shadow-md flex items-center justify-center min-w-[150px]"
                     >
-                        {saving ? 'Guardando...' : 'GUARDAR CAMBIOS'}
+                        {saving ? (
+                            <span className="flex items-center gap-2">
+                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                Guardando...
+                            </span>
+                        ) : 'Guardar Cambios'}
                     </button>
                 </div>
             </div>
 
+            {/* Alert Box - Moved to top for better visibility */}
+            <div className="bg-green-50/50 border border-green-100/50 p-4 rounded-xl flex items-start gap-3">
+                <span className="text-green-500 mt-0.5 text-lg">🛡️</span>
+                <div>
+                    <h3 className="font-bold text-green-800 text-xs uppercase mb-1">Seguridad en Tiempo Real</h3>
+                    <p className="text-xs text-green-700 font-medium leading-relaxed">
+                        Cualquier modificación en esta matriz se aplica instantáneamente. Los usuarios afectados que tengan una sesión activa experimentarán una recarga automática para ajustar sus accesos de inmediato, previniendo cualquier vulnerabilidad.
+                    </p>
+                </div>
+            </div>
+
             {/* Matrix View */}
-            <div className="space-y-10">
+            <div className="space-y-6">
                 {Object.entries(rolesByPillar).map(([pillar, pillarRoles]) => (
-                    <div key={pillar} className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden animate-in fade-in duration-700">
-                        <div className="bg-[#0511F2] p-6 text-white flex items-center justify-between">
-                            <h2 className="font-black uppercase tracking-widest text-sm flex items-center gap-3">
-                                <span className="w-2 h-2 bg-[#EAF207] rounded-full"></span>
-                                {pillar}
+                    <div key={pillar} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                        <div className="bg-gray-50 border-b border-gray-200 p-4 flex items-center justify-between">
+                            <h2 className="font-black text-gray-800 uppercase text-sm flex items-center gap-2">
+                                <span className={`w-2 h-4 rounded-full ${
+                                    pillar === 'GROW' ? 'bg-[#EE05F2]' : 
+                                    pillar === 'OPERATIONS' ? 'bg-[#0511F2]' : 
+                                    pillar === 'SUPPORT' ? 'bg-[#26A3BF]' : 'bg-[#EAF207]'
+                                }`}></span>
+                                Área {pillar}
                             </h2>
-                            <span className="text-[10px] font-bold opacity-60 uppercase">{pillarRoles.length} Roles Definidos</span>
+                            <span className="text-xs font-bold text-gray-400 bg-white px-2 py-1 rounded-md border border-gray-100">
+                                {pillarRoles.length} Roles
+                            </span>
                         </div>
                         
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
+                            <table className="w-full text-left border-collapse min-w-[800px]">
                                 <thead>
-                                    <tr className="border-b border-gray-50">
-                                        <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest w-1/4">Cargo / Rol</th>
+                                    <tr className="border-b border-gray-100 bg-white">
+                                        <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider w-[280px] sticky left-0 bg-white z-10 border-r border-gray-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                                            Cargo / Rol
+                                        </th>
                                         {availablePaths.map(ap => (
-                                            <th key={ap.path} className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
-                                                <div className="flex flex-col items-center gap-2">
-                                                    <span className="text-xl">{ap.icon}</span>
-                                                    <span className="whitespace-nowrap">{ap.label.split(' / ')[0]}</span>
+                                            <th key={ap.path} className="p-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">
+                                                <div className="flex flex-col items-center gap-1.5">
+                                                    <span className="text-base opacity-80">{ap.icon}</span>
+                                                    <span className="whitespace-nowrap text-[10px]">{ap.label.split(' / ')[0]}</span>
                                                 </div>
                                             </th>
                                         ))}
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="divide-y divide-gray-50">
                                     {pillarRoles.sort((a, b) => b.level - a.level).map(role => (
-                                        <tr key={role.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                                            <td className="p-6">
+                                        <tr key={role.id} className="hover:bg-gray-50/50 transition-colors bg-white group">
+                                            <td className="p-4 sticky left-0 bg-white z-10 border-r border-gray-50 group-hover:bg-gray-50/50 transition-colors shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
                                                 <div className="flex flex-col">
-                                                    <span className="font-black text-[#0511F2] text-sm uppercase">{role.label}</span>
-                                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Nivel {role.level}</span>
+                                                    <span className="font-bold text-gray-800 text-xs uppercase">{role.label}</span>
+                                                    <span className="text-[10px] text-gray-400 font-semibold mt-0.5 uppercase">Nivel {role.level}</span>
                                                 </div>
                                             </td>
                                             {availablePaths.map(ap => {
                                                 const isActive = role.allowedPaths.includes(ap.path);
-                                                // Prevent disabling own access or admin critical access if possible, 
-                                                // but for simplicity we allow full control to Owner.
+                                                
+                                                // Dynamic active color based on pillar
+                                                let activeBgColor = "bg-[#0511F2]";
+                                                let activeRingColor = "ring-[#0511F2]";
+                                                let activeShadowColor = "shadow-blue-200";
+
+                                                if (pillar === 'GROW') {
+                                                    activeBgColor = "bg-[#EE05F2]";
+                                                    activeRingColor = "ring-[#EE05F2]";
+                                                    activeShadowColor = "shadow-pink-200";
+                                                } else if (pillar === 'SUPPORT') {
+                                                    activeBgColor = "bg-[#26A3BF]";
+                                                    activeRingColor = "ring-[#26A3BF]";
+                                                    activeShadowColor = "shadow-cyan-200";
+                                                }
+
                                                 return (
-                                                    <td key={ap.path} className="p-4 text-center">
+                                                    <td key={ap.path} className="p-3 text-center">
                                                         <button
                                                             onClick={() => togglePath(role.id, ap.path)}
-                                                            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+                                                            className={`w-6 h-6 mx-auto rounded-md flex items-center justify-center transition-all duration-200 ${
                                                                 isActive 
-                                                                ? "bg-[#EE05F2] text-white shadow-lg shadow-pink-100 scale-105" 
-                                                                : "bg-gray-100 text-gray-300 hover:bg-gray-200"
+                                                                ? `${activeBgColor} text-white shadow-sm ${activeShadowColor} ring-1 ${activeRingColor} ring-offset-1` 
+                                                                : "bg-gray-50 border border-gray-200 text-transparent hover:bg-gray-100 hover:border-gray-300"
                                                             }`}
                                                         >
-                                                            {isActive ? '✅' : '✕'}
+                                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                            </svg>
                                                         </button>
                                                     </td>
                                                 );
@@ -194,17 +233,6 @@ export default function PermissionsPage() {
                         </div>
                     </div>
                 ))}
-            </div>
-
-            {/* Alert Box */}
-            <div className="bg-blue-50 border border-blue-100 p-8 rounded-[2rem] flex items-start gap-6">
-                <div className="text-3xl">ℹ️</div>
-                <div>
-                    <h3 className="font-black text-[#0511F2] uppercase text-sm mb-2">Nota sobre la sincronización</h3>
-                    <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                        Los cambios realizados en esta matriz se guardan en tiempo real en la nube, pero debido al almacenamiento en caché de la sesión, los usuarios que estén logueados podrían necesitar cerrar sesión y volver a entrar o refrescar la página para ver reflejados sus nuevos accesos en el menú lateral.
-                    </p>
-                </div>
             </div>
         </div>
     );

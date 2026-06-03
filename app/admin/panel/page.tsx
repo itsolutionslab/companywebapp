@@ -35,7 +35,47 @@ export default function DashboardPage() {
     const [isDateModalOpen, setIsDateModalOpen] = useState(false);
     const [dateModalMode, setDateModalMode] = useState<'single' | 'range'>('single');
 
+    const [userUid, setUserUid] = useState<string | null>(null);
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [userTeamId, setUserTeamId] = useState<string | null>(null);
+    const [myTeamMembers, setMyTeamMembers] = useState<string[]>([]);
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
     useEffect(() => {
+        import("firebase/auth").then(({ onAuthStateChanged }) => {
+            import("@/lib/firebase").then(({ auth, db, getTeams }) => {
+                const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+                    if (authUser) {
+                        setUserUid(authUser.uid);
+                        const { doc, getDoc } = await import("firebase/firestore");
+                        const userDoc = await getDoc(doc(db, 'users', authUser.uid));
+                        let role = 'staff';
+                        let teamId = null;
+                        if (userDoc.exists()) {
+                            role = userDoc.data().role || 'staff';
+                            teamId = userDoc.data().team_id || null;
+                        }
+                        setUserRole(role);
+                        setUserTeamId(teamId);
+                        
+                        const isAdmin = role === 'admin' || role === 'owneradmin';
+                        setIsSuperAdmin(isAdmin);
+
+                        if (!isAdmin && teamId) {
+                            const teams = await getTeams();
+                            const myTeam = teams.find((t: any) => t.id === teamId && t.manager_id === authUser.uid) as any;
+                            if (myTeam) {
+                                setMyTeamMembers(myTeam.member_ids || []);
+                            }
+                        }
+                    } else {
+                        window.location.href = '/admin/ingreso';
+                    }
+                });
+                return () => unsubscribe();
+            });
+        });
+
         const unsubLeads = onLeadsUpdate((data) => {
             // Sort locally as we removed order from Firestore query for robustness
             const sortedData = [...data].sort((a, b) => {
@@ -77,6 +117,18 @@ export default function DashboardPage() {
     const filteredLeads = useMemo(() => {
         const now = new Date();
         const filtered = leads.filter(l => {
+            // --- Hierarchy logic ---
+            if (!isSuperAdmin) {
+                const isOwner = l.owner_id === userUid;
+                const isCreator = l.created_by === userUid;
+                const isInMyTeam = myTeamMembers.includes(l.owner_id || '') || myTeamMembers.includes(l.created_by || '');
+                
+                // If not admin, and I'm not the owner, not the creator, and it's not owned by someone in my team (if I am manager)
+                if (!isOwner && !isCreator && !isInMyTeam) {
+                    return false;
+                }
+            }
+
             if (!l?.audit_logs?.created_at) return false;
 
             const ca = l.audit_logs.created_at;
@@ -123,7 +175,7 @@ export default function DashboardPage() {
         });
 
         return filtered;
-    }, [leads, filter, startDate, endDate]);
+    }, [leads, filter, startDate, endDate, isSuperAdmin, userUid, myTeamMembers]);
 
 
 

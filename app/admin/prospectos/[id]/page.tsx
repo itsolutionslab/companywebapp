@@ -3,13 +3,15 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getLeadById, updateLead, onAvailabilityUpdate, getBusinessSettings, db, addLeadEvent } from "@/lib/firebase";
-import { Lead, LeadStatus } from "@/types/tracking";
+import { getLeadById, updateLead, onAvailabilityUpdate, getBusinessSettings, db, addLeadEvent, auth, storage } from "@/lib/firebase";
+import { Lead, LeadStatus, LeadDocument, LeadReminder } from "@/types/tracking";
 import { useTranslation } from "@/components/admin/LanguageContext";
 import { useNotification } from "@/components/admin/NotificationContext";
 import { getTimeSlotsForDate } from "@/lib/timeSlots";
 import ScheduleModal from "@/components/admin/ScheduleModal";
-import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, Timestamp } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot, doc, getDoc, updateDoc, Timestamp, arrayUnion } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ROLES_CONFIG, Pillar } from "@/config/roles_config";
 import QuotationEditor from "@/modules/quotation/components/QuotationEditor";
 
 import styles from "./ProspectoDetail.module.css";
@@ -32,6 +34,24 @@ export default function LeadDetailPage() {
     const [fileName, setFileName] = useState<string>('Documento de Proyecto');
     const [expandedDomain, setExpandedDomain] = useState<'GROW' | 'OPERATIONS' | 'SUPPORT' | null>(null);
     const [expandedTrackerDomain, setExpandedTrackerDomain] = useState<'GROW' | 'OPERATIONS' | 'SUPPORT' | null>(null);
+
+    // Auth and Permissions State
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [userPillar, setUserPillar] = useState<Pillar | null>(null);
+    const [userSecondaryPillars, setUserSecondaryPillars] = useState<Pillar[]>([]);
+    const [userLevel, setUserLevel] = useState<number>(0);
+    const [currentUserData, setCurrentUserData] = useState<{ uid: string, name: string } | null>(null);
+
+    // Documents State
+    const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+
+    // Edit Mode State
+    const [isEditing, setIsEditing] = useState(false);
+    const [editData, setEditData] = useState<any>({});
+
+    // Reminder State
+    const [reminderDate, setReminderDate] = useState('');
+    const [reminderNote, setReminderNote] = useState('');
 
     // Quotations State
     const [quotations, setQuotations] = useState<any[]>([]);
@@ -101,9 +121,120 @@ export default function LeadDetailPage() {
         }
     };
 
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, category: 'BUSINESS' | 'TECHNICAL' = 'BUSINESS') => {
+        const files = event.target.files;
+        if (!files || files.length === 0 || !id || !currentUserData) return;
+
+        setIsUploadingDoc(true);
+        try {
+            const newDocs: LeadDocument[] = [];
+            const descriptions: string[] = [];
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const docId = Math.random().toString(36).substring(2, 15);
+                const storageRef = ref(storage, `leads/${id}/documents/${docId}_${file.name}`);
+                await uploadBytes(storageRef, file);
+                const url = await getDownloadURL(storageRef);
+                
+                newDocs.push({
+                    id: docId,
+                    name: file.name,
+                    url,
+                    uploaded_at: Timestamp.now(),
+                    uploaded_by: currentUserData.uid,
+                    uploaded_by_name: currentUserData.name,
+                    restricted_for_operations: category === 'BUSINESS' ? true : false,
+                    restricted_for_support: category === 'BUSINESS' ? true : false,
+                    label: category === 'TECHNICAL' ? 'Técnico' : 'Adjunto',
+                    category
+                });
+                descriptions.push(file.name);
+            }
+
+            const docRef = doc(db, "leads", id as string);
+            await updateDoc(docRef, {
+                documents: arrayUnion(...newDocs)
+            });
+
+            await addLeadEvent(id as string, {
+                type: 'NOTE_ADDED',
+                description: `Documentos adjuntados: ${descriptions.join(', ')}`,
+                timestamp: Timestamp.now()
+            } as any);
+
+            showNotification(`${files.length > 1 ? 'Documentos subidos' : 'Documento subido'} correctamente`, "success");
+            fetchLead(); // refresh
+        } catch (error: any) {
+            console.error("Upload error:", error);
+            showNotification(`Error al subir: ${error.message}`, "error");
+        } finally {
+            setIsUploadingDoc(false);
+            event.target.value = ''; // Reset input
+        }
+    };
+
+    const handleToggleDocumentRestriction = async (docId: string, type: 'operations' | 'support') => {
+        if (!lead || !lead.documents) return;
+        
+        try {
+            const updatedDocs = lead.documents.map(d => {
+                if (d.id === docId) {
+                    return {
+                        ...d,
+                        [type === 'operations' ? 'restricted_for_operations' : 'restricted_for_support']: !d[type === 'operations' ? 'restricted_for_operations' : 'restricted_for_support']
+                    };
+                }
+                return d;
+            });
+
+            const docRef = doc(db, "leads", id as string);
+            await updateDoc(docRef, { documents: updatedDocs });
+
+            showNotification("Visibilidad del documento actualizada", "success");
+            
+            // Optimistic update
+            setLead({ ...lead, documents: updatedDocs });
+        } catch (error: any) {
+            console.error("Toggle error:", error);
+            showNotification(`Error al actualizar: ${error.message}`, "error");
+        }
+    };
+
     useEffect(() => {
         if (id) fetchLead();
     }, [id]);
+
+    useEffect(() => {
+        const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists()) {
+                        const roleId = userDoc.data().role;
+                        const config = ROLES_CONFIG[roleId] ||
+                            ROLES_CONFIG[roleId?.toUpperCase()] ||
+                            ROLES_CONFIG[roleId?.toLowerCase()];
+
+                        if (config) {
+                            setUserRole(roleId);
+                            setUserPillar(config.pillar as any);
+                            setUserSecondaryPillars((config.secondaryPillars as Pillar[]) || []);
+                            setUserLevel(config.level);
+
+                            setCurrentUserData({ uid: user.uid, name: userDoc.data().name || user.displayName || 'Usuario' });
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error fetching user role:", error);
+                }
+            }
+        });
+
+        return () => {
+            unsubscribeAuth();
+        };
+    }, []);
 
     useEffect(() => {
         if (lead?.status_flow?.current) {
@@ -318,6 +449,88 @@ export default function LeadDetailPage() {
         }
     };
 
+    const handleEditToggle = () => {
+        if (!isEditing && lead?.data) {
+            setEditData({ ...lead.data });
+        }
+        setIsEditing(!isEditing);
+    };
+
+    const handleSaveEdit = async () => {
+        if (!lead) return;
+        setIsUpdating(true);
+        try {
+            await updateLead(lead.lead_id, { data: editData });
+            const { addLeadEvent } = await import("@/lib/firebase");
+            await addLeadEvent(lead.lead_id, {
+                type: 'NOTE_ADDED',
+                description: 'Información del prospecto actualizada.',
+                timestamp: Timestamp.now()
+            } as any);
+            await fetchLead();
+            setIsEditing(false);
+            showNotification("Información actualizada correctamente", "success");
+        } catch (error) {
+            console.error("Error saving lead info:", error);
+            showNotification("Error al guardar información", "error");
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleAddReminder = async () => {
+        if (!lead || !reminderDate || !currentUserData) return;
+        setIsUpdating(true);
+        try {
+            const newReminder: LeadReminder = {
+                id: Math.random().toString(36).substring(2, 15),
+                scheduled_for: Timestamp.fromDate(new Date(reminderDate)),
+                created_at: Timestamp.now(),
+                created_by: currentUserData.uid,
+                created_by_name: currentUserData.name,
+                note: reminderNote,
+                status: 'pending'
+            };
+            const docRef = doc(db, "leads", lead.lead_id);
+            await updateDoc(docRef, {
+                reminders: arrayUnion(newReminder)
+            });
+            const { addLeadEvent } = await import("@/lib/firebase");
+            await addLeadEvent(lead.lead_id, {
+                type: 'NOTE_ADDED',
+                description: `Recordatorio programado para: ${new Date(reminderDate).toLocaleString()}`,
+                timestamp: Timestamp.now()
+            } as any);
+            await fetchLead();
+            setReminderDate('');
+            setReminderNote('');
+            showNotification("Recordatorio programado con éxito", "success");
+        } catch (error) {
+            console.error("Error adding reminder:", error);
+            showNotification("Error al programar recordatorio", "error");
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleCompleteReminder = async (reminder: LeadReminder) => {
+        if (!lead) return;
+        setIsUpdating(true);
+        try {
+            const updatedReminders = (lead.reminders || []).map(r => 
+                r.id === reminder.id ? { ...r, status: 'completed' as const } : r
+            );
+            const docRef = doc(db, "leads", lead.lead_id);
+            await updateDoc(docRef, { reminders: updatedReminders });
+            await fetchLead();
+            showNotification("Recordatorio completado", "success");
+        } catch (error) {
+            showNotification("Error al completar recordatorio", "error");
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className={styles.loadingBox}>
@@ -334,6 +547,24 @@ export default function LeadDetailPage() {
             </div>
         );
     }
+    // Calcular el Valor Estimado efectivo: usa la última cotización si existe, o el valor manual.
+    let effectiveEstimateValue = lead.value_estimate || 0;
+    let hasQuotations = false;
+    
+    if (quotations && quotations.length > 0) {
+        hasQuotations = true;
+        const sortedQuotations = [...quotations].sort((a, b) => {
+            const dateA = a.date?.seconds || a.createdAt?.seconds || 0;
+            const dateB = b.date?.seconds || b.createdAt?.seconds || 0;
+            return dateB - dateA;
+        });
+        const latestQuotation = sortedQuotations[0];
+        if (latestQuotation && typeof latestQuotation.total === 'number') {
+            effectiveEstimateValue = latestQuotation.total / 100;
+        }
+    }
+    const isGrowOrArchitect = userPillar === 'GROW' || userPillar === 'ADMIN' || userSecondaryPillars?.includes('GROW') || userRole === 'admin' || userRole === 'owner' || userRole === 'owneradmin';
+    const isOperationsOnly = userPillar === 'OPERATIONS' && !userSecondaryPillars?.includes('GROW') && userRole !== 'admin' && userRole !== 'owner' && userRole !== 'owneradmin';
 
     return (
         <div className={styles.detailContainer}>
@@ -351,15 +582,17 @@ export default function LeadDetailPage() {
                         </div>
                     </div>
 
-                    <div className={styles.valueEstimateBox}>
-                        <div style={{ textAlign: 'right' }}>
-                            <span className={styles.valueLabel}>Valor Estimado</span>
-                            <span className={styles.valueAmount}>${lead.value_estimate?.toLocaleString() || '0'}</span>
+                    {isGrowOrArchitect && (
+                        <div className={styles.valueEstimateBox}>
+                            <div style={{ textAlign: 'right' }}>
+                                <span className={styles.valueLabel}>Valor Estimado {hasQuotations ? '(Cotización)' : ''}</span>
+                                <span className={styles.valueAmount}>${effectiveEstimateValue.toLocaleString()}</span>
+                            </div>
+                            <div className={styles.valueIcon} title={hasQuotations ? "Valor proveniente de la última cotización" : "Valor estimado manual"}>
+                                💰
+                            </div>
                         </div>
-                        <div className={styles.valueIcon}>
-                            💰
-                        </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Smart Tracker: Tabs + Horizontal Scroll */}
@@ -420,217 +653,559 @@ export default function LeadDetailPage() {
             <div className={styles.mainGrid}>
                 {/* Main Info Card */}
                 <div className={styles.infoSection}>
-                    <div className={styles.sectionCard} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
-                        <section>
-                            <h3 className="admin-h3" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-primary)' }}></span>
-                                Datos de Contacto
-                            </h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                <div>
-                                    <label className="admin-label">Email</label>
-                                    <p style={{ fontWeight: 'bold', color: 'var(--admin-text-main)' }}>{lead.data?.email || 'N/A'}</p>
+                    <div className={styles.sectionCard} style={{ position: 'relative' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
+                            <section>
+                                <h3 className="admin-h3" style={{ fontSize: '12px', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-primary)', height: '10px' }}></span>
+                                    Datos de Contacto
+                                </h3>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    {isEditing ? (
+                                        <>
+                                            <div>
+                                                <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Nombre del Contacto</label>
+                                                <input type="text" className={styles.editInput} value={editData.name || ''} onChange={e => setEditData({ ...editData, name: e.target.value })} />
+                                            </div>
+                                            <div>
+                                                <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Email</label>
+                                                <input type="email" className={styles.editInput} value={editData.email || ''} onChange={e => setEditData({ ...editData, email: e.target.value })} />
+                                            </div>
+                                            <div>
+                                                <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Teléfono</label>
+                                                <input type="tel" className={styles.editInput} value={editData.phone || ''} onChange={e => setEditData({ ...editData, phone: e.target.value })} />
+                                            </div>
+                                            <div>
+                                                <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Empresa</label>
+                                                <input type="text" className={styles.editInput} value={editData.company || ''} onChange={e => setEditData({ ...editData, company: e.target.value })} />
+                                            </div>
+                                            <div>
+                                                <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Website</label>
+                                                <input type="url" className={styles.editInput} value={editData.website || ''} onChange={e => setEditData({ ...editData, website: e.target.value })} />
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div>
+                                                <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Nombre del Contacto</label>
+                                                <p style={{ fontWeight: 'bold', color: 'var(--admin-text-main)', fontSize: '13px', margin: 0 }}>{lead.data?.name || 'N/A'}</p>
+                                            </div>
+                                            <div>
+                                                <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Email</label>
+                                                <p style={{ fontWeight: 'bold', color: 'var(--admin-text-main)', fontSize: '13px', margin: 0 }}>{lead.data?.email || 'N/A'}</p>
+                                            </div>
+                                            <div>
+                                                <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Teléfono</label>
+                                                <p style={{ fontWeight: 'bold', color: 'var(--admin-text-main)', fontSize: '13px', margin: 0 }}>{lead.data?.phone || 'N/A'}</p>
+                                            </div>
+                                            <div>
+                                                <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Empresa</label>
+                                                <p style={{ fontWeight: 'bold', color: 'var(--admin-text-main)', fontSize: '13px', margin: 0 }}>{lead.data?.company || 'N/A'}</p>
+                                            </div>
+                                            {lead.data?.website && (
+                                                <div>
+                                                    <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Website</label>
+                                                    <p style={{ fontWeight: 'bold', color: 'var(--admin-primary)', fontSize: '13px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                        <a href={lead.data.website.startsWith('http') ? lead.data.website : `https://${lead.data.website}`} target="_blank" rel="noopener noreferrer">
+                                                            {lead.data.website}
+                                                        </a>
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
                                 </div>
-                                <div>
-                                    <label className="admin-label">Teléfono</label>
-                                    <p style={{ fontWeight: 'bold', color: 'var(--admin-text-main)' }}>{lead.data?.phone || 'N/A'}</p>
-                                </div>
-                                <div>
-                                    <label className="admin-label">Empresa</label>
-                                    <p style={{ fontWeight: 'bold', color: 'var(--admin-text-main)' }}>{lead.data?.company || 'N/A'}</p>
-                                </div>
-                                {lead.data?.website && (
-                                    <div>
-                                        <label className="admin-label">Website</label>
-                                        <p style={{ fontWeight: 'bold', color: 'var(--admin-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            <a href={lead.data.website.startsWith('http') ? lead.data.website : `https://${lead.data.website}`} target="_blank" rel="noopener noreferrer">
-                                                {lead.data.website}
-                                            </a>
-                                        </p>
+                            </section>
+
+                            {isGrowOrArchitect && (
+                                <section>
+                                    <h3 className="admin-h3" style={{ fontSize: '12px', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-warning)', height: '10px' }}></span>
+                                        Modelo Operativo
+                                    </h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        {isEditing ? (
+                                            <>
+                                                <div>
+                                                    <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Delivery Model</label>
+                                                    <select className={styles.editSelect} value={editData.delivery_model || 'ADVISORY'} onChange={e => setEditData({ ...editData, delivery_model: e.target.value })}>
+                                                        <option value="ADVISORY">Advisory</option>
+                                                        <option value="IMPLEMENTATION">Implementation</option>
+                                                        <option value="MANAGED_SERVICES">Managed Services</option>
+                                                        <option value="STAFF_AUGMENTATION">Staff Augmentation</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Capability</label>
+                                                    <select className={styles.editSelect} value={editData.capability || 'SOFTWARE'} onChange={e => setEditData({ ...editData, capability: e.target.value })}>
+                                                        <option value="SOFTWARE">Software Development</option>
+                                                        <option value="AI">AI & Machine Learning</option>
+                                                        <option value="CLOUD">Cloud Solutions</option>
+                                                        <option value="DATA">Data Engineering</option>
+                                                        <option value="MARKETING">Digital Marketing</option>
+                                                    </select>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div>
+                                                    <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Delivery Model</label>
+                                                    <div style={{ marginTop: '2px' }}>
+                                                        <span className="admin-badge admin-badge-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '9px' }}>
+                                                            {lead.data?.delivery_model || 'ADVISORY'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div style={{ marginTop: '0.5rem' }}>
+                                                    <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Capability</label>
+                                                    <div style={{ marginTop: '2px' }}>
+                                                        <span className="admin-badge admin-badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '9px' }}>
+                                                            {lead.data?.capability || 'SOFTWARE'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
+                                </section>
+                            )}
+                        </div>
+                        
+                        {/* Botón Editar / Guardar */}
+                        {(['GROW', 'ADMIN'].includes(userPillar || '') || userSecondaryPillars?.includes('GROW') || lead.created_by === currentUserData?.uid) && (
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #f0f0f0' }}>
+                                {isEditing && (
+                                    <button 
+                                        onClick={handleSaveEdit} 
+                                        className="admin-btn admin-btn-primary" 
+                                        style={{ fontSize: '10px', padding: '0.5rem 1rem' }}
+                                        disabled={isUpdating}
+                                    >
+                                        {isUpdating ? 'Guardando...' : 'Guardar'}
+                                    </button>
+                                )}
+                                {(isGrowOrArchitect || lead.created_by === currentUserData?.uid) && lead.status_flow.current !== 'WIN_CLOSED' && lead.status_flow.current !== 'LOST' && (
+                                    <button 
+                                        onClick={handleEditToggle} 
+                                        className={isEditing ? "admin-btn admin-btn-secondary" : "admin-btn admin-btn-primary"} 
+                                        style={{ fontSize: '10px', padding: '0.5rem 1rem' }}
+                                    >
+                                        {isEditing ? 'Cancelar' : 'Editar Información'}
+                                    </button>
                                 )}
                             </div>
-                        </section>
-
-                        <section>
-                            <h3 className="admin-h3" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-warning)' }}></span>
-                                Modelo Operativo
-                            </h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <div>
-                                    <label className={styles.valueLabel} style={{ textAlign: 'left' }}>Delivery Model</label>
-                                    <div style={{ marginTop: '0.25rem' }}>
-                                        <span className="admin-badge admin-badge-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            {lead.data?.delivery_model || 'ADVISORY'}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className={styles.valueLabel} style={{ textAlign: 'left' }}>Capability</label>
-                                    <div style={{ marginTop: '0.25rem' }}>
-                                        <span className="admin-badge admin-badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            {lead.data?.capability || 'SOFTWARE'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
+                        )}
                     </div>
 
                     {/* Insights */}
-                    <div className={styles.kpiGrid}>
-                        <div className={styles.kpiCard}>
-                            <span className={styles.kpiLabel}>Etapa Actual</span>
-                            <span className={styles.kpiValue} style={{ color: 'var(--admin-success)' }}>{lead.data?.stage || 'No definida'}</span>
+                    {isGrowOrArchitect && (
+                        <div className={styles.kpiGrid}>
+                            <div className={styles.kpiCard}>
+                                <span className={styles.kpiLabel}>Etapa Actual</span>
+                                <span className={styles.kpiValue} style={{ color: 'var(--admin-success)' }}>{lead.data?.stage || 'No definida'}</span>
+                            </div>
+                            <div className={styles.kpiCard}>
+                                <span className={styles.kpiLabel}>Urgencia</span>
+                                <span className={styles.kpiValue} style={{ color: 'var(--admin-secondary)' }}>{lead.data?.timeline || 'N/A'}</span>
+                            </div>
+                            <div className={styles.kpiCard}>
+                                <span className={styles.kpiLabel}>Inversión</span>
+                                <span className={styles.kpiValue} style={{ color: 'var(--admin-primary)' }}>{lead.data?.investment_level || 'N/A'}</span>
+                            </div>
+                            <div className={styles.kpiCard}>
+                                <span className={styles.kpiLabel}>Clics</span>
+                                <span className={styles.kpiValue}>{lead.kpis?.clicks_count || 0}</span>
+                            </div>
                         </div>
-                        <div className={styles.kpiCard}>
-                            <span className={styles.kpiLabel}>Urgencia</span>
-                            <span className={styles.kpiValue} style={{ color: 'var(--admin-secondary)' }}>{lead.data?.timeline || 'N/A'}</span>
-                        </div>
-                        <div className={styles.kpiCard}>
-                            <span className={styles.kpiLabel}>Inversión</span>
-                            <span className={styles.kpiValue} style={{ color: 'var(--admin-primary)' }}>{lead.data?.investment_level || 'N/A'}</span>
-                        </div>
-                        <div className={styles.kpiCard}>
-                            <span className={styles.kpiLabel}>Clics</span>
-                            <span className={styles.kpiValue}>{lead.kpis?.clicks_count || 0}</span>
+                    )}
+
+                    {/* Recordatorios Inteligentes */}
+                    <div className={styles.sectionCard}>
+                        <h3 className="admin-h3" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-warning)' }}></span>
+                            Recordatorios
+                        </h3>
+
+                        {/* Add Reminder UI */}
+                        {(['GROW', 'ADMIN'].includes(userPillar || '') || userSecondaryPillars?.includes('GROW') || lead.created_by === currentUserData?.uid) && (
+                            <div className={styles.addReminderBox}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                                    <div className={styles.inputGroup}>
+                                        <label>Fecha y Hora</label>
+                                        <input 
+                                            type="datetime-local" 
+                                            className={styles.editInput}
+                                            value={reminderDate}
+                                            onChange={(e) => setReminderDate(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className={styles.inputGroup}>
+                                        <label>Nota / Descripción</label>
+                                        <input 
+                                            type="text" 
+                                            className={styles.editInput}
+                                            placeholder="Ej. Revisar cotización, Llamada de seguimiento..."
+                                            value={reminderNote}
+                                            onChange={(e) => setReminderNote(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                    <button 
+                                        className="admin-btn admin-btn-primary" 
+                                        style={{ fontSize: '11px', padding: '0.5rem 1rem' }}
+                                        onClick={handleAddReminder}
+                                        disabled={isUpdating || !reminderDate}
+                                    >
+                                        {isUpdating ? 'Guardando...' : 'Programar Recordatorio'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Reminders List */}
+                        <div className={styles.reminderList}>
+                            {(!lead.reminders || lead.reminders.length === 0) ? (
+                                <p style={{ color: 'var(--admin-text-light)', fontSize: '0.85rem' }}>No hay recordatorios programados.</p>
+                            ) : (
+                                [...lead.reminders].sort((a, b) => b.scheduled_for?.seconds - a.scheduled_for?.seconds).map(reminder => {
+                                    const dateObj = reminder.scheduled_for ? new Date(reminder.scheduled_for.seconds * 1000) : new Date();
+                                    const isPending = reminder.status === 'pending';
+                                    const isOverdue = isPending && dateObj <= new Date();
+
+                                    return (
+                                        <div key={reminder.id} className={`${styles.reminderCard} ${styles[reminder.status]}`} style={isOverdue ? { borderColor: 'var(--admin-accent)', boxShadow: '0 0 10px rgba(238, 5, 242, 0.2)' } : {}}>
+                                            <div className={styles.reminderHeader}>
+                                                <span className={styles.reminderDate} style={isOverdue ? { color: 'var(--admin-accent)' } : {}}>
+                                                    {isOverdue && '⚠️ '} 
+                                                    {dateObj.toLocaleDateString()} {dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                                {isPending && (
+                                                    <button 
+                                                        className="admin-btn admin-btn-secondary"
+                                                        style={{ fontSize: '10px', padding: '0.2rem 0.5rem' }}
+                                                        onClick={() => handleCompleteReminder(reminder)}
+                                                        disabled={isUpdating}
+                                                    >
+                                                        Completar
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {reminder.note && <p className={styles.reminderNote}>{reminder.note}</p>}
+                                            <div className={styles.reminderMeta}>
+                                                <span>Programado por: {reminder.created_by_name || 'Usuario'}</span>
+                                                <span>{reminder.status === 'completed' ? '✅ Completado' : '⏳ Pendiente'}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
                         </div>
                     </div>
 
                     {/* Impact & Project Description */}
                     <div className={styles.sectionCard}>
-                        <section style={{ marginBottom: '2rem' }}>
-                            <h3 className="admin-h3" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-success)' }}></span>
-                                Impacto de Negocio
-                            </h3>
-                            <p style={{ padding: '1.5rem', background: 'var(--admin-surface)', borderRadius: '1.25rem', fontWeight: 'bold', lineHeight: '1.6' }}>
-                                {lead.data?.impact || 'No se especificó el impacto esperado.'}
-                            </p>
-                        </section>
+                        {isGrowOrArchitect && (
+                            <section style={{ marginBottom: '1.5rem' }}>
+                                <h3 className="admin-h3" style={{ fontSize: '12px', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-success)', height: '10px' }}></span>
+                                    Impacto de Negocio
+                                </h3>
+                                {isEditing ? (
+                                    <textarea 
+                                        className={styles.editTextarea} 
+                                        value={editData.impact || ''} 
+                                        onChange={e => setEditData({ ...editData, impact: e.target.value })}
+                                    />
+                                ) : (
+                                    <p style={{ padding: '1rem', background: 'var(--admin-surface)', borderRadius: '0.75rem', fontWeight: 'bold', lineHeight: '1.4', fontSize: '12px', margin: 0 }}>
+                                        {lead.data?.impact || 'No se especificó el impacto esperado.'}
+                                    </p>
+                                )}
+                            </section>
+                        )}
 
                         <section>
-                            <h3 className="admin-h3" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-primary)' }}></span>
+                            <h3 className="admin-h3" style={{ fontSize: '12px', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-primary)', height: '10px' }}></span>
                                 Descripción del Proyecto
                             </h3>
-                            <p style={{ color: 'var(--admin-text-muted)', fontWeight: '500', lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>
-                                {lead.data?.project_desc || 'No se proporcionó descripción detallada.'}
-                            </p>
+                            {isEditing ? (
+                                <textarea 
+                                    className={styles.editTextarea} 
+                                    value={editData.project_desc || ''} 
+                                    onChange={e => setEditData({ ...editData, project_desc: e.target.value })}
+                                    style={{ minHeight: '120px' }}
+                                />
+                            ) : (
+                                <p style={{ color: 'var(--admin-text-muted)', fontWeight: '500', lineHeight: '1.5', whiteSpace: 'pre-wrap', fontSize: '12px', margin: 0 }}>
+                                    {lead.data?.project_desc || 'No se proporcionó descripción detallada.'}
+                                </p>
+                            )}
                         </section>
                     </div>
 
                     {/* Cotizaciones Vinculadas */}
-                    <div className={styles.sectionCard}>
-                        <h3 className="admin-h3" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-accent)' }}></span>
-                            Cotizaciones Vinculadas
-                        </h3>
+                    {isGrowOrArchitect && (
+                        <div className={styles.sectionCard}>
+                            <h3 className="admin-h3" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-accent)' }}></span>
+                                Cotizaciones Vinculadas
+                            </h3>
 
-                        {/* Search and Link Existing */}
-                        <div style={{ marginBottom: '2rem', position: 'relative' }}>
-                            <label className="admin-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Vincular Cotización Existente</label>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <input 
-                                    type="text" 
-                                    value={quotationSearch} 
-                                    onChange={(e) => {
-                                        setQuotationSearch(e.target.value);
-                                        setShowQuotationResults(true);
-                                    }}
-                                    onFocus={() => setShowQuotationResults(true)}
-                                    placeholder="Buscar por código o cliente..." 
-                                    className={styles.iosInput}
-                                    style={{ flexGrow: 1 }}
-                                />
-                                {quotationSearch.trim() && (
-                                    <button 
-                                        onClick={async () => {
-                                            const found = allQuotations.find(q => q.quotationId?.toLowerCase() === quotationSearch.trim().toLowerCase());
-                                            if (found) {
-                                                await handleLinkQuotation(found.id);
-                                            } else {
-                                                showNotification("No se encontró cotización con ese código exacto.", "warning");
-                                            }
+                            {/* Search and Link Existing */}
+                            <div style={{ marginBottom: '2rem', position: 'relative' }}>
+                                <label className="admin-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Vincular Cotización Existente</label>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <input 
+                                        type="text" 
+                                        value={quotationSearch} 
+                                        onChange={(e) => {
+                                            setQuotationSearch(e.target.value);
+                                            setShowQuotationResults(true);
                                         }}
-                                        className="admin-btn admin-btn-secondary"
-                                        style={{ padding: '0.75rem 1rem', fontSize: '10px' }}
-                                    >
-                                        Vincular
-                                    </button>
+                                        onFocus={() => setShowQuotationResults(true)}
+                                        placeholder="Buscar por código o cliente..." 
+                                        className={styles.iosInput}
+                                        style={{ flexGrow: 1 }}
+                                    />
+                                    {quotationSearch.trim() && (
+                                        <button 
+                                            onClick={async () => {
+                                                const found = allQuotations.find(q => q.quotationId?.toLowerCase() === quotationSearch.trim().toLowerCase());
+                                                if (found) {
+                                                    await handleLinkQuotation(found.id);
+                                                } else {
+                                                    showNotification("No se encontró cotización con ese código exacto.", "warning");
+                                                }
+                                            }}
+                                            className="admin-btn admin-btn-secondary"
+                                            style={{ padding: '0.75rem 1rem', fontSize: '10px' }}
+                                        >
+                                            Vincular
+                                        </button>
+                                    )}
+                                </div>
+
+                                {showQuotationResults && quotationSearch.trim() && (
+                                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid var(--admin-border)', borderRadius: '1rem', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', zIndex: 100, maxHeight: '200px', overflowY: 'auto', marginTop: '5px' }}>
+                                        {allQuotations
+                                            .filter(q => q.leadId !== id)
+                                            .filter(q => 
+                                                q.quotationId?.toLowerCase().includes(quotationSearch.toLowerCase()) || 
+                                                q.clientName?.toLowerCase().includes(quotationSearch.toLowerCase())
+                                            )
+                                            .map(q => (
+                                                <div 
+                                                    key={q.id}
+                                                    onClick={() => handleLinkQuotation(q.id)}
+                                                    style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--admin-surface)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-surface)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                                >
+                                                    <div>
+                                                        <strong style={{ color: 'var(--admin-primary)', fontSize: '0.85rem' }}>{q.quotationId}</strong>
+                                                        <span style={{ fontSize: '0.75rem', color: 'var(--admin-text-muted)', marginLeft: '0.5rem' }}>({q.clientName})</span>
+                                                    </div>
+                                                    <span style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>
+                                                        {q.currency} {((q.totalCents || q.total || 0) / 100).toFixed(2)}
+                                                    </span>
+                                                </div>
+                                            ))
+                                        }
+                                    </div>
                                 )}
                             </div>
 
-                            {showQuotationResults && quotationSearch.trim() && (
-                                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid var(--admin-border)', borderRadius: '1rem', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', zIndex: 100, maxHeight: '200px', overflowY: 'auto', marginTop: '5px' }}>
-                                    {allQuotations
-                                        .filter(q => q.leadId !== id)
-                                        .filter(q => 
-                                            q.quotationId?.toLowerCase().includes(quotationSearch.toLowerCase()) || 
-                                            q.clientName?.toLowerCase().includes(quotationSearch.toLowerCase())
-                                        )
-                                        .map(q => (
-                                            <div 
-                                                key={q.id}
-                                                onClick={() => handleLinkQuotation(q.id)}
-                                                style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--admin-surface)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-surface)'}
-                                                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                                            >
-                                                <div>
-                                                    <strong style={{ color: 'var(--admin-primary)', fontSize: '0.85rem' }}>{q.quotationId}</strong>
-                                                    <span style={{ fontSize: '0.75rem', color: 'var(--admin-text-muted)', marginLeft: '0.5rem' }}>({q.clientName})</span>
+                            {/* List of linked quotations */}
+                            {quotations.length === 0 ? (
+                                <p style={{ color: 'var(--admin-text-muted)', fontSize: '0.875rem', fontStyle: 'italic', margin: 0 }}>
+                                    No hay cotizaciones vinculadas a este prospecto.
+                                </p>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    {quotations.map((q) => (
+                                        <div 
+                                            key={q.id} 
+                                            style={{ 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'space-between', 
+                                                padding: '1rem', 
+                                                background: 'var(--admin-surface)', 
+                                                borderRadius: '1rem', 
+                                                border: '1px solid var(--admin-border)' 
+                                            }}
+                                        >
+                                            <div onClick={() => router.push(`/admin/cotizaciones/${q.id}`)} style={{ cursor: 'pointer', flexGrow: 1 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <strong style={{ color: 'var(--admin-primary)', fontSize: '0.9rem' }}>{q.quotationId}</strong>
+                                                    <span className="admin-badge" style={{ fontSize: '8px', padding: '0.15rem 0.4rem', textTransform: 'uppercase' }}>
+                                                        {q.status}
+                                                    </span>
                                                 </div>
-                                                <span style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>
-                                                    {q.currency} {((q.totalCents || q.total || 0) / 100).toFixed(2)}
-                                                </span>
+                                                <p style={{ fontSize: '0.75rem', color: 'var(--admin-text-muted)', margin: '0.25rem 0 0' }}>
+                                                    Monto: {q.currency} {((q.totalCents || q.total || 0) / 100).toFixed(2)} | Fecha: {q.date?.toDate ? new Date(q.date.toDate()).toLocaleDateString() : new Date(q.date).toLocaleDateString()}
+                                                </p>
                                             </div>
-                                        ))
-                                    }
+                                            <button 
+                                                onClick={() => handleUnlinkQuotation(q.id)}
+                                                style={{ padding: '0.4rem 0.8rem', background: '#fee2e2', color: '#ef4444', fontSize: '9px', fontWeight: 'bold', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                                            >
+                                                DESVINCULAR
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </div>
+                    )}
 
-                        {/* List of linked quotations */}
-                        {quotations.length === 0 ? (
+                    {/* Documentos Comerciales */}
+                    {isGrowOrArchitect && (
+                        <div className={styles.sectionCard}>
+                            <h3 className="admin-h3" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-warning)' }}></span>
+                                Documentos Comerciales
+                            </h3>
+
+                            {/* Upload Input */}
+                            {(isGrowOrArchitect || lead.created_by === currentUserData?.uid) ? (
+                                <div className={styles.uploadContainer}>
+                                    <div style={{ background: 'var(--admin-primary)', color: 'white', padding: '0.5rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                    </div>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        onChange={(e) => handleFileUpload(e, 'BUSINESS')}
+                                        disabled={isUploadingDoc}
+                                        className={styles.uploadInput}
+                                        accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                                    />
+                                    {isUploadingDoc && <span style={{ fontSize: '10px', color: 'var(--admin-primary)', fontWeight: 'bold' }}>Subiendo...</span>}
+                                </div>
+                            ) : null}
+
+                            {/* Document List */}
+                            {(!lead.documents || lead.documents.filter(d => !d.category || d.category === 'BUSINESS').length === 0) ? (
+                                <p style={{ color: 'var(--admin-text-muted)', fontSize: '0.875rem', fontStyle: 'italic', margin: 0 }}>
+                                    No hay documentos comerciales adjuntos a este prospecto.
+                                </p>
+                            ) : (
+                                <div className={styles.docList}>
+                                    {lead.documents.filter(d => !d.category || d.category === 'BUSINESS').map(doc => {
+                                        // Visibility Logic
+                                        const canView = isGrowOrArchitect || lead.created_by === currentUserData?.uid ||
+                                                        (userPillar === 'OPERATIONS' && !doc.restricted_for_operations) ||
+                                                        (userPillar === 'SUPPORT' && !doc.restricted_for_support);
+                                        
+                                        if (!canView) return null;
+
+                                        const canToggle = isGrowOrArchitect || lead.created_by === currentUserData?.uid;
+
+                                        return (
+                                            <div key={doc.id} className={styles.docItem}>
+                                                <div className={styles.docInfo}>
+                                                    <a href={doc.url} target="_blank" rel="noopener noreferrer" className={styles.docName}>
+                                                        {doc.name}
+                                                    </a>
+                                                    <div className={styles.docMeta}>
+                                                        <span className="admin-badge" style={{ fontSize: '8px', padding: '0.15rem 0.4rem' }}>{doc.label || 'Adjunto'}</span>
+                                                        <span>Subido por {doc.uploaded_by_name}</span>
+                                                        <span>•</span>
+                                                        <span>{doc.uploaded_at?.toDate ? new Date(doc.uploaded_at.toDate()).toLocaleDateString() : 'Reciente'}</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className={styles.docActions}>
+                                                    {canToggle ? (
+                                                        <>
+                                                            <div className={styles.toggleWrapper} title="Restringido para Operaciones">
+                                                                <span>OPS</span>
+                                                                <div 
+                                                                    className={`${styles.toggleSwitch} ${doc.restricted_for_operations ? styles.active : ''}`}
+                                                                    onClick={() => handleToggleDocumentRestriction(doc.id, 'operations')}
+                                                                />
+                                                            </div>
+                                                            <div className={styles.toggleWrapper} title="Restringido para Soporte">
+                                                                <span>SUP</span>
+                                                                <div 
+                                                                    className={`${styles.toggleSwitch} ${doc.restricted_for_support ? styles.active : ''}`}
+                                                                    onClick={() => handleToggleDocumentRestriction(doc.id, 'support')}
+                                                                />
+                                                            </div>
+                                                            <a href={doc.url} target="_blank" rel="noopener noreferrer" className="admin-btn admin-btn-secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '10px' }}>
+                                                                Ver
+                                                            </a>
+                                                        </>
+                                                    ) : (
+                                                        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="admin-btn admin-btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '10px' }}>
+                                                            Ver Documento
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Requerimientos Técnicos */}
+                    <div className={styles.sectionCard}>
+                        <h3 className="admin-h3" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-success)' }}></span>
+                            Requerimientos Técnicos
+                        </h3>
+
+                        {/* Upload Input */}
+                        <div className={styles.uploadContainer}>
+                            <div style={{ background: 'var(--admin-success)', color: 'white', padding: '0.5rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            </div>
+                            <input
+                                type="file"
+                                multiple
+                                onChange={(e) => handleFileUpload(e, 'TECHNICAL')}
+                                disabled={isUploadingDoc}
+                                className={styles.uploadInput}
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                            />
+                            {isUploadingDoc && <span style={{ fontSize: '10px', color: 'var(--admin-success)', fontWeight: 'bold' }}>Subiendo...</span>}
+                        </div>
+
+                        {/* Document List */}
+                        {(!lead.documents || lead.documents.filter(d => d.category === 'TECHNICAL').length === 0) ? (
                             <p style={{ color: 'var(--admin-text-muted)', fontSize: '0.875rem', fontStyle: 'italic', margin: 0 }}>
-                                No hay cotizaciones vinculadas a este prospecto.
+                                No hay requerimientos técnicos adjuntos a este prospecto.
                             </p>
                         ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                {quotations.map((q) => (
-                                    <div 
-                                        key={q.id} 
-                                        style={{ 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            justifyContent: 'space-between', 
-                                            padding: '1rem', 
-                                            background: 'var(--admin-surface)', 
-                                            borderRadius: '1rem', 
-                                            border: '1px solid var(--admin-border)' 
-                                        }}
-                                    >
-                                        <div onClick={() => router.push(`/admin/cotizaciones/${q.id}`)} style={{ cursor: 'pointer', flexGrow: 1 }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <strong style={{ color: 'var(--admin-primary)', fontSize: '0.9rem' }}>{q.quotationId}</strong>
-                                                <span className="admin-badge" style={{ fontSize: '8px', padding: '0.15rem 0.4rem', textTransform: 'uppercase' }}>
-                                                    {q.status}
-                                                </span>
+                            <div className={styles.docList}>
+                                {lead.documents.filter(d => d.category === 'TECHNICAL').map(doc => {
+                                    return (
+                                        <div key={doc.id} className={styles.docItem}>
+                                            <div className={styles.docInfo}>
+                                                <a href={doc.url} target="_blank" rel="noopener noreferrer" className={styles.docName}>
+                                                    {doc.name}
+                                                </a>
+                                                <div className={styles.docMeta}>
+                                                    <span className="admin-badge admin-badge-success" style={{ fontSize: '8px', padding: '0.15rem 0.4rem' }}>{doc.label || 'Técnico'}</span>
+                                                    <span>Subido por {doc.uploaded_by_name}</span>
+                                                    <span>•</span>
+                                                    <span>{doc.uploaded_at?.toDate ? new Date(doc.uploaded_at.toDate()).toLocaleDateString() : 'Reciente'}</span>
+                                                </div>
                                             </div>
-                                            <p style={{ fontSize: '0.75rem', color: 'var(--admin-text-muted)', margin: '0.25rem 0 0' }}>
-                                                Monto: {q.currency} {((q.totalCents || q.total || 0) / 100).toFixed(2)} | Fecha: {q.date?.toDate ? new Date(q.date.toDate()).toLocaleDateString() : new Date(q.date).toLocaleDateString()}
-                                            </p>
+                                            
+                                            <div className={styles.docActions}>
+                                                <a href={doc.url} target="_blank" rel="noopener noreferrer" className="admin-btn admin-btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '10px' }}>
+                                                    Ver Documento
+                                                </a>
+                                            </div>
                                         </div>
-                                        <button 
-                                            onClick={() => handleUnlinkQuotation(q.id)}
-                                            style={{ padding: '0.4rem 0.8rem', background: '#fee2e2', color: '#ef4444', fontSize: '9px', fontWeight: 'bold', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                                        >
-                                            DESVINCULAR
-                                        </button>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -748,30 +1323,47 @@ export default function LeadDetailPage() {
                                     <span style={{ lineHeight: 1 }}>{quotations.length}</span>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => {
-                                    setNewValue(lead.value_estimate?.toString() || '0');
-                                    setIsUpdatingValue(!isUpdatingValue);
-                                }}
-                                className={styles.actionBtn}
-                                style={{ background: 'rgba(111, 217, 4, 0.05)', color: 'var(--admin-success)' }}
-                            >
-                                💰 {isUpdatingValue ? 'Cerrar' : 'Actualizar Valor'}
-                            </button>
+                            {isGrowOrArchitect && (
+                                <>
+                                    {hasQuotations ? (
+                                        <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(111, 217, 4, 0.05)', borderRadius: '0.75rem', border: '1px dashed var(--admin-success)', textAlign: 'center' }}>
+                                            <p style={{ margin: 0, fontSize: '10px', color: 'var(--admin-success)', fontWeight: 'bold' }}>
+                                                🔒 Valor vinculado a Cotización
+                                            </p>
+                                            <p style={{ margin: '0.25rem 0 0 0', fontSize: '9px', color: 'var(--admin-text-muted)' }}>
+                                                Para actualizar, modifica la cotización.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <button
+                                                onClick={() => {
+                                                    setNewValue(lead.value_estimate?.toString() || '0');
+                                                    setIsUpdatingValue(!isUpdatingValue);
+                                                }}
+                                                className={styles.actionBtn}
+                                                style={{ background: 'rgba(111, 217, 4, 0.05)', color: 'var(--admin-success)' }}
+                                            >
+                                                💰 {isUpdatingValue ? 'Cerrar' : 'Actualizar Valor'}
+                                            </button>
 
-                            {isUpdatingValue && (
-                                <div className="animate-slide-up" style={{ marginTop: '0.5rem' }}>
-                                    <input
-                                        type="number"
-                                        value={newValue}
-                                        onChange={(e) => setNewValue(e.target.value)}
-                                        className={styles.iosInput}
-                                        style={{ marginBottom: '0.5rem' }}
-                                    />
-                                    <button onClick={handleUpdateValue} className="admin-btn admin-btn-primary" style={{ width: '100%', padding: '0.75rem' }}>
-                                        Guardar
-                                    </button>
-                                </div>
+                                            {isUpdatingValue && (
+                                                <div className="animate-slide-up" style={{ marginTop: '0.5rem' }}>
+                                                    <input
+                                                        type="number"
+                                                        value={newValue}
+                                                        onChange={(e) => setNewValue(e.target.value)}
+                                                        className={styles.iosInput}
+                                                        style={{ marginBottom: '0.5rem' }}
+                                                    />
+                                                    <button onClick={handleUpdateValue} className="admin-btn admin-btn-primary" style={{ width: '100%', padding: '0.75rem' }}>
+                                                        Guardar
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </>
                             )}
                         </div>
 

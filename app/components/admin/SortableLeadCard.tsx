@@ -41,9 +41,15 @@ export function SortableLeadCard({ lead, onAssignClick }: SortableLeadCardProps)
                 onClick={(e) => {
                     if (transform) e.preventDefault();
                 }}
-                className={styles.leadCard}
+                className={`${styles.leadCard} ${
+                    lead.reminders?.some(r => r.status === 'pending' && (!r.scheduled_for || (r.scheduled_for?.seconds * 1000) <= Date.now())) 
+                    ? styles.reminderAlertActive 
+                    : ''
+                }`}
             >
-                <div className={styles.diagonal}></div>
+                <div className={styles.cardBg}>
+                    <div className={styles.diagonal}></div>
+                </div>
                 <div className="relative z-10">
                     <div className={styles.cardHeader}>
                         <div className={styles.badges}>

@@ -36,6 +36,16 @@ export interface UserProfile {
           'CS_L0' | 'CS_L1' | 'CS_L2' | 'CS_L3';
     created_at: any;
     last_password_change?: any;
+    team_id?: string;
+}
+
+export interface Team {
+    id: string;
+    name: string;
+    pillar: 'GROW' | 'OPERATIONS' | 'SUPPORT';
+    manager_id: string; // The uid of the team manager
+    member_ids: string[]; // List of uids of the team members
+    created_at: any;
 }
 
 export interface BusinessProfile {

@@ -1,6 +1,6 @@
 /* Lead Card Component Styles */
 .leadCard {
-  background: #ffffff;
+  background: transparent;
   padding: 1.25rem;
   border-radius: 18px;
   border: 1px solid rgba(0, 0, 0, 0.04);
@@ -8,9 +8,22 @@
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   cursor: grab;
   position: relative;
-  overflow: hidden;
+  overflow: hidden; /* Added back to crop the rotating gradient */
   display: block;
   text-decoration: none;
+}
+
+.cardBg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  border-radius: 18px;
+  z-index: 0;
+  overflow: hidden;
+  transition: all 0.3s;
 }
 
 .leadCard:hover {
@@ -158,9 +171,51 @@
   );
   opacity: 0.02;
   pointer-events: none;
+  z-index: 1;
 }
 
 @media (max-width: 768px) {
   .leadCard { padding: 1rem; }
   .title { font-size: 12px; }
+}
+
+/* --- Reminder Glowing Animation --- */
+@keyframes spin-gradient {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.reminderAlertActive {
+  position: relative;
+  z-index: 1;
+}
+
+.reminderAlertActive::before {
+  content: '';
+  position: absolute;
+  inset: -2px; /* Control border width */
+  border-radius: 18px; /* Match card border radius + 2px */
+  background: conic-gradient(from 0deg, transparent 70%, var(--admin-warning) 80%, var(--admin-primary) 100%);
+  animation: spin-gradient 2s linear infinite;
+  z-index: -1;
+  pointer-events: none;
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  padding: 2px; /* Same as inset */
+}
+
+/* We don't need to tweak the cardBg anymore since mask handles it seamlessly */
+.reminderAlertActive .cardBg {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 16px;
 }

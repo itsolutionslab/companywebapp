@@ -66,15 +66,31 @@ export default function AdminLayout({
                     setLoading(false);
                 });
 
-                // Fetch dynamic role configuration (meta-config)
-                try {
-                    const config = await getRoleConfig();
-                    if (config) {
-                        setDynamicRoles({ ...ROLES_CONFIG, ...config });
+                // Listen to global role configuration changes for instant UI updates across the company
+                let isInitialRoleLoad = true;
+                const unsubscribeRolesConfig = onSnapshot(doc(db, "settings", "roles"), (docSnapshot) => {
+                    if (docSnapshot.exists()) {
+                        const newConfig = docSnapshot.data();
+                        setDynamicRoles({ ...ROLES_CONFIG, ...newConfig });
+                        
+                        // Force reload if global permissions change while user is logged in
+                        if (!isInitialRoleLoad) {
+                            console.log("Global roles config updated. Refreshing permissions...");
+                            window.location.reload();
+                        }
+                        isInitialRoleLoad = false;
                     }
-                } catch (error) {
-                    console.error("Error fetching dynamic roles config:", error);
-                }
+                }, (error) => {
+                    console.error("Error listening to global roles config:", error);
+                });
+
+                // Attach to unsubscribe function
+                const originalUnsubscribeRole = unsubscribeRole;
+                unsubscribeRole = () => {
+                    originalUnsubscribeRole();
+                    unsubscribeRolesConfig();
+                };
+
             } else {
                 if (unsubscribeRole) {
                     unsubscribeRole();
@@ -211,6 +227,7 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath, dy
         { name: t('reservations') || 'Reservas', path: '/admin/reservas', icon: '🤝' },
         { name: t('schedules') || 'Horarios', path: '/admin/horarios', icon: '⏰' },
         { name: t('users') || 'Usuarios', path: '/admin/usuarios', icon: '👥' },
+        { name: 'Equipos', path: '/admin/teams', icon: '🏢' },
     ];
 
     const menuItems = allMenuItems.filter(item => {
