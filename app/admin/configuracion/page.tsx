@@ -202,6 +202,8 @@ export default function SettingsPage() {
         { id: 'acceso',    label: 'Acceso',    icon: '🛡️' },
     ];
 
+    const uniqueRoles = Array.from(new Map(Object.values(ROLES_CONFIG).map(r => [r.id, r])).values());
+
     return (
         <div className="admin-container max-w-4xl pb-20 px-4 md:px-0 animate-in fade-in slide-in-from-bottom-8 duration-1000">
             <header className="pt-8 pb-10 relative">
@@ -357,14 +359,14 @@ export default function SettingsPage() {
                                                     className="admin-input cursor-pointer"
                                                 >
                                                     <optgroup label="ADMINISTRACIÓN ESTRATÉGICA">
-                                                        {Object.values(ROLES_CONFIG).filter(r => r.pillar === 'ADMIN').map(r => (
+                                                        {uniqueRoles.filter(r => r.pillar === 'ADMIN').map(r => (
                                                             <option key={r.id} value={r.id}>{r.label}</option>
                                                         ))}
                                                         <option value="staff">Personal General (Staff)</option>
                                                     </optgroup>
                                                     {(['GROW','OPERATIONS','SUPPORT'] as Pillar[]).map(pillar => (
                                                         <optgroup key={pillar} label={PILLAR_META[pillar].label.toUpperCase()}>
-                                                            {Object.values(ROLES_CONFIG).filter(r => r.pillar === pillar).map(r => (
+                                                            {uniqueRoles.filter(r => r.pillar === pillar).map(r => (
                                                                 <option key={r.id} value={r.id}>{r.label}</option>
                                                             ))}
                                                         </optgroup>

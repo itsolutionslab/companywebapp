@@ -298,46 +298,46 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath, dy
             </header>
 
             {/* Sidebar - Desktop Only */}
-            <aside className="hidden md:flex w-80 bg-white shadow-2xl flex-shrink-0 z-50 border-r border-gray-100 h-screen overflow-y-auto relative">
-                <div className="p-10 flex flex-col min-h-full w-full">
-                    <div className="flex items-center space-x-4 mb-16">
-                        <div className="w-12 h-12 bg-[#0511F2] rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-xl shadow-blue-200 relative overflow-hidden group">
+            <aside className="hidden md:flex w-[260px] bg-white shadow-[0_0_40px_rgba(0,0,0,0.03)] flex-shrink-0 z-50 border-r border-gray-100 h-screen overflow-y-auto relative">
+                <div className="p-6 flex flex-col min-h-full w-full">
+                    <div className="flex items-center space-x-3 mb-10 pl-2">
+                        <div className="w-10 h-10 bg-[#0511F2] rounded-xl flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-200 relative overflow-hidden group flex-shrink-0">
                             BP
-                            <div className="absolute top-0 right-0 w-5 h-5 bg-[#EAF207] translate-x-2.5 -translate-y-2.5 rotate-45 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"></div>
+                            <div className="absolute top-0 right-0 w-4 h-4 bg-[#EAF207] translate-x-2 -translate-y-2 rotate-45 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"></div>
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-2xl font-black text-[#0511F2] tracking-tighter leading-none font-heading uppercase">BRECOMPERU</span>
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#26A3BF] mt-1">Consultora Global</span>
+                            <span className="text-lg font-black text-[#0511F2] tracking-tighter leading-none font-heading uppercase">BRECOMPERU</span>
+                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-[#26A3BF] mt-1">Consultora Global</span>
                         </div>
                     </div>
 
-                    <nav className="flex-grow space-y-2">
-                        <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6 ml-4">MENÚ ADMINISTRATIVO</p>
+                    <nav className="flex-grow space-y-1.5">
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-4 ml-3">Menú Principal</p>
                         {menuItems.map((item) => (
                             <Link
                                 key={item.path}
                                 href={getCleanPath(item.path)}
-                                className={`flex items-center space-x-4 p-4 rounded-[1.5rem] transition-all duration-500 group relative ${currentAdminPath === item.path
-                                    ? "bg-[#0511F2] text-white shadow-2xl shadow-blue-200 scale-[1.05] -translate-x-2"
-                                    : "text-gray-500 hover:bg-gray-50 hover:text-[#0511F2]"
+                                className={`flex items-center space-x-3 py-2.5 px-3 rounded-xl transition-all duration-300 group relative ${currentAdminPath === item.path
+                                    ? "bg-[#0511F2]/10 text-[#0511F2] font-black"
+                                    : "text-gray-500 font-bold hover:bg-gray-50 hover:text-[#0511F2]"
                                     }`}
                             >
-                                <span className={`text-2xl transition-transform duration-700 ${currentAdminPath === item.path ? 'scale-110 rotate-3' : 'group-hover:scale-110 group-hover:-rotate-3'}`}>{item.icon}</span>
-                                <span className="font-black text-[12px] uppercase tracking-widest">{item.name}</span>
+                                <span className={`text-lg transition-transform duration-300 ${currentAdminPath === item.path ? 'scale-110' : 'group-hover:scale-110'}`}>{item.icon}</span>
+                                <span className="text-[10px] uppercase tracking-wider">{item.name}</span>
                                 {currentAdminPath === item.path && (
-                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#EAF207] rounded-r-full"></div>
+                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#0511F2] rounded-r-full"></div>
                                 )}
                             </Link>
                         ))}
                     </nav>
 
-                    <div className="mt-auto pt-10 border-t border-gray-100 space-y-8">
-                        <div className="flex bg-gray-50 rounded-[1.5rem] p-1.5 border border-gray-100 shadow-inner">
+                    <div className="mt-auto pt-8 border-t border-gray-100 space-y-6">
+                        <div className="flex bg-gray-50 rounded-xl p-1 border border-gray-100 shadow-inner">
                             {langOptions.map((l) => (
                                 <button
                                     key={l}
                                     onClick={() => setLang(l as any)}
-                                    className={`flex-1 text-[11px] py-3 rounded-[1.25rem] transition-all uppercase font-black ${lang === l ? "bg-white shadow-lg text-[#EE05F2]" : "text-gray-400 hover:text-gray-600"
+                                    className={`flex-1 text-[9px] py-2 rounded-lg transition-all uppercase font-black ${lang === l ? "bg-white shadow-sm text-[#EE05F2]" : "text-gray-400 hover:text-gray-600"
                                         }`}
                                 >
                                     {l}
@@ -345,26 +345,25 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath, dy
                             ))}
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-1.5">
                             <Link
                                 href={getCleanPath("/admin/configuracion")}
-                                className={`w-full flex items-center space-x-4 p-4 rounded-[1.5rem] transition-all duration-500 group ${currentAdminPath === '/admin/configuracion' ? "bg-[#EE05F2]/5 text-[#EE05F2] font-black" : "text-gray-400 hover:text-[#0511F2] hover:bg-gray-50"}`}
+                                className={`w-full flex items-center space-x-3 py-2.5 px-3 rounded-xl transition-all duration-300 group ${currentAdminPath === '/admin/configuracion' ? "bg-[#EE05F2]/10 text-[#EE05F2] font-black" : "text-gray-500 font-bold hover:text-[#0511F2] hover:bg-gray-50"}`}
                             >
-                                <span className="text-2xl group-hover:rotate-90 transition-transform duration-700">⚙️</span>
-                                <span className="font-black text-[11px] uppercase tracking-widest">{t('settings')}</span>
+                                <span className="text-lg group-hover:rotate-90 transition-transform duration-500">⚙️</span>
+                                <span className="text-[10px] uppercase tracking-wider">{t('settings')}</span>
                             </Link>
 
                             <button
                                 onClick={handleLogout}
-                                className="w-full flex items-center space-x-4 p-4 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-[1.5rem] transition-all duration-500 group font-black uppercase tracking-widest text-[11px]"
+                                className="w-full flex items-center space-x-3 py-2.5 px-3 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-300 group font-bold uppercase tracking-wider text-[10px]"
                             >
-                                <span className="text-2xl group-hover:-translate-x-1 transition-transform">🚪</span>
+                                <span className="text-lg group-hover:-translate-x-1 transition-transform">🚪</span>
                                 <span>{t('logout')}</span>
                             </button>
                         </div>
                     </div>
                 </div>
-                <div className="diagonal-accent"></div>
             </aside>
 
             {/* Main Content */}
@@ -374,19 +373,27 @@ function AdminLayoutContent({ children, handleLogout, role, currentAdminPath, dy
                 </div>
             </main>
 
-            {/* Bottom Navigation - Mobile Only */}
-            <nav className="md:hidden fixed bottom-8 left-6 right-6 bg-white/95 backdrop-blur-3xl border border-white px-2 py-3 z-50 flex items-center justify-around shadow-2xl shadow-blue-900/10 rounded-[2.5rem]">
+            {/* Bottom Navigation - Mobile Only (Premium Light + Solid Active) */}
+            <nav className="md:hidden fixed bottom-6 left-4 right-4 bg-white/95 backdrop-blur-2xl border-[1.5px] border-gray-100 px-2 py-2.5 z-50 flex items-center justify-around shadow-[0_15px_40px_-5px_rgba(5,17,242,0.2)] rounded-3xl">
                 {menuItems.slice(0, 5).map((item) => {
                     const isActive = currentAdminPath === item.path;
+                    // Format names for tiny nav bar
+                    let displayName = item.name;
+                    if (displayName === 'Pipeline Maestro') displayName = 'Pipeline';
+                    
                     return (
                         <Link
                             key={item.path}
                             href={getCleanPath(item.path)}
                             onClick={() => setShowSettings(false)}
-                            className={`flex flex-col items-center justify-center p-3 rounded-[1.5rem] transition-all relative active:scale-90 ${isActive ? "bg-[#0511F2] text-white shadow-xl shadow-blue-300 scale-110 -translate-y-2" : "text-gray-400"}`}
+                            className={`flex flex-col items-center justify-center min-w-[60px] transition-all duration-300 ${isActive ? "text-[#0511F2]" : "text-gray-400 hover:text-gray-500"}`}
                         >
-                            <span className={`text-xl transition-transform duration-500 ${isActive ? "scale-110" : "scale-100"}`}>{item.icon}</span>
-                            {isActive && <span className="text-[8px] uppercase font-black tracking-widest mt-1.5 animate-in slide-in-from-bottom-2 duration-500">{item.name}</span>}
+                            <div className={`flex items-center justify-center w-14 h-8 rounded-full transition-all duration-300 ${isActive ? "bg-[#0511F2] text-white shadow-md shadow-blue-500/30" : "bg-transparent"}`}>
+                                <span className={`text-[20px] transition-transform duration-300 ${isActive ? "scale-105" : "scale-100"}`}>{item.icon}</span>
+                            </div>
+                            <span className={`text-[9px] uppercase mt-1.5 text-center leading-none transition-all duration-300 ${isActive ? "font-black opacity-100 tracking-wider" : "font-bold opacity-80 tracking-wide"}`}>
+                                {displayName}
+                            </span>
                         </Link>
                     );
                 })}

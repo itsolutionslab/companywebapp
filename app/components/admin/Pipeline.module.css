@@ -3,11 +3,33 @@
   display: flex;
   gap: 1.5rem;
   overflow-x: auto;
-  padding-bottom: 3rem;
-  min-height: calc(100vh - 350px);
+  padding-bottom: 1rem;
+  height: calc(100vh - 180px);
+  /* Limit height to enable internal scrolling */
+  min-height: 400px;
   padding-top: 0.5rem;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+/* Modern horizontal scrollbar for container */
+.container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.container::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+}
+
+.container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.25);
 }
 
 .column {
@@ -16,6 +38,8 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  height: 100%;
+  /* Fill container height */
 }
 
 .columnHeader {
@@ -23,6 +47,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 0.5rem;
+  flex-shrink: 0;
 }
 
 .headerActions {
@@ -42,7 +67,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .columnTitle {
@@ -66,25 +91,48 @@
 
 .columnBody {
   flex: 1;
-  border-radius: 20px;
-  padding: 1.25rem 0.75rem;
+  border-radius: 16px;
+  padding: 1rem 0.5rem;
   border: 1px solid rgba(0, 0, 0, 0.04);
-  background: rgba(245, 245, 247, 0.7);
+  background: rgba(245, 245, 247, 0.6);
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
-  min-height: 500px;
   position: relative;
-  overflow: hidden;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+  overflow-y: auto;
+  /* Enable internal vertical scroll */
+  overflow-x: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+/* Modern vertical scrollbar for column */
+.columnBody::-webkit-scrollbar {
+  width: 6px;
+}
+
+.columnBody::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 8px 0;
+}
+
+.columnBody::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+}
+
+.columnBody::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.25);
 }
 
 .cardsStack {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  flex: 1;
+  gap: 0.85rem;
+  min-height: min-content;
+  padding: 0.25rem;
 }
 
 .columnBody.isOver {
@@ -107,7 +155,9 @@
   transition: var(--admin-transition);
 }
 
-.emptyIcon { font-size: 32px; }
+.emptyIcon {
+  font-size: 32px;
+}
 
 .diagonal {
   position: absolute;
@@ -115,13 +165,11 @@
   right: -25px;
   width: 120px;
   height: 120px;
-  background: repeating-linear-gradient(
-    -45deg,
-    var(--admin-warning),
-    var(--admin-warning) 3px,
-    transparent 3px,
-    transparent 12px
-  );
+  background: repeating-linear-gradient(-45deg,
+      var(--admin-warning),
+      var(--admin-warning) 3px,
+      transparent 3px,
+      transparent 12px);
   opacity: 0.02;
   pointer-events: none;
 }
@@ -164,10 +212,18 @@
 }
 
 @media (max-width: 768px) {
-  .column { width: 260px; }
-  .container { gap: 1rem; padding-bottom: 2rem; }
+  .column {
+    width: 260px;
+  }
+
+  .container {
+    gap: 1rem;
+    padding-bottom: 2rem;
+  }
 }
 
 @media (max-width: 480px) {
-  .column { width: 85vw; }
+  .column {
+    width: 85vw;
+  }
 }

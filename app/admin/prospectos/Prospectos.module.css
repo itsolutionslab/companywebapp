@@ -1,6 +1,6 @@
 /* Prospectos Main Page Styles */
 .pageContainer {
-  padding-bottom: 5rem;
+  padding-bottom: 0.5rem;
   animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -38,99 +38,281 @@
   }
 }
 
-/* Domain Header Badge */
-.domainBadgeHeader {
-  padding: 1rem 1.5rem;
-  background: rgba(5, 17, 242, 0.05);
-  border-radius: var(--admin-radius-xl);
-  border: 1px solid rgba(5, 17, 242, 0.1);
+/* --- COMPACT HEADER REDESIGN --- */
+.topHeaderRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 1rem;
+  gap: 1.5rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  margin-bottom: 1rem;
 }
 
-.domainInfo {
+.domainHeaderCompact {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.domainIconCompact {
+  width: 2rem;
+  height: 2rem;
+  background: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+}
+
+.domainTitleCompact {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--admin-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.headerActionsCompact {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.domainIcon {
-  width: 2.5rem;
-  height: 2.5rem;
+.searchBoxCompact {
+  position: relative;
+  flex: 1;
+  max-width: 320px;
+}
+
+.searchInputCompact {
+  width: 100%;
+  padding: 8px 1rem 8px 2.25rem;
+  background: #f8f9fa;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--admin-text-main);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.searchInputCompact:focus {
   background: white;
-  border-radius: var(--admin-radius-sm);
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(5, 17, 242, 0.05);
+}
+
+.searchIconCompact {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #adb5bd;
+}
+
+.toolbarRow {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-  shadow: var(--admin-shadow-sm);
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-.domainTitle {
-  font-size: 12px;
-  font-weight: 900;
-  color: var(--admin-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
+.tabsCompact {
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
 }
 
-.domainSubtitle {
-  font-size: 10px;
-  color: var(--admin-text-light);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-top: 0.125rem;
-}
-
-.countIndicator {
-  display: none;
+.tabCompact {
+  display: flex;
   align-items: center;
-  gap: 0.75rem;
-}
-
-@media (min-width: 768px) {
-  .countIndicator {
-    display: flex;
-  }
-}
-
-.countText {
+  gap: 0.4rem;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
   font-size: 10px;
-  font-weight: 900;
+  font-weight: 800;
+  color: var(--admin-text-light);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tabCompact:hover:not(.tabCompactLocked) {
+  background: rgba(5, 17, 242, 0.04);
+  color: var(--admin-primary);
+}
+
+.tabCompactActive {
+  background: white;
+  color: var(--admin-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.tabCompactLocked {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+.filtersCompact {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filterGroupCompact {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filterLabelCompact {
+  font-size: 10px;
+  font-weight: 800;
   color: var(--admin-text-light);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+}
+
+.filterSelectCompact,
+.filterInputCompact {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: white;
+  font-size: 11px;
+  font-family: inherit;
+  color: var(--admin-text-main);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filterSelectCompact:hover,
+.filterInputCompact:hover {
+  border-color: var(--admin-primary);
+}
+
+.btnPrimaryCompact {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: var(--admin-primary);
+  border: none;
+  font-size: 10px;
+  font-weight: 800;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(5, 17, 242, 0.2);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btnPrimaryCompact:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(5, 17, 242, 0.3);
+}
+
+.toggleContainerCompact {
+  display: flex;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.toggleBtnCompact {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--admin-text-light);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggleBtnCompactActive {
+  background: white;
+  color: var(--admin-primary);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .pulseDot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
+  background-color: var(--admin-primary);
   border-radius: 50%;
-  background: var(--admin-primary);
   animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
   0% {
-    transform: scale(1);
-    opacity: 1;
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(5, 17, 242, 0.5);
   }
 
-  50% {
-    transform: scale(1.5);
-    opacity: 0.5;
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(5, 17, 242, 0);
   }
 
   100% {
-    transform: scale(1);
-    opacity: 1;
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(5, 17, 242, 0);
   }
 }
 
-/* ─── Modal System ─ Mobile First (Bottom Sheet with Nav Coexistence) ──── */
+.countTextCompact {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--admin-text-light);
+  text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+  .topHeaderRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .searchBoxCompact {
+    max-width: 100%;
+  }
+
+  .headerActionsCompact {
+    justify-content: space-between;
+  }
+
+  .toolbarRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+
+/* ─── Modal System ─ Mobile First (Centralized Dialog) ──── */
 .modalOverlay {
   position: fixed;
   inset: 0;
@@ -139,80 +321,46 @@
   -webkit-backdrop-filter: blur(12px);
   z-index: 1000;
   display: flex;
-  align-items: flex-end;
-  /* Dock to bottom on mobile */
+  align-items: center;
   justify-content: center;
-  padding: 0;
+  padding: 1rem;
 }
 
 .modalContent {
   width: 100%;
-  max-width: 100%;
-  max-height: 92dvh;
-  /* Gap at top for native feeling */
+  max-width: 620px;
+  max-height: 85dvh;
   background: #ffffff;
-  border-radius: 28px 28px 0 0;
-  /* Elegant top rounded corners only on mobile */
+  border-radius: 24px;
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.18);
-  animation: sheetUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  animation: cardIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes sheetUp {
+@keyframes cardIn {
   from {
-    transform: translateY(100%);
+    transform: scale(0.95) translateY(10px);
+    opacity: 0;
   }
 
   to {
     transform: none;
+    opacity: 1;
   }
 }
 
 /* ─── Desktop override ──────────────────────────── */
 @media (min-width: 640px) {
   .modalOverlay {
-    align-items: center;
     padding: 1.5rem;
   }
 
   .modalContent {
-    max-width: 620px;
     max-height: 90dvh;
     border-radius: 28px;
-    animation: cardIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  @keyframes cardIn {
-    from {
-      transform: scale(0.94) translateY(16px);
-      opacity: 0;
-    }
-
-    to {
-      transform: none;
-      opacity: 1;
-    }
-  }
-}
-
-/* Pull indicator (mobile only) */
-.modalContent::before {
-  content: '';
-  display: block;
-  width: 40px;
-  height: 4px;
-  border-radius: 2px;
-  background: #d1d1d6;
-  margin: 10px auto 0;
-  flex-shrink: 0;
-}
-
-@media (min-width: 640px) {
-  .modalContent::before {
-    display: none;
   }
 }
 

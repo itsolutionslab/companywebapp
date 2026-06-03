@@ -13,6 +13,7 @@ import PipelineBoard from "@/components/admin/PipelineBoard";
 
 export type ViewMode = 'PIPELINE' | 'TABLE';
 export type Domain = 'GROW' | 'OPERATIONS' | 'SUPPORT';
+export type DateFilterType = 'ALL_TIME' | 'THIS_WEEK' | 'THIS_MONTH' | 'THIS_YEAR' | 'EXACT_DATE' | 'DATE_RANGE';
 
 import styles from "./Prospectos.module.css";
 
@@ -36,6 +37,11 @@ export default function ProspectosPage() {
         solutions_architect_id: '',
         dev_team: ''
     });
+
+    // Date Filters
+    const [dateFilterType, setDateFilterType] = useState<DateFilterType>('THIS_MONTH');
+    const [exactDate, setExactDate] = useState<string>('');
+    const [dateRange, setDateRange] = useState<{start: string, end: string}>({start: '', end: ''});
 
     // Form State
     const [formData, setFormData] = useState({
@@ -144,9 +150,39 @@ export default function ProspectosPage() {
                 email.includes(searchTermLower) ||
                 company.includes(searchTermLower);
 
-            return matchesDomain && matchesSearch;
+            // Date filtering
+            let matchesDate = true;
+            const createdAtStr = lead.audit_logs?.created_at;
+            let leadDate: Date | null = null;
+            if (createdAtStr) {
+                if (typeof createdAtStr.toDate === 'function') leadDate = createdAtStr.toDate();
+                else leadDate = new Date(createdAtStr);
+            }
+
+            if (leadDate && dateFilterType !== 'ALL_TIME') {
+                const now = new Date();
+                if (dateFilterType === 'THIS_WEEK') {
+                    const day = now.getDay();
+                    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+                    const firstDayOfWeek = new Date(now.setDate(diff));
+                    firstDayOfWeek.setHours(0,0,0,0);
+                    if (leadDate < firstDayOfWeek) matchesDate = false;
+                } else if (dateFilterType === 'THIS_MONTH') {
+                    if (leadDate.getMonth() !== now.getMonth() || leadDate.getFullYear() !== now.getFullYear()) matchesDate = false;
+                } else if (dateFilterType === 'THIS_YEAR') {
+                    if (leadDate.getFullYear() !== now.getFullYear()) matchesDate = false;
+                } else if (dateFilterType === 'EXACT_DATE' && exactDate) {
+                    const lDateStr = leadDate.toISOString().split('T')[0];
+                    if (lDateStr !== exactDate) matchesDate = false;
+                } else if (dateFilterType === 'DATE_RANGE' && dateRange.start && dateRange.end) {
+                    const lDateStr = leadDate.toISOString().split('T')[0];
+                    if (lDateStr < dateRange.start || lDateStr > dateRange.end) matchesDate = false;
+                }
+            }
+
+            return matchesDomain && matchesSearch && matchesDate;
         });
-    }, [leads, activeDomain, searchTerm]);
+    }, [leads, activeDomain, searchTerm, dateFilterType, exactDate, dateRange, currentUserData, userLevel]);
 
     const getStatusColor = (status: LeadStatus) => {
         const s = status as string;
@@ -228,6 +264,20 @@ export default function ProspectosPage() {
         }
     };
 
+    const growUsers = useMemo(() => staffUsers.filter(u => {
+        const roleStr = u.role || '';
+        const roleConfig = ROLES_CONFIG[roleStr.toUpperCase()] || ROLES_CONFIG[roleStr.toLowerCase()] || ROLES_CONFIG[roleStr];
+        const isGrow = roleConfig?.pillar === 'GROW';
+        const isCreator = assignLead ? u.uid === assignLead.created_by : false;
+        return isGrow || isCreator;
+    }), [staffUsers, assignLead]);
+
+    const architectUsers = useMemo(() => staffUsers.filter(u => {
+        const roleStr = u.role || '';
+        const roleConfig = ROLES_CONFIG[roleStr.toUpperCase()] || ROLES_CONFIG[roleStr.toLowerCase()] || ROLES_CONFIG[roleStr];
+        return roleConfig?.id === 'OPS_L4';
+    }), [staffUsers]);
+
     if (loading) {
         return (
             <div className={styles.loadingBox}>
@@ -251,40 +301,59 @@ export default function ProspectosPage() {
 
     return (
         <div className={styles.pageContainer}>
-            {/* Header */}
-            <div className={styles.actionBar}>
-                <div className={styles.controlsGroup}>
-                    <button
-                        onClick={() => {
-                            setFormData(prev => ({ ...prev, targetDomain: activeDomain }));
-                            setIsCreating(true);
-                        }}
-                        className="admin-btn admin-btn-primary"
-                    >
-                        <span>➕</span>
-                        NUEVO LEAD
-                    </button>
+            {/* Top Header Row */}
+            <div className={styles.topHeaderRow}>
+                <div className={styles.domainHeaderCompact}>
+                    <div className={styles.domainIconCompact}>
+                        {activeDomain === 'GROW' ? '📈' : activeDomain === 'OPERATIONS' ? '⚙️' : '🤝'}
+                    </div>
+                    <h3 className={styles.domainTitleCompact}>
+                        {activeDomain === 'GROW' ? 'Dominio de Crecimiento' : activeDomain === 'OPERATIONS' ? 'Dominio de Operaciones' : 'Dominio de Soporte'}
+                    </h3>
+                </div>
 
-                    <div className={styles.toggleContainer}>
+                <div className={styles.searchBoxCompact}>
+                    <span className={styles.searchIconCompact}>🔍</span>
+                    <input
+                        type="text"
+                        placeholder="Buscar por cliente o empresa..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className={styles.searchInputCompact}
+                    />
+                </div>
+
+                <div className={styles.headerActionsCompact}>
+                    <div className={styles.toggleContainerCompact}>
                         <button
                             onClick={() => setViewMode('PIPELINE')}
-                            className={`${styles.toggleBtn} ${viewMode === 'PIPELINE' ? styles.toggleBtnActive : ''}`}
+                            className={`${styles.toggleBtnCompact} ${viewMode === 'PIPELINE' ? styles.toggleBtnCompactActive : ''}`}
                         >
                             PIPELINE
                         </button>
                         <button
                             onClick={() => setViewMode('TABLE')}
-                            className={`${styles.toggleBtn} ${viewMode === 'TABLE' ? styles.toggleBtnActive : ''}`}
+                            className={`${styles.toggleBtnCompact} ${viewMode === 'TABLE' ? styles.toggleBtnCompactActive : ''}`}
                         >
                             TABLA
                         </button>
                     </div>
+
+                    <button
+                        onClick={() => {
+                            setFormData(prev => ({ ...prev, targetDomain: activeDomain }));
+                            setIsCreating(true);
+                        }}
+                        className={styles.btnPrimaryCompact}
+                    >
+                        <span>➕</span> NUEVO LEAD
+                    </button>
                 </div>
             </div>
 
-            {/* Domain Navigation Tabs */}
-            <div className={styles.tabsPanel}>
-                <div className={styles.domainTabsGroup}>
+            {/* Toolbar Row */}
+            <div className={styles.toolbarRow}>
+                <div className={styles.tabsCompact}>
                     {(['GROW', 'OPERATIONS', 'SUPPORT'] as Domain[]).map((domain) => {
                         const isLocked = !canSwitchDomain && userPillar !== domain;
                         return (
@@ -292,7 +361,7 @@ export default function ProspectosPage() {
                                 key={domain}
                                 disabled={isLocked}
                                 onClick={() => setActiveDomain(domain)}
-                                className={`${styles.domainTab} ${activeDomain === domain ? styles.domainTabActive : ''} ${isLocked ? styles.domainTabLocked : ''}`}
+                                className={`${styles.tabCompact} ${activeDomain === domain ? styles.tabCompactActive : ''} ${isLocked ? styles.tabCompactLocked : ''}`}
                             >
                                 <span>{domain === 'GROW' ? '📈' : domain === 'OPERATIONS' ? '⚙️' : '🤝'}</span>
                                 {domain}
@@ -301,40 +370,60 @@ export default function ProspectosPage() {
                     })}
                 </div>
 
-                <div className={styles.searchBox}>
-                    <span className={styles.searchIcon}>🔍</span>
-                    <input
-                        type="text"
-                        placeholder="Buscar por cliente o empresa..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className={styles.searchInput}
-                    />
+                <div className={styles.filtersCompact}>
+                    <div className={styles.filterGroupCompact}>
+                        <span className={styles.filterLabelCompact}>📅 Periodo:</span>
+                        <select 
+                            className={styles.filterSelectCompact}
+                            value={dateFilterType}
+                            onChange={(e) => setDateFilterType(e.target.value as DateFilterType)}
+                        >
+                            <option value="THIS_MONTH">Este Mes</option>
+                            <option value="THIS_WEEK">Esta Semana</option>
+                            <option value="THIS_YEAR">Este Año</option>
+                            <option value="EXACT_DATE">Fecha Exacta</option>
+                            <option value="DATE_RANGE">Rango de Fechas</option>
+                            <option value="ALL_TIME">Todo</option>
+                        </select>
+                    </div>
+
+                    {dateFilterType === 'EXACT_DATE' && (
+                        <div className={styles.filterGroupCompact}>
+                            <input 
+                                type="date" 
+                                className={styles.filterInputCompact}
+                                value={exactDate}
+                                onChange={(e) => setExactDate(e.target.value)}
+                            />
+                        </div>
+                    )}
+
+                    {dateFilterType === 'DATE_RANGE' && (
+                        <div className={styles.filterGroupCompact}>
+                            <input 
+                                type="date" 
+                                className={styles.filterInputCompact}
+                                value={dateRange.start}
+                                onChange={(e) => setDateRange(prev => ({...prev, start: e.target.value}))}
+                            />
+                            <span className={styles.filterLabelCompact}>a</span>
+                            <input 
+                                type="date" 
+                                className={styles.filterInputCompact}
+                                value={dateRange.end}
+                                onChange={(e) => setDateRange(prev => ({...prev, end: e.target.value}))}
+                            />
+                        </div>
+                    )}
+
+                    <div className={styles.filterGroupCompact} style={{marginLeft: '0.5rem'}}>
+                        <span className={styles.countTextCompact}>{filteredLeads.length} Items</span>
+                        <div className={styles.pulseDot}></div>
+                    </div>
                 </div>
             </div>
 
-            {/* Domain Info Header */}
-            <div className={styles.domainBadgeHeader}>
-                <div className={styles.domainInfo}>
-                    <div className={styles.domainIcon}>
-                        {activeDomain === 'GROW' ? '📈' : activeDomain === 'OPERATIONS' ? '⚙️' : '🤝'}
-                    </div>
-                    <div>
-                        <h3 className={styles.domainTitle}>
-                            {activeDomain === 'GROW' ? 'Dominio de Crecimiento (Ventas)' : activeDomain === 'OPERATIONS' ? 'Dominio de Operaciones (Delivery)' : 'Dominio de Soporte (Continuidad)'}
-                        </h3>
-                        <p className={styles.domainSubtitle}>
-                            {activeDomain === 'GROW' ? 'Convierte leads en contratos cerrados' : activeDomain === 'OPERATIONS' ? 'Garantiza la entrega de valor y calidad técnica' : 'Fomenta la retención y expansión de cuentas'}
-                        </p>
-                    </div>
-                </div>
-                <div className={styles.countIndicator}>
-                    <span className={styles.countText}>{filteredLeads.length} Items Encontrados</span>
-                    <div className={styles.pulseDot}></div>
-                </div>
-            </div>
-
-            {/* Leads List / Board Container */}
+            {/* Main Content Area */}
             {viewMode === 'PIPELINE' ? (
                 <PipelineBoard
                     leads={filteredLeads}
@@ -608,7 +697,7 @@ export default function ProspectosPage() {
                                     onChange={e => setAssignFormData({...assignFormData, owner_id: e.target.value})}
                                 >
                                     <option value="">-- Sin Asignar --</option>
-                                    {staffUsers.map(u => (
+                                    {growUsers.map(u => (
                                         <option key={u.uid} value={u.uid}>{u.name || u.email || u.uid}</option>
                                     ))}
                                 </select>
@@ -621,7 +710,7 @@ export default function ProspectosPage() {
                                     onChange={e => setAssignFormData({...assignFormData, solutions_architect_id: e.target.value})}
                                 >
                                     <option value="">-- Sin Asignar --</option>
-                                    {staffUsers.map(u => (
+                                    {architectUsers.map(u => (
                                         <option key={u.uid} value={u.uid}>{u.name || u.email || u.uid}</option>
                                     ))}
                                 </select>
