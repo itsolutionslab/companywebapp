@@ -37,6 +37,7 @@ export interface UserProfile {
     created_at: any;
     last_password_change?: any;
     team_id?: string;
+    disabled?: boolean;
 }
 
 export interface Team {

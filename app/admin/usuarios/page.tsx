@@ -45,6 +45,15 @@ export default function UsersPage() {
     const [newRole, setNewRole] = useState<UserProfile['role']>('staff');
     const [editLoading, setEditLoading] = useState(false);
 
+    // Password Change State
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [userToPasswordChange, setUserToPasswordChange] = useState<UserProfile | null>(null);
+    const [newPassword, setNewPassword] = useState("");
+    const [passwordLoading, setPasswordLoading] = useState(false);
+
+    // Status Toggle State
+    const [statusLoading, setStatusLoading] = useState(false);
+
     const currentUserUid = auth.currentUser?.uid;
 
     const roleHierarchy: Record<string, number> = {
@@ -203,6 +212,100 @@ export default function UsersPage() {
         }
     };
 
+    const handleToggleStatus = async (user: UserProfile) => {
+        if (!auth.currentUser) return;
+        setStatusLoading(true);
+        try {
+            const idToken = await auth.currentUser.getIdToken();
+            const res = await fetch('/api/admin/users/manage', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({
+                    action: 'toggle_status',
+                    uid: user.uid,
+                    disabled: !user.disabled
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al actualizar estado');
+            
+            showNotification(`Usuario ${user.disabled ? 'activado' : 'desactivado'} correctamente`, 'success');
+        } catch (error: any) {
+            showNotification(`Error: ${error.message}`, 'error');
+        } finally {
+            setStatusLoading(false);
+        }
+    };
+
+    const handleBulkToggleStatus = async (disabled: boolean) => {
+        if (!auth.currentUser || selectedUsers.size === 0) return;
+        setStatusLoading(true);
+        try {
+            const idToken = await auth.currentUser.getIdToken();
+            const res = await fetch('/api/admin/users/manage', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({
+                    action: 'toggle_status',
+                    uids: Array.from(selectedUsers),
+                    disabled: disabled
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al actualizar estados');
+            
+            showNotification(`Usuarios ${disabled ? 'desactivados' : 'activados'} correctamente`, 'success');
+            setSelectedUsers(new Set());
+        } catch (error: any) {
+            showNotification(`Error: ${error.message}`, 'error');
+        } finally {
+            setStatusLoading(false);
+        }
+    };
+
+    const handleChangePasswordSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!auth.currentUser || !userToPasswordChange) return;
+        if (newPassword.length < 6) {
+            showNotification('La contraseña debe tener al menos 6 caracteres', 'error');
+            return;
+        }
+
+        setPasswordLoading(true);
+        try {
+            const idToken = await auth.currentUser.getIdToken();
+            const res = await fetch('/api/admin/users/manage', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({
+                    action: 'change_password',
+                    uid: userToPasswordChange.uid,
+                    newPassword: newPassword
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al cambiar contraseña');
+            
+            showNotification('Contraseña actualizada correctamente', 'success');
+            setShowPasswordModal(false);
+            setUserToPasswordChange(null);
+            setNewPassword("");
+        } catch (error: any) {
+            showNotification(`Error: ${error.message}`, 'error');
+        } finally {
+            setPasswordLoading(false);
+        }
+    };
+
     const toggleUserSelection = (uid: string) => {
         const newSelection = new Set(selectedUsers);
         if (newSelection.has(uid)) {
@@ -296,15 +399,33 @@ export default function UsersPage() {
 
                 <div className={styles.bulkActions}>
                     {selectedUsers.size > 0 && (
-                        <button
-                            onClick={() => {
-                                setEditingUser(null);
-                                setIsEditingRole(true);
-                            }}
-                            className={`${styles.btn} ${styles.btnPrimary}`}
-                        >
-                            EDITAR ROL ({selectedUsers.size})
-                        </button>
+                        <>
+                            <button
+                                onClick={() => {
+                                    setEditingUser(null);
+                                    setIsEditingRole(true);
+                                }}
+                                className={`${styles.btn} ${styles.btnPrimary}`}
+                            >
+                                ROL ({selectedUsers.size})
+                            </button>
+                            <button
+                                onClick={() => handleBulkToggleStatus(false)}
+                                disabled={statusLoading}
+                                className={`${styles.btn} ${styles.btnSuccess}`}
+                                title="Activar Seleccionados"
+                            >
+                                ACTIVAR
+                            </button>
+                            <button
+                                onClick={() => handleBulkToggleStatus(true)}
+                                disabled={statusLoading}
+                                className={`${styles.btn} ${styles.btnWarning}`}
+                                title="Desactivar Seleccionados"
+                            >
+                                DESACTIVAR
+                            </button>
+                        </>
                     )}
                     <button
                         onClick={() => selectAllUsers(filteredUsers)}
@@ -333,7 +454,7 @@ export default function UsersPage() {
                     return (
                         <div
                             key={user.uid}
-                            className={`${styles.userCard} ${isSelected ? styles.userCardSelected : ''}`}
+                            className={`${styles.userCard} ${isSelected ? styles.userCardSelected : ''} ${user.disabled ? styles.userCardInactive : ''}`}
                         >
                             <div className={styles.diagonalAccent}></div>
                             
@@ -366,7 +487,7 @@ export default function UsersPage() {
                                     </div>
                                     <p className={styles.userEmail}>{user.email}</p>
 
-                                    {/* Role Badge */}
+                                    {/* Role Badge & Status */}
                                     <div className={styles.roleFooter}>
                                         <span className={`${styles.roleBadge} ${getRoleAvatarClass(user.role) === styles.avatarAdmin ? styles.roleBadgeAdmin : ''}`}>
                                             {getRoleLabel(user.role)}
@@ -374,12 +495,34 @@ export default function UsersPage() {
                                         <span className={styles.levelLabel}>
                                             Lvl {getRoleLevel(user.role)}
                                         </span>
+                                        <span className={`${styles.statusBadge} ${user.disabled ? styles.statusInactive : styles.statusActive}`}>
+                                            {user.disabled ? 'Inactivo' : 'Activo'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Actions overlay buttons inside iOS style card top right */}
                             <div className={styles.cardActions}>
+                                <button
+                                    disabled={!canModify || isSelf}
+                                    onClick={() => {
+                                        setUserToPasswordChange(user);
+                                        setShowPasswordModal(true);
+                                    }}
+                                    className={styles.actionIconBtn}
+                                    title="Cambiar Contraseña"
+                                >
+                                    🔑
+                                </button>
+                                <button
+                                    disabled={!canModify || isSelf || statusLoading}
+                                    onClick={() => handleToggleStatus(user)}
+                                    className={`${styles.actionIconBtn} ${user.disabled ? styles.actionIconBtn : styles.actionIconBtnWarning}`}
+                                    title={user.disabled ? "Activar Usuario" : "Desactivar Usuario"}
+                                >
+                                    {user.disabled ? '⚡' : '⏸️'}
+                                </button>
                                 <button
                                     disabled={!canModify || isSelf}
                                     onClick={() => {
@@ -622,6 +765,78 @@ export default function UsersPage() {
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Change Password Modal */}
+            {showPasswordModal && userToPasswordChange && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modal}>
+                        <div className={styles.diagonalAccent} style={{ opacity: 0.1 }}></div>
+                        <div className={styles.modalHeader}>
+                            <div className={styles.modalTitleWrapper}>
+                                <h2 className={styles.modalTitle}>Cambiar Contraseña</h2>
+                                <p className={styles.modalSubtitle}>Usuario: {userToPasswordChange.full_name}</p>
+                            </div>
+                            <button 
+                                onClick={() => {
+                                    setShowPasswordModal(false);
+                                    setUserToPasswordChange(null);
+                                    setNewPassword("");
+                                }} 
+                                className={styles.modalCloseBtn}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleChangePasswordSubmit} className={styles.form}>
+                            <div className={styles.inputGroup}>
+                                <label className={styles.label}>Nueva Contraseña</label>
+                                <div className={styles.passwordInputWrapper}>
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        required
+                                        placeholder="Mínimo 6 caracteres"
+                                        className={styles.input}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className={styles.passwordToggle}
+                                    >
+                                        {showPassword ? '👁️' : '🔒'}
+                                    </button>
+                                </div>
+                                <p className={styles.helpText}>
+                                    El usuario usará esta nueva contraseña en su próximo inicio de sesión.
+                                </p>
+                            </div>
+
+                            <div className={styles.modalActions}>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowPasswordModal(false);
+                                        setUserToPasswordChange(null);
+                                        setNewPassword("");
+                                    }}
+                                    className={`${styles.btn} ${styles.btnSecondary}`}
+                                >
+                                    CANCELAR
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={passwordLoading}
+                                    className={`${styles.btn} ${styles.btnPrimary}`}
+                                >
+                                    {passwordLoading ? '...' : 'ACTUALIZAR'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
