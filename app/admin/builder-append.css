@@ -1,0 +1,41 @@
+
+/* ==========================================================================
+   LANDING BUILDER (VISUAL EDITOR)
+   ========================================================================== */
+
+.campaign-builder-canvas::-webkit-scrollbar {
+  width: 8px;
+}
+.campaign-builder-canvas::-webkit-scrollbar-track {
+  background: var(--admin-surface);
+}
+.campaign-builder-canvas::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.campaign-builder-canvas::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.campaign-builder-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.campaign-builder-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.campaign-builder-sidebar::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 3px;
+}
+.campaign-builder-sidebar::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+.campaign-builder-block {
+  opacity: 1;
+  transition: opacity 0.2s ease, border-color 0.2s ease;
+}
+
+.campaign-builder-block:hover {
+  opacity: 0.95;
+}

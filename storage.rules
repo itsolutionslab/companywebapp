@@ -67,6 +67,14 @@ service firebase.storage {
     }
 
     // ========================================
+    // CAMPAÑAS (LANDING PAGES)
+    // ========================================
+    match /campaigns/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // ========================================
     // OTROS (Usuarios y Proyectos)
     // ========================================
     match /users/{userId}/{fileName} {

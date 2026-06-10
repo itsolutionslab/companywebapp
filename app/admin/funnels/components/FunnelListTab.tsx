@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { onFunnelsUpdate, updateFunnel, createLead, createFunnel, storage } from "@/lib/firebase";
+import { onFunnelsUpdate, updateFunnel, createLead, createFunnel, storage, auth, getStaffUsers } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { doc, getDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { ROLES_CONFIG } from "@/config/roles_config";
 import DateFilterModal from "@/components/admin/DateFilterModal";
+import { toast } from 'react-hot-toast';
 
 type TimeFilter = 'day' | 'week' | 'month' | 'bimester' | 'trimester' | 'semester' | 'year' | 'single' | 'range' | 'custom';
 
@@ -33,19 +35,72 @@ export default function FunnelListTab() {
     const [fileName, setFileName] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // RBAC & Users State
+    const [currentUserData, setCurrentUserData] = useState<{uid: string, team_id: string} | null>(null);
+    const [staffUsers, setStaffUsers] = useState<any[]>([]);
+    const [userLevel, setUserLevel] = useState<number>(0);
+
     useEffect(() => {
         const unsub = onFunnelsUpdate((data) => {
             setFunnels(data);
             setLoading(false);
         });
 
-        return () => unsub();
+        const loadUsers = async () => {
+            const users = await getStaffUsers();
+            setStaffUsers(users);
+        };
+        loadUsers();
+
+        const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        setCurrentUserData({ uid: user.uid, team_id: userData.team_id || '' });
+                        
+                        const roleId = userData.role;
+                        const config = ROLES_CONFIG[roleId] || ROLES_CONFIG[roleId?.toUpperCase()] || ROLES_CONFIG[roleId?.toLowerCase()];
+                        if (config) {
+                            setUserLevel(config.level);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                }
+            }
+        });
+
+        return () => {
+            unsub();
+            unsubscribeAuth();
+        };
     }, []);
 
     const filteredFunnels = useMemo(() => {
+        const userMap = new Map(staffUsers.map(u => [u.uid, u]));
         const now = new Date();
+        
         return funnels.filter(f => {
             if (!f.created_at) return false;
+            
+            // RBAC logic
+            const isGlobalAdmin = userLevel >= 10;
+            const isCreator = f.created_by === currentUserData?.uid;
+            
+            const creatorInfo = userMap.get(f.created_by) || {};
+            const creatorRoleStr = creatorInfo.role || '';
+            const creatorConfig = ROLES_CONFIG[creatorRoleStr.toUpperCase()] || ROLES_CONFIG[creatorRoleStr.toLowerCase()] || ROLES_CONFIG[creatorRoleStr];
+            const creatorLevel = creatorConfig?.level || 0;
+            const creatorTeam = creatorInfo.team_id || '';
+            
+            const isSuperiorInTeam = (currentUserData?.team_id === creatorTeam) && (creatorTeam !== '') && (userLevel > creatorLevel);
+            
+            if (!isGlobalAdmin && !isCreator && !isSuperiorInTeam && f.created_by) {
+                return false;
+            }
+
             const ca = f.created_at;
             const lDate = (ca && typeof ca === 'object' && 'toDate' in ca) ? ca.toDate() : (ca ? new Date(ca) : new Date(0));
             if (isNaN(lDate.getTime()) || lDate.getTime() === 0) return false;
@@ -70,7 +125,7 @@ export default function FunnelListTab() {
             }
             return true;
         });
-    }, [funnels, filter, startDate, endDate]);
+    }, [funnels, filter, startDate, endDate, staffUsers, currentUserData, userLevel]);
 
     const handleConvert = async (funnel: any) => {
         if (!confirm("¿Estás seguro de convertir este registro en un Prospecto en el Pipeline Maestro?")) return;
@@ -98,10 +153,10 @@ export default function FunnelListTab() {
             // Update Funnel status
             await updateFunnel(funnel.id, { status: 'CONVERTIDO_PROSPECTO' });
             
-            alert("¡Convertido a Prospecto exitosamente!");
+            toast.success("¡Convertido a Prospecto exitosamente!");
         } catch (error) {
             console.error("Error convirtiendo funnel:", error);
-            alert("Error al convertir a prospecto.");
+            toast.error("Error al convertir a prospecto.");
         }
     };
 

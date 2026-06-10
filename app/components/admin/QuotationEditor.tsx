@@ -12,6 +12,7 @@ import { useTranslation } from './LanguageContext';
 import { db, auth } from '@/lib/firebase';
 import { doc, setDoc, Timestamp, addDoc, collection } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 interface QuotationEditorProps {
     initialData?: any;
@@ -96,10 +97,10 @@ export default function QuotationEditor({ initialData, quotationId }: QuotationE
 
                 router.push(`/admin/cotizaciones/${docRef.id}`);
             }
-            alert("Cotización guardada con éxito");
+            toast.success("Cotización guardada con éxito");
         } catch (error) {
             console.error("Error saving quotation:", error);
-            alert("Error al guardar");
+            toast.error("Error al guardar");
         } finally {
             setLoading(false);
         }

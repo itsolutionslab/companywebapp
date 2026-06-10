@@ -443,7 +443,14 @@ export const getCampaignBySlug = async (slug: string) => {
     const q = query(collection(db, "campaigns"), where("slug", "==", slug));
     const snapshot = await getDocs(q);
     if (!snapshot.empty) {
-        return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+        const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+        // Sort in memory by updated_at descending to avoid needing a composite index
+        docs.sort((a, b) => {
+            const timeA = a.updated_at?.toMillis() || 0;
+            const timeB = b.updated_at?.toMillis() || 0;
+            return timeB - timeA;
+        });
+        return docs[0];
     }
     return null;
 };

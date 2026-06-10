@@ -6,6 +6,9 @@ import { getCampaignBySlug, createFunnel, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Script from "next/script";
 import styles from "./Campaign.module.css";
+import BlockRenderer from "@/app/admin/funnels/components/builder/BlockRenderer";
+import DynamicForm from "../components/DynamicForm";
+import { toast } from 'react-hot-toast';
 
 export default function CampaignLandingPage() {
     const params = useParams();
@@ -41,7 +44,7 @@ export default function CampaignLandingPage() {
         if (!file) return;
 
         if (file.size > 5 * 1024 * 1024) {
-            alert("El archivo es demasiado grande. Máx. 5MB.");
+            toast.error("El archivo es demasiado grande. Máx. 5MB.");
             return;
         }
 
@@ -91,7 +94,7 @@ export default function CampaignLandingPage() {
             
         } catch (error) {
             console.error("Error submitting form:", error);
-            alert("Ocurrió un error al enviar tus datos. Por favor intenta de nuevo.");
+            toast.error("Ocurrió un error al enviar tus datos. Por favor intenta de nuevo.");
         } finally {
             setIsSubmitting(false);
         }
@@ -113,6 +116,38 @@ export default function CampaignLandingPage() {
             </div>
         );
     }
+
+    const renderDynamicForm = (block?: any) => (
+        <DynamicForm 
+            fieldsConfig={campaign.fields_config || []}
+            onSubmit={async (data) => {
+                await createFunnel({
+                    ...data,
+                    campaign_slug: slug,
+                    campaign_id: campaign.id,
+                    source: "public_landing"
+                });
+                
+                // Trigger Events if pixels exist
+                if (typeof window !== 'undefined') {
+                    if (campaign.pixels?.fb && (window as any).fbq) {
+                        (window as any).fbq('track', 'Lead');
+                    }
+                    if (campaign.pixels?.tiktok && (window as any).ttq) {
+                        (window as any).ttq.track('SubmitForm');
+                    }
+                    if (campaign.pixels?.google && (window as any).gtag) {
+                        (window as any).gtag('event', 'conversion', {
+                            'send_to': `${campaign.pixels.google}/lead_conversion_label_if_any`
+                        });
+                    }
+                }
+            }}
+            buttonText={block?.content?.buttonText}
+            buttonColor={block?.content?.buttonColor}
+            textColor={block?.content?.textColor}
+        />
+    );
 
     return (
         <div className={styles.container}>
@@ -153,13 +188,13 @@ export default function CampaignLandingPage() {
             )}
 
             {campaign.pixels?.tiktok && (
-                <Script id="tiktok-pixel" strategy="afterInteractive">
+                <Script id="tt-pixel" strategy="afterInteractive">
                     {`
-                        !function (w, d, t) {
+                    !function (w, d, t) {
                         w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
                         ttq.load('${campaign.pixels.tiktok}');
                         ttq.page();
-                        }(window, document, 'ttq');
+                    }(window, document, 'ttq');
                     `}
                 </Script>
             )}
@@ -169,204 +204,43 @@ export default function CampaignLandingPage() {
                     <Script src={`https://www.googletagmanager.com/gtag/js?id=${campaign.pixels.google}`} strategy="afterInteractive" />
                     <Script id="google-analytics" strategy="afterInteractive">
                         {`
-                            window.dataLayer = window.dataLayer || [];
-                            function gtag(){dataLayer.push(arguments);}
-                            gtag('js', new Date());
-                            gtag('config', '${campaign.pixels.google}');
+                        window.dataLayer = window.dataLayer || [];
+                        function gtag(){window.dataLayer.push(arguments);}
+                        gtag('js', new Date());
+                        gtag('config', '${campaign.pixels.google}');
                         `}
                     </Script>
                 </>
             )}
 
-            {/* Header */}
-            <header className={styles.header}>
-                <div className={styles.headerInner}>
-                    <a href="/" className={styles.logo}>
-                        Brecom<span>IT</span> Solutions
-                    </a>
-                </div>
-            </header>
-
-            {/* Hero Section */}
-            <section className={styles.hero}>
-                {campaign.hero_image_url && (
-                    <div 
-                        className={styles.heroBg} 
-                        style={{ backgroundImage: `url(${campaign.hero_image_url})` }}
-                    />
-                )}
-                <div className={styles.heroContent}>
-                    <h1 className={styles.heroTitle}>{campaign.title}</h1>
-                    {campaign.description && (
-                        <p className={styles.heroDescription}>{campaign.description}</p>
-                    )}
-                </div>
-            </section>
-
-            {/* Main Content & Form */}
-            <main className={styles.main}>
-                <div className={styles.formCard}>
-                    {submitted ? (
-                        <div className={styles.successState}>
-                            <div className={styles.successIcon}>✓</div>
-                            <h2 className={styles.successTitle}>¡Gracias por tu interés!</h2>
-                            <p className={styles.successMessage}>
-                                Hemos recibido tus datos correctamente. Un especialista de nuestro equipo se pondrá en contacto contigo muy pronto.
-                            </p>
+            <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', width: '100%' }}>
+                {campaign.blocks && campaign.blocks.length > 0 ? (
+                    /* Render Dynamic Visual Blocks */
+                    campaign.blocks.map((block: any) => (
+                        <BlockRenderer 
+                            key={block.id} 
+                            block={block} 
+                            isPreview={true} 
+                            formComponent={renderDynamicForm(block)}
+                        />
+                    ))
+                ) : (
+                    /* Fallback to legacy layout */
+                    <div className="legacy-layout">
+                        <div className={styles.publicCampaignHero} style={ campaign.hero_image_url ? { backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url(${campaign.hero_image_url})` } : {} }>
+                            <div className={styles.publicCampaignHeroContent}>
+                                <h1 className={styles.publicCampaignTitle}>{campaign.title}</h1>
+                                <p className={styles.publicCampaignDesc}>{campaign.description}</p>
+                            </div>
                         </div>
-                    ) : (
-                        <>
-                            <h2 className={styles.formTitle}>Completa el formulario</h2>
-                            <p className={styles.formSubtitle}>Déjanos tus datos y nos comunicaremos contigo.</p>
-                            
-                            <form onSubmit={handleSubmit}>
-                                {campaign.fields_config?.filter((f: any) => f.state !== 'hidden').map((field: any) => {
-                                    if (field.id === 'file_url') {
-                                        return (
-                                            <div key={field.id} className={styles.formGroup}>
-                                                <label className={styles.label}>
-                                                    {field.label} {field.state === 'required' && <span className={styles.requiredAsterisk}>*</span>}
-                                                </label>
-                                                <div 
-                                                    className={styles.uploadBox}
-                                                    onClick={() => fileInputRef.current?.click()}
-                                                >
-                                                    {isUploading ? (
-                                                        <div className={styles.spinner} style={{ borderColor: 'rgba(5, 17, 242, 0.3)', borderTopColor: '#0511f2' }}></div>
-                                                    ) : (
-                                                        <div className={styles.uploadIcon}>📎</div>
-                                                    )}
-                                                    <div className={styles.uploadText}>
-                                                        {isUploading ? "Subiendo archivo..." : "Haz clic para seleccionar archivo"}
-                                                    </div>
-                                                    {fileName && <div className={styles.uploadFileName}>{fileName}</div>}
-                                                </div>
-                                                <input 
-                                                    ref={fileInputRef} 
-                                                    type="file" 
-                                                    style={{ display: 'none' }}
-                                                    accept=".pdf,.png,.jpg,.jpeg,.webp"
-                                                    onChange={handleFileUpload} 
-                                                    required={field.state === 'required' && !formData.file_url}
-                                                />
-                                            </div>
-                                        );
-                                    }
-                                    
-                                    if (field.id === 'impact') {
-                                        return (
-                                            <div key={field.id} className={styles.formGroup}>
-                                                <label className={styles.label}>
-                                                    {field.label} {field.state === 'required' && <span className={styles.requiredAsterisk}>*</span>}
-                                                </label>
-                                                <textarea 
-                                                    required={field.state === 'required'}
-                                                    value={formData[field.id] || ''}
-                                                    onChange={(e) => setFormData({...formData, [field.id]: e.target.value})}
-                                                    className={`${styles.input} ${styles.textarea}`}
-                                                    placeholder="Escribe aquí..."
-                                                />
-                                            </div>
-                                        );
-                                    }
-
-                                    if (['role', 'stage', 'timeline', 'investment_level', 'decision_maker'].includes(field.id)) {
-                                        return (
-                                            <div key={field.id} className={styles.formGroup}>
-                                                <label className={styles.label}>
-                                                    {field.label} {field.state === 'required' && <span className={styles.requiredAsterisk}>*</span>}
-                                                </label>
-                                                <select
-                                                    required={field.state === 'required'}
-                                                    value={formData[field.id] || ''}
-                                                    onChange={(e) => setFormData({...formData, [field.id]: e.target.value})}
-                                                    className={styles.input}
-                                                >
-                                                    <option value="">Seleccione una opción</option>
-                                                    {field.id === 'role' && (
-                                                        <>
-                                                            <option value="ceo">CEO / Director / Dueño</option>
-                                                            <option value="cto">CTO / Gerente de TI</option>
-                                                            <option value="lead">Líder de Proyecto / Operaciones</option>
-                                                            <option value="po">Product Owner / Gerente de Producto</option>
-                                                            <option value="advisor">Asesor / Consultor</option>
-                                                            <option value="other">Otro Rol</option>
-                                                        </>
-                                                    )}
-                                                    {field.id === 'stage' && (
-                                                        <>
-                                                            <option value="idea">Fase de Idea / Exploración</option>
-                                                            <option value="reqs">Levantamiento de Requisitos</option>
-                                                            <option value="mvp">Construcción de MVP</option>
-                                                            <option value="scaling">Escalamiento / Crecimiento</option>
-                                                            <option value="legacy">Migración / Sistema Legacy</option>
-                                                        </>
-                                                    )}
-                                                    {field.id === 'timeline' && (
-                                                        <>
-                                                            <option value="now">Inmediato (0-1 mes)</option>
-                                                            <option value="1-3">Próximo Trimestre (1-3 meses)</option>
-                                                            <option value="3-6">Mediano Plazo (3-6 meses)</option>
-                                                            <option value="explore">Solo Explorando / Sin fecha</option>
-                                                        </>
-                                                    )}
-                                                    {field.id === 'investment_level' && (
-                                                        <>
-                                                            <option value="low">Starter (&lt; $5k)</option>
-                                                            <option value="mid">Growth ($5k - $15k)</option>
-                                                            <option value="high">Enterprise ($15k - $50k)</option>
-                                                            <option value="ultra">Corporate ($50k+)</option>
-                                                            <option value="guidance">Necesito Orientación</option>
-                                                        </>
-                                                    )}
-                                                    {field.id === 'decision_maker' && (
-                                                        <>
-                                                            <option value="yes">Sí, soy el tomador de decisiones final</option>
-                                                            <option value="part">Soy parte del comité de evaluación</option>
-                                                            <option value="info">Solo estoy recopilando información</option>
-                                                        </>
-                                                    )}
-                                                </select>
-                                            </div>
-                                        );
-                                    }
-
-                                    return (
-                                        <div key={field.id} className={styles.formGroup}>
-                                            <label className={styles.label}>
-                                                {field.label} {field.state === 'required' && <span className={styles.requiredAsterisk}>*</span>}
-                                            </label>
-                                            <input 
-                                                type={field.id === 'email' ? 'email' : 'text'}
-                                                required={field.state === 'required'}
-                                                value={formData[field.id] || ''}
-                                                onChange={(e) => setFormData({...formData, [field.id]: e.target.value})}
-                                                className={styles.input}
-                                                placeholder={`Ingresa tu ${field.label.toLowerCase()}`}
-                                            />
-                                        </div>
-                                    );
-                                })}
-
-                                <button 
-                                    type="submit" 
-                                    disabled={isSubmitting || isUploading}
-                                    className={styles.submitBtn}
-                                >
-                                    {isSubmitting ? (
-                                        <>
-                                            <div className={styles.spinner}></div>
-                                            <span>Enviando...</span>
-                                        </>
-                                    ) : (
-                                        <span>Enviar Solicitud →</span>
-                                    )}
-                                </button>
-                            </form>
-                        </>
-                    )}
-                </div>
-            </main>
+                        <div className={styles.publicCampaignContainer}>
+                            <div style={{ maxWidth: '600px', margin: '3rem auto' }}>
+                                {renderDynamicForm()}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

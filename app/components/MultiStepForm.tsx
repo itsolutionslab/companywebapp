@@ -6,6 +6,7 @@ import { LeadData } from '../types/tracking';
 import { translations } from '../data/translations';
 import { obfuscateData } from '../lib/obfuscation';
 import Turnstile from 'react-turnstile';
+import { toast } from 'react-hot-toast';
 
 interface MultiStepFormProps {
     region?: string;
@@ -23,9 +24,9 @@ const SERVICES = [
 ];
 
 const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', lang = 'en', onComplete }) => {
-    const t = (key: string) => {
+    const t = (key: string, fallback?: string) => {
         const regionalKey = region === 'pe' ? `${key}-pe` : key;
-        return (translations as any)[lang]?.[regionalKey] || (translations as any)[lang]?.[key] || key;
+        return (translations as any)[lang]?.[regionalKey] || (translations as any)[lang]?.[key] || fallback || key;
     };
 
     const [step, setStep] = useState(1);
@@ -101,7 +102,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', lang = 'en
         if (!file) return;
 
         if (file.size > 5 * 1024 * 1024) {
-            alert("File is too large. Max 5MB.");
+            toast.error(t('File is too large. Max 5MB.', 'El archivo es demasiado grande. Máx 5MB.'));
             return;
         }
 
@@ -136,7 +137,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', lang = 'en
     const submitForm = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!turnstileToken) {
-            alert("Please complete the security check.");
+            toast.error(t('Please complete the security check.', 'Por favor, completa el control de seguridad.'));
             return;
         }
 
@@ -182,7 +183,7 @@ const MultiStepForm: React.FC<MultiStepFormProps> = ({ region = 'us', lang = 'en
                 setTimeout(() => onComplete(), 5000);
             }
         } catch (error: any) {
-            alert(error.message || "Hubo un error al enviar el formulario. Por favor, inténtalo de nuevo.");
+            toast.error(error.message || t('There was an error submitting the form.', 'Hubo un error al enviar el formulario. Por favor, inténtalo de nuevo.'));
         } finally {
             setLoading(false);
         }
