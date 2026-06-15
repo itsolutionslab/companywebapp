@@ -196,6 +196,24 @@ export const SOLUTIONS: SolutionDemo[] = [
         ]
     },
     {
+        "id": "retail",
+        "title": "Retail",
+        "industry": "Retail",
+        "description": "Soluciones especializadas para el sector Retail.",
+        "path": "retail",
+        "entryFile": "general/custom/crazy.html",
+        "demos": [
+            {
+                "name": "General Custom Crazy",
+                "file": "general/custom/crazy.html"
+            }
+        ],
+        "tags": [
+            "Retail",
+            "Enterprise"
+        ]
+    },
+    {
         "id": "telecom",
         "title": "Telecom",
         "industry": "Telecom",
