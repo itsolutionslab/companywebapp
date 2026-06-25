@@ -83,6 +83,16 @@ export interface LeadData {
     budget_range?: string; // Legacy?
     region?: string;
     origin?: 'web_page' | 'admin_panel';
+    company_linkedin?: string;
+    rubro_principal?: string;
+    subrubro?: string;
+    comentarios?: string;
+    prioridad_lead?: 'caliente' | 'tibio' | 'frio';
+    tipo_empresa?: string;
+    tamano_empresa?: string;
+    zona_geografica?: string;
+    dolor_principal?: string;
+    servicio_ofrecido?: string;
 }
 
 export interface LeadKPIs {

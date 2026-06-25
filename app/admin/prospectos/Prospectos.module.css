@@ -321,15 +321,15 @@
   -webkit-backdrop-filter: blur(12px);
   z-index: 1000;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 1rem;
+  padding: 40px 1rem 24px;
 }
 
 .modalContent {
   width: 100%;
   max-width: 620px;
-  max-height: 85dvh;
+  max-height: calc(100dvh - 64px);
   background: #ffffff;
   border-radius: 24px;
   position: relative;
@@ -355,11 +355,11 @@
 /* ─── Desktop override ──────────────────────────── */
 @media (min-width: 640px) {
   .modalOverlay {
-    padding: 1.5rem;
+    padding: 100px 1.5rem 50px;
   }
 
   .modalContent {
-    max-height: 90dvh;
+    max-height: calc(100dvh - 150px);
     border-radius: 28px;
   }
 }

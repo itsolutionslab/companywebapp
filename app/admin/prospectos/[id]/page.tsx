@@ -13,6 +13,7 @@ import { collection, query, where, orderBy, onSnapshot, doc, getDoc, updateDoc, 
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { ROLES_CONFIG, Pillar } from "@/config/roles_config";
 import QuotationEditor from "@/modules/quotation/components/QuotationEditor";
+import { RUBROS_CATALOG, SUBRUBROS_VENTAS, TIPO_EMPRESA_OPTIONS, TAMANO_EMPRESA_OPTIONS, ZONA_GEOGRAFICA_OPTIONS } from "@/config/leads_config";
 
 import styles from "./ProspectoDetail.module.css";
 
@@ -793,6 +794,278 @@ export default function LeadDetailPage() {
                                         {isEditing ? 'Cancelar' : 'Editar Información'}
                                     </button>
                                 )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Sección Comercial de Prospecto */}
+                    <div className={styles.sectionCard} style={{ marginTop: '1rem' }}>
+                        <h3 className="admin-h3" style={{ fontSize: '14px', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-accent)', height: '10px' }}></span>
+                            Información y Clasificación Comercial
+                        </h3>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
+                            {/* Columna Izquierda: Identificación y Clasificación */}
+                            <section style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {isEditing ? (
+                                    <>
+                                        <div>
+                                            <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>LinkedIn de Empresa</label>
+                                            <input 
+                                                type="url" 
+                                                className={styles.editInput} 
+                                                value={editData.company_linkedin || ''} 
+                                                onChange={e => setEditData({ ...editData, company_linkedin: e.target.value })} 
+                                                placeholder="https://linkedin.com/company/..."
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Rubro Principal</label>
+                                            <select 
+                                                className={styles.editSelect} 
+                                                value={editData.rubro_principal || ''} 
+                                                onChange={e => setEditData({ ...editData, rubro_principal: e.target.value, subrubro: '' })}
+                                            >
+                                                <option value="">-- Seleccionar Rubro --</option>
+                                                {Object.entries(RUBROS_CATALOG).map(([key, info]) => (
+                                                    <option key={key} value={info.name}>{info.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Subrubro</label>
+                                            <select 
+                                                className={styles.editSelect} 
+                                                value={editData.subrubro || ''} 
+                                                onChange={e => setEditData({ ...editData, subrubro: e.target.value })}
+                                            >
+                                                <option value="">-- Seleccionar Subrubro --</option>
+                                                {(() => {
+                                                    const selectedRubroObj = Object.values(RUBROS_CATALOG).find(r => r.name === editData.rubro_principal);
+                                                    const availableSubrubros = selectedRubroObj ? [...selectedRubroObj.subrubros, ...SUBRUBROS_VENTAS] : SUBRUBROS_VENTAS;
+                                                    return availableSubrubros.map(sub => (
+                                                        <option key={sub} value={sub}>{sub}</option>
+                                                    ));
+                                                })()}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Prioridad / Clasificación del Lead</label>
+                                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '4px' }}>
+                                                {[
+                                                    { val: 'caliente', label: '🔥 Caliente', color: '#fee2e2', border: '#fca5a5', text: '#b91c1c', activeBg: '#ef4444', activeText: '#ffffff' },
+                                                    { val: 'tibio', label: '⚡ Tibio', color: '#ffedd5', border: '#fdba74', text: '#c2410c', activeBg: '#f97316', activeText: '#ffffff' },
+                                                    { val: 'frio', label: '❄️ Frío', color: '#dbeafe', border: '#93c5fd', text: '#1d4ed8', activeBg: '#3b82f6', activeText: '#ffffff' }
+                                                ].map(item => {
+                                                    const isSelected = editData.prioridad_lead === item.val;
+                                                    return (
+                                                        <button
+                                                            key={item.val}
+                                                            type="button"
+                                                            onClick={() => setEditData({ ...editData, prioridad_lead: item.val as any })}
+                                                            style={{
+                                                                flex: 1,
+                                                                padding: '8px 10px',
+                                                                borderRadius: '8px',
+                                                                border: `1.5px solid ${isSelected ? item.activeBg : item.border}`,
+                                                                background: isSelected ? item.activeBg : item.color,
+                                                                color: isSelected ? item.activeText : item.text,
+                                                                fontWeight: 'bold',
+                                                                fontSize: '11px',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s ease',
+                                                                textAlign: 'center'
+                                                            }}
+                                                        >
+                                                            {item.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div>
+                                            <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>LinkedIn de Empresa</label>
+                                            {lead.data?.company_linkedin ? (
+                                                <p style={{ margin: 0, fontSize: '13px' }}>
+                                                    <a 
+                                                        href={lead.data.company_linkedin.startsWith('http') ? lead.data.company_linkedin : `https://${lead.data.company_linkedin}`} 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        style={{ color: 'var(--admin-primary)', fontWeight: 'bold', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                                    >
+                                                        <span>🔗 LinkedIn de Empresa</span>
+                                                    </a>
+                                                </p>
+                                            ) : (
+                                                <p style={{ color: 'var(--admin-text-light)', margin: 0, fontSize: '13px', fontStyle: 'italic' }}>No registrado</p>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Rubro Principal</label>
+                                            <p style={{ fontWeight: 'bold', color: 'var(--admin-text-main)', fontSize: '13px', margin: 0 }}>{lead.data?.rubro_principal || 'No especificado'}</p>
+                                        </div>
+                                        <div>
+                                            <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Subrubro</label>
+                                            <p style={{ fontWeight: 'bold', color: 'var(--admin-text-main)', fontSize: '13px', margin: 0 }}>{lead.data?.subrubro || 'No especificado'}</p>
+                                        </div>
+                                        <div>
+                                            <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Prioridad del Lead</label>
+                                            <div style={{ marginTop: '2px' }}>
+                                                {(() => {
+                                                    const p = lead.data?.prioridad_lead;
+                                                    if (p === 'caliente') return <span className="admin-badge" style={{ backgroundColor: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '0.3rem 0.75rem', borderRadius: '8px', fontSize: '10px', fontWeight: '800' }}>🔥 CALIENTE</span>;
+                                                    if (p === 'tibio') return <span className="admin-badge" style={{ backgroundColor: '#ffedd5', color: '#c2410c', border: '1px solid #fdba74', padding: '0.3rem 0.75rem', borderRadius: '8px', fontSize: '10px', fontWeight: '800' }}>⚡ TIBIO</span>;
+                                                    if (p === 'frio') return <span className="admin-badge" style={{ backgroundColor: '#dbeafe', color: '#1d4ed8', border: '1px solid #93c5fd', padding: '0.3rem 0.75rem', borderRadius: '8px', fontSize: '10px', fontWeight: '800' }}>❄️ FRÍO</span>;
+                                                    return <span style={{ color: 'var(--admin-text-light)', fontSize: '13px', fontStyle: 'italic' }}>Sin clasificación</span>;
+                                                })()}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </section>
+
+                            {/* Columna Derecha: Dimensiones de Empresa y Dolor */}
+                            <section style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {isEditing ? (
+                                    <>
+                                        <div>
+                                            <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Tipo de Empresa</label>
+                                            <select 
+                                                className={styles.editSelect} 
+                                                value={editData.tipo_empresa || ''} 
+                                                onChange={e => setEditData({ ...editData, tipo_empresa: e.target.value })}
+                                            >
+                                                <option value="">-- Seleccionar Tipo --</option>
+                                                {TIPO_EMPRESA_OPTIONS.map(opt => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Tamaño de Empresa</label>
+                                            <select 
+                                                className={styles.editSelect} 
+                                                value={editData.tamano_empresa || ''} 
+                                                onChange={e => setEditData({ ...editData, tamano_empresa: e.target.value })}
+                                            >
+                                                <option value="">-- Seleccionar Tamaño --</option>
+                                                {TAMANO_EMPRESA_OPTIONS.map(opt => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Zona Geográfica</label>
+                                            <select 
+                                                className={styles.editSelect} 
+                                                value={editData.zona_geografica || ''} 
+                                                onChange={e => setEditData({ ...editData, zona_geografica: e.target.value })}
+                                            >
+                                                <option value="">-- Seleccionar Zona --</option>
+                                                {ZONA_GEOGRAFICA_OPTIONS.map(opt => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Servicio que Ofreces</label>
+                                            <input 
+                                                type="text" 
+                                                className={styles.editInput} 
+                                                value={editData.servicio_ofrecido || ''} 
+                                                onChange={e => setEditData({ ...editData, servicio_ofrecido: e.target.value })} 
+                                                placeholder="Ej. Desarrollo de CRM a medida"
+                                            />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div>
+                                            <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Tipo de Empresa</label>
+                                            <p style={{ fontWeight: 'bold', color: 'var(--admin-text-main)', fontSize: '13px', margin: 0 }}>{lead.data?.tipo_empresa || 'No especificado'}</p>
+                                        </div>
+                                        <div>
+                                            <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Tamaño de Empresa</label>
+                                            <p style={{ fontWeight: 'bold', color: 'var(--admin-text-main)', fontSize: '13px', margin: 0 }}>{lead.data?.tamano_empresa || 'No especificado'}</p>
+                                        </div>
+                                        <div>
+                                            <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Zona Geográfica</label>
+                                            <p style={{ fontWeight: 'bold', color: 'var(--admin-text-main)', fontSize: '13px', margin: 0 }}>{lead.data?.zona_geografica || 'No especificado'}</p>
+                                        </div>
+                                        <div>
+                                            <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Servicio que Ofreces</label>
+                                            <p style={{ fontWeight: 'bold', color: 'var(--admin-text-main)', fontSize: '13px', margin: 0 }}>{lead.data?.servicio_ofrecido || 'No especificado'}</p>
+                                        </div>
+                                    </>
+                                )}
+                            </section>
+                        </div>
+
+                        {/* Fila inferior: Dolor y Comentarios */}
+                        <div style={{ marginTop: '1.25rem', borderTop: '1px solid #f0f0f0', paddingTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {isEditing ? (
+                                <>
+                                    <div>
+                                        <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Dolor Principal</label>
+                                        <textarea 
+                                            className={styles.editTextarea} 
+                                            value={editData.dolor_principal || ''} 
+                                            onChange={e => setEditData({ ...editData, dolor_principal: e.target.value })} 
+                                            placeholder="Describa el dolor o problema principal del cliente..."
+                                            style={{ minHeight: '60px' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Comentarios Comerciales</label>
+                                        <textarea 
+                                            className={styles.editTextarea} 
+                                            value={editData.comentarios || ''} 
+                                            onChange={e => setEditData({ ...editData, comentarios: e.target.value })} 
+                                            placeholder="Notas de seguimiento o comentarios comerciales..."
+                                            style={{ minHeight: '60px' }}
+                                        />
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div>
+                                        <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Dolor Principal</label>
+                                        <p style={{ margin: 0, fontSize: '12px', color: 'var(--admin-text-muted)', lineHeight: '1.4' }}>
+                                            {lead.data?.dolor_principal || 'No registrado.'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Comentarios Comerciales</label>
+                                        <p style={{ margin: 0, fontSize: '12px', color: 'var(--admin-text-muted)', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
+                                            {lead.data?.comentarios || 'Sin comentarios comerciales.'}
+                                        </p>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Botones de acción duplicados para mejorar UX al final de esta sección */}
+                        {(['GROW', 'ADMIN'].includes(userPillar || '') || userSecondaryPillars?.includes('GROW') || lead.created_by === currentUserData?.uid) && isEditing && (
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #f0f0f0' }}>
+                                <button 
+                                    onClick={handleSaveEdit} 
+                                    className="admin-btn admin-btn-primary" 
+                                    style={{ fontSize: '10px', padding: '0.5rem 1rem' }}
+                                    disabled={isUpdating}
+                                >
+                                    {isUpdating ? 'Guardando...' : 'Guardar Cambios'}
+                                </button>
+                                <button 
+                                    onClick={handleEditToggle} 
+                                    className="admin-btn admin-btn-secondary" 
+                                    style={{ fontSize: '10px', padding: '0.5rem 1rem' }}
+                                >
+                                    Cancelar
+                                </button>
                             </div>
                         )}
                     </div>

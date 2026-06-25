@@ -8,12 +8,20 @@ import { Lead, LeadStatus, DeliveryModel, Capability } from "@/types/tracking";
 import { ROLES_CONFIG } from "@/config/roles_config";
 import { useTranslation } from "@/components/admin/LanguageContext";
 import Link from "next/link";
+import { RUBROS_CATALOG } from "@/config/leads_config";
 import { useNotification } from "@/components/admin/NotificationContext";
 import PipelineBoard from "@/components/admin/PipelineBoard";
 
 export type ViewMode = 'PIPELINE' | 'TABLE';
 export type Domain = 'GROW' | 'OPERATIONS' | 'SUPPORT';
-export type DateFilterType = 'ALL_TIME' | 'THIS_WEEK' | 'THIS_MONTH' | 'THIS_YEAR' | 'EXACT_DATE' | 'DATE_RANGE';
+export type DateFilterType = 'TODAY' | 'ALL_TIME' | 'THIS_WEEK' | 'THIS_MONTH' | 'THIS_YEAR' | 'EXACT_DATE' | 'DATE_RANGE';
+
+const getLocalDateString = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 import styles from "./Prospectos.module.css";
 
@@ -24,8 +32,9 @@ export default function ProspectosPage() {
     const [loading, setLoading] = useState(true);
     const [activeDomain, setActiveDomain] = useState<Domain>('GROW');
     const [searchTerm, setSearchTerm] = useState('');
-    const [viewMode, setViewMode] = useState<ViewMode>('PIPELINE');
+    const [viewMode, setViewMode] = useState<ViewMode>('TABLE');
     const [isCreating, setIsCreating] = useState(false);
+    const [creatorFilter, setCreatorFilter] = useState<string>('ALL');
     const [createLoading, setCreateLoading] = useState(false);
 
     const [currentUserData, setCurrentUserData] = useState<{uid: string, name: string} | null>(null);
@@ -38,8 +47,8 @@ export default function ProspectosPage() {
         dev_team: ''
     });
 
-    // Date Filters
-    const [dateFilterType, setDateFilterType] = useState<DateFilterType>('THIS_MONTH');
+        // Date Filters
+    const [dateFilterType, setDateFilterType] = useState<DateFilterType>('TODAY');
     const [exactDate, setExactDate] = useState<string>('');
     const [dateRange, setDateRange] = useState<{start: string, end: string}>({start: '', end: ''});
 
@@ -52,7 +61,11 @@ export default function ProspectosPage() {
         project_desc: '',
         targetDomain: 'GROW' as Domain,
         delivery_model: 'ADVISORY' as DeliveryModel,
-        capability: 'SOFTWARE' as Capability
+        capability: 'SOFTWARE' as Capability,
+        company_linkedin: '',
+        rubro_principal: '',
+        prioridad_lead: 'tibio' as 'caliente' | 'tibio' | 'frio',
+        comentarios: ''
     });
 
     const [userRole, setUserRole] = useState<string | null>(null);
@@ -163,7 +176,11 @@ export default function ProspectosPage() {
 
             if (leadDate && dateFilterType !== 'ALL_TIME') {
                 const now = new Date();
-                if (dateFilterType === 'THIS_WEEK') {
+                if (dateFilterType === 'TODAY') {
+                    const todayStr = getLocalDateString(now);
+                    const leadDateStr = getLocalDateString(leadDate);
+                    if (leadDateStr !== todayStr) matchesDate = false;
+                } else if (dateFilterType === 'THIS_WEEK') {
                     const day = now.getDay();
                     const diff = now.getDate() - day + (day === 0 ? -6 : 1);
                     const firstDayOfWeek = new Date(now.setDate(diff));
@@ -174,17 +191,23 @@ export default function ProspectosPage() {
                 } else if (dateFilterType === 'THIS_YEAR') {
                     if (leadDate.getFullYear() !== now.getFullYear()) matchesDate = false;
                 } else if (dateFilterType === 'EXACT_DATE' && exactDate) {
-                    const lDateStr = leadDate.toISOString().split('T')[0];
+                    const lDateStr = getLocalDateString(leadDate);
                     if (lDateStr !== exactDate) matchesDate = false;
                 } else if (dateFilterType === 'DATE_RANGE' && dateRange.start && dateRange.end) {
-                    const lDateStr = leadDate.toISOString().split('T')[0];
+                    const lDateStr = getLocalDateString(leadDate);
                     if (lDateStr < dateRange.start || lDateStr > dateRange.end) matchesDate = false;
                 }
             }
 
-            return matchesDomain && matchesSearch && matchesDate;
+            // Filter by creator (only for level 10 and 11)
+            let matchesCreator = true;
+            if ((userLevel === 10 || userLevel === 11) && creatorFilter !== 'ALL') {
+                matchesCreator = lead.created_by === creatorFilter;
+            }
+
+            return matchesDomain && matchesSearch && matchesDate && matchesCreator;
         });
-    }, [leads, activeDomain, searchTerm, dateFilterType, exactDate, dateRange, currentUserData, userLevel]);
+    }, [leads, activeDomain, searchTerm, dateFilterType, exactDate, dateRange, currentUserData, userLevel, creatorFilter]);
 
     const getStatusColor = (status: LeadStatus) => {
         const s = status as string;
@@ -230,7 +253,11 @@ export default function ProspectosPage() {
                     project_desc: formData.project_desc,
                     delivery_model: formData.delivery_model,
                     capability: formData.capability,
-                    origin: 'admin_panel'
+                    origin: 'admin_panel',
+                    company_linkedin: formData.company_linkedin,
+                    rubro_principal: formData.rubro_principal || '',
+                    prioridad_lead: formData.prioridad_lead,
+                    comentarios: formData.comentarios
                 },
                 status_flow: {
                     current: newStatus,
@@ -257,7 +284,11 @@ export default function ProspectosPage() {
                 project_desc: '',
                 targetDomain: activeDomain,
                 delivery_model: 'ADVISORY' as DeliveryModel,
-                capability: 'SOFTWARE' as Capability
+                capability: 'SOFTWARE' as Capability,
+                company_linkedin: '',
+                rubro_principal: '',
+                prioridad_lead: 'tibio',
+                comentarios: ''
             });
         } catch (error: any) {
             showNotification(`Error: ${error.message}`, "error");
@@ -302,7 +333,8 @@ export default function ProspectosPage() {
     };
 
     return (
-        <div className={styles.pageContainer}>
+        <>
+            <div className={styles.pageContainer}>
             {/* Top Header Row */}
             <div className={styles.topHeaderRow}>
                 <div className={styles.domainHeaderCompact}>
@@ -380,6 +412,7 @@ export default function ProspectosPage() {
                             value={dateFilterType}
                             onChange={(e) => setDateFilterType(e.target.value as DateFilterType)}
                         >
+                            <option value="TODAY">Hoy</option>
                             <option value="THIS_MONTH">Este Mes</option>
                             <option value="THIS_WEEK">Esta Semana</option>
                             <option value="THIS_YEAR">Este Año</option>
@@ -418,6 +451,29 @@ export default function ProspectosPage() {
                         </div>
                     )}
 
+                    {(userLevel === 10 || userLevel === 11) && (
+                        <div className={styles.filterGroupCompact} style={{ marginLeft: '0.5rem' }}>
+                            <span className={styles.filterLabelCompact}>👤 Creador:</span>
+                            <select 
+                                className={styles.filterSelectCompact}
+                                value={creatorFilter}
+                                onChange={(e) => setCreatorFilter(e.target.value)}
+                            >
+                                <option value="ALL">Todos</option>
+                                {staffUsers.map(user => (
+                                    <option key={user.uid} value={user.uid}>{user.name || user.email || user.uid}</option>
+                                ))}
+                                {/* Fallback: show creators from the leads list not in staffUsers */}
+                                {Array.from(new Set(leads.map(l => l.created_by).filter(Boolean))).map(uid => {
+                                    if (staffUsers.some(u => u.uid === uid)) return null;
+                                    const leadWithCreatorName = leads.find(l => l.created_by === uid);
+                                    const name = leadWithCreatorName?.created_by_name || uid;
+                                    return <option key={uid} value={uid}>{name}</option>;
+                                })}
+                            </select>
+                        </div>
+                    )}
+
                     <div className={styles.filterGroupCompact} style={{marginLeft: '0.5rem'}}>
                         <span className={styles.countTextCompact}>{filteredLeads.length} Items</span>
                         <div className={styles.pulseDot}></div>
@@ -445,14 +501,17 @@ export default function ProspectosPage() {
                     }}
                 />
             ) : (
-                <div className="admin-table-container">
-                    <table className="admin-table">
+                <div className="admin-table-container" style={{ overflowX: 'auto' }}>
+                    <table className="admin-table" style={{ width: '100%', minWidth: '1000px', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr>
                                 <th>Entidad / Contacto</th>
+                                <th>Rubro / Subrubro</th>
+                                <th>Tipo / Tamaño</th>
+                                <th>Zona Geográfica</th>
+                                <th>Dolor / Servicio</th>
+                                <th>Prioridad</th>
                                 <th>Estado Actual</th>
-                                <th>Origen & Región</th>
-                                <th>Métricas</th>
                                 <th style={{ textAlign: 'right' }}>Gestión</th>
                             </tr>
                         </thead>
@@ -461,12 +520,17 @@ export default function ProspectosPage() {
                                 <tr key={lead.lead_id}>
                                     <td>
                                         <div className="admin-table-entity">
-                                            <div className="admin-table-row-title">
-                                                <Link href={`/admin/prospectos/${lead.lead_id}`} className="admin-table-name">
+                                            <div className="admin-table-row-title" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                                <Link href={`/admin/prospectos/${lead.lead_id}`} className="admin-table-name" style={{ fontWeight: 'bold' }}>
                                                     {lead.data?.name || 'Sin Nombre'}
                                                 </Link>
                                                 {lead.data?.company && (
-                                                    <span className="admin-table-company-badge">{lead.data.company}</span>
+                                                    <span className="admin-table-company-badge" style={{ fontSize: '10px' }}>{lead.data.company}</span>
+                                                )}
+                                                {lead.data?.company_linkedin && (
+                                                    <a href={lead.data.company_linkedin.startsWith('http') ? lead.data.company_linkedin : `https://${lead.data.company_linkedin}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', textDecoration: 'none' }} title="LinkedIn de la empresa">
+                                                        🔗
+                                                    </a>
                                                 )}
                                             </div>
                                             <div className="admin-table-contact-info">
@@ -475,28 +539,84 @@ export default function ProspectosPage() {
                                         </div>
                                     </td>
                                     <td>
-                                        <span className={`admin-badge ${getStatusColor(lead.status_flow.current)}`} style={{ padding: '0.4rem 1rem', fontSize: '9px' }}>
-                                            {statusLabels[lead.status_flow.current] || lead.status_flow.current}
-                                        </span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <span style={{ fontWeight: '600', fontSize: '11px', color: 'var(--admin-text-main)' }}>{lead.data?.rubro_principal || 'N/A'}</span>
+                                            <span style={{ fontSize: '9px', color: 'var(--admin-text-light)' }}>{lead.data?.subrubro || 'N/A'}</span>
+                                        </div>
                                     </td>
                                     <td>
-                                        <div className="admin-table-meta-box">
-                                            <span className="admin-table-meta-primary">{lead.source_attribution.landing_page?.split('_')[0] || 'Directo'}</span>
-                                            <span className="admin-table-meta-secondary">
-                                                {lead.data?.region || 'Global'} / {lead.source_attribution.utm_source || 'Organic'}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <span style={{ fontWeight: '500', fontSize: '11px' }}>{lead.data?.tipo_empresa || 'N/A'}</span>
+                                            <span style={{ fontSize: '9px', color: 'var(--admin-text-light)' }}>{lead.data?.tamano_empresa || 'N/A'}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span style={{ fontSize: '11px', fontWeight: '500' }}>{lead.data?.zona_geografica || 'N/A'}</span>
+                                    </td>
+                                    <td>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxWidth: '200px' }}>
+                                            <span style={{ fontWeight: '500', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={lead.data?.dolor_principal || lead.data?.project_desc}>
+                                                {lead.data?.dolor_principal || lead.data?.project_desc || 'N/A'}
+                                            </span>
+                                            <span style={{ fontSize: '9px', color: 'var(--admin-text-light)' }}>
+                                                {lead.data?.servicio_ofrecido || 'N/A'}
                                             </span>
                                         </div>
                                     </td>
                                     <td>
-                                        <div className="admin-table-meta-box">
-                                            <span className="admin-table-meta-primary">
-                                                {lead.kpis?.clicks_count || 0} clics • {Math.round((lead.kpis?.session_duration || 0) / 60)}m
-                                            </span>
-                                            <span className="admin-table-meta-secondary">
-                                                Creado: {new Date(lead.audit_logs?.created_at?.toDate?.() ||
-                                                    (lead.audit_logs?.created_at ? new Date(lead.audit_logs?.created_at) : new Date())).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
-                                            </span>
-                                        </div>
+                                        {(() => {
+                                            const p = lead.data?.prioridad_lead;
+                                            if (p === 'caliente') return <span className="admin-badge" style={{ backgroundColor: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '9px', fontWeight: '800' }}>Caliente</span>;
+                                            if (p === 'tibio') return <span className="admin-badge" style={{ backgroundColor: '#ffedd5', color: '#c2410c', border: '1px solid #fdba74', padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '9px', fontWeight: '800' }}>Tibio</span>;
+                                            if (p === 'frio') return <span className="admin-badge" style={{ backgroundColor: '#dbeafe', color: '#1d4ed8', border: '1px solid #93c5fd', padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '9px', fontWeight: '800' }}>Frío</span>;
+                                            return <span style={{ color: '#9ca3af', fontSize: '11px' }}>N/A</span>;
+                                        })()}
+                                    </td>
+                                    <td>
+                                        <select
+                                            value={lead.status_flow.current}
+                                            onChange={async (e) => {
+                                                const newStatus = e.target.value as LeadStatus;
+                                                try {
+                                                    await updateLead(lead.lead_id, { 
+                                                        status_flow: { 
+                                                            current: newStatus, 
+                                                            history: lead.status_flow.history || [] 
+                                                        } 
+                                                    });
+                                                    showNotification("Estado actualizado exitosamente", "success");
+                                                } catch (error: any) {
+                                                    showNotification(`Error al actualizar estado: ${error.message}`, "error");
+                                                }
+                                            }}
+                                            className={`admin-badge ${getStatusColor(lead.status_flow.current)}`}
+                                            style={{
+                                                padding: '0.25rem 1.6rem 0.25rem 0.6rem',
+                                                fontSize: '9px',
+                                                border: '1px solid currentColor',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                outline: 'none',
+                                                fontWeight: 'bold',
+                                                appearance: 'none',
+                                                WebkitAppearance: 'none',
+                                                backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23374151\' stroke-width=\'3\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' d=\'M19.5 8.25l-7.5 7.5-7.5-7.5\'/%3E%3C/svg%3E")',
+                                                backgroundRepeat: 'no-repeat',
+                                                backgroundPosition: 'right 6px center',
+                                                backgroundSize: '8px',
+                                                textAlign: 'left'
+                                            }}
+                                        >
+                                            {domainStatuses[activeDomain].map((status) => (
+                                                <option 
+                                                    key={status} 
+                                                    value={status}
+                                                    style={{ background: '#ffffff', color: '#1c1c1e', fontWeight: 'normal', fontSize: '12px' }}
+                                                >
+                                                    {statusLabels[status] || status}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </td>
                                     <td style={{ textAlign: 'right' }}>
                                         <Link
@@ -520,6 +640,7 @@ export default function ProspectosPage() {
                     )}
                 </div>
             )}
+            </div>
 
             {/* Create Prospect Modal */}
             {isCreating && (
@@ -626,6 +747,83 @@ export default function ProspectosPage() {
                                     onChange={e => setFormData({ ...formData, project_desc: e.target.value })}
                                     className={styles.input}
                                     style={{ resize: 'vertical', minHeight: '80px' }}
+                                />
+                            </div>
+
+                            <div className={styles.formGrid} style={{ marginTop: '1.5rem' }}>
+                                <div className={styles.inputGroup}>
+                                    <label className={styles.inputLabel}>LinkedIn de Empresa</label>
+                                    <input
+                                        type="url"
+                                        placeholder="https://linkedin.com/company/..."
+                                        value={formData.company_linkedin}
+                                        onChange={e => setFormData({ ...formData, company_linkedin: e.target.value })}
+                                        className={styles.input}
+                                    />
+                                </div>
+                                <div className={styles.inputGroup}>
+                                    <label className={styles.inputLabel}>Rubro Principal</label>
+                                    <select
+                                        value={formData.rubro_principal}
+                                        onChange={e => setFormData({ ...formData, rubro_principal: e.target.value })}
+                                        className={styles.input}
+                                    >
+                                        <option value="">-- Seleccionar Rubro --</option>
+                                        {Object.entries(RUBROS_CATALOG).map(([key, info]) => (
+                                            <option key={key} value={info.name}>{info.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className={styles.inputGroup} style={{ marginTop: '1.5rem' }}>
+                                <label className={styles.inputLabel}>Clasificación del Lead</label>
+                                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '4px' }}>
+                                    {[
+                                        { val: 'caliente', label: '🔥 Caliente', color: '#fee2e2', border: '#fca5a5', text: '#b91c1c', activeBg: '#ef4444', activeText: '#ffffff' },
+                                        { val: 'tibio', label: '⚡ Tibio', color: '#ffedd5', border: '#fdba74', text: '#c2410c', activeBg: '#f97316', activeText: '#ffffff' },
+                                        { val: 'frio', label: '❄️ Frío', color: '#dbeafe', border: '#93c5fd', text: '#1d4ed8', activeBg: '#3b82f6', activeText: '#ffffff' }
+                                    ].map(item => {
+                                        const isSelected = formData.prioridad_lead === item.val;
+                                        return (
+                                            <button
+                                                key={item.val}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, prioridad_lead: item.val as any })}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '10px 16px',
+                                                    borderRadius: '12px',
+                                                    border: `1.5px solid ${isSelected ? item.activeBg : item.border}`,
+                                                    background: isSelected ? item.activeBg : item.color,
+                                                    color: isSelected ? item.activeText : item.text,
+                                                    fontWeight: 'bold',
+                                                    fontSize: '12px',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s ease',
+                                                    textAlign: 'center',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    boxShadow: isSelected ? `0 4px 10px rgba(0,0,0,0.1)` : 'none'
+                                                }}
+                                            >
+                                                {item.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className={styles.inputGroup} style={{ marginTop: '1.5rem' }}>
+                                <label className={styles.inputLabel}>Comentarios Comerciales</label>
+                                <textarea
+                                    rows={2}
+                                    placeholder="Comentarios o notas adicionales sobre el contacto..."
+                                    value={formData.comentarios}
+                                    onChange={e => setFormData({ ...formData, comentarios: e.target.value })}
+                                    className={styles.input}
+                                    style={{ resize: 'vertical', minHeight: '60px' }}
                                 />
                             </div>
 
@@ -752,6 +950,6 @@ export default function ProspectosPage() {
                 </div>
                 );
             })()}
-        </div>
+        </>
     );
 }
