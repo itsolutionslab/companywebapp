@@ -47,8 +47,12 @@ export default function LeadDetailPage() {
     const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
     // Edit Mode State
-    const [isEditing, setIsEditing] = useState(false);
-    const [editData, setEditData] = useState<any>({});
+    const [isEditingGeneral, setIsEditingGeneral] = useState(false);
+    const [editDataGeneral, setEditDataGeneral] = useState<any>({});
+    const [isEditingCommercial, setIsEditingCommercial] = useState(false);
+    const [editDataCommercial, setEditDataCommercial] = useState<any>({});
+    const [isEditingProject, setIsEditingProject] = useState(false);
+    const [editDataProject, setEditDataProject] = useState<any>({});
 
     // Reminder State
     const [reminderDate, setReminderDate] = useState('');
@@ -450,30 +454,122 @@ export default function LeadDetailPage() {
         }
     };
 
-    const handleEditToggle = () => {
-        if (!isEditing && lead?.data) {
-            setEditData({ ...lead.data });
+    const handleEditToggleGeneral = () => {
+        if (!isEditingGeneral && lead?.data) {
+            setEditDataGeneral({ ...lead.data });
         }
-        setIsEditing(!isEditing);
+        setIsEditingGeneral(!isEditingGeneral);
     };
 
-    const handleSaveEdit = async () => {
+    const handleSaveEditGeneral = async () => {
         if (!lead) return;
         setIsUpdating(true);
         try {
-            await updateLead(lead.lead_id, { data: editData });
+            const latestLead = await getLeadById(lead.lead_id);
+            const currentData = latestLead?.data || lead.data || {};
+            const mergedData = {
+                ...currentData,
+                name: editDataGeneral.name !== undefined ? editDataGeneral.name : (currentData.name || ''),
+                email: editDataGeneral.email !== undefined ? editDataGeneral.email : (currentData.email || ''),
+                phone: editDataGeneral.phone !== undefined ? editDataGeneral.phone : (currentData.phone || ''),
+                company: editDataGeneral.company !== undefined ? editDataGeneral.company : (currentData.company || ''),
+                website: editDataGeneral.website !== undefined ? editDataGeneral.website : (currentData.website || ''),
+                delivery_model: editDataGeneral.delivery_model !== undefined ? editDataGeneral.delivery_model : (currentData.delivery_model || 'ADVISORY'),
+                capability: editDataGeneral.capability !== undefined ? editDataGeneral.capability : (currentData.capability || 'SOFTWARE')
+            };
+            await updateLead(lead.lead_id, { data: mergedData });
             const { addLeadEvent } = await import("@/lib/firebase");
             await addLeadEvent(lead.lead_id, {
                 type: 'NOTE_ADDED',
-                description: 'Información del prospecto actualizada.',
+                description: 'Información general y operativa actualizada.',
                 timestamp: Timestamp.now()
             } as any);
             await fetchLead();
-            setIsEditing(false);
-            showNotification("Información actualizada correctamente", "success");
+            setIsEditingGeneral(false);
+            showNotification("Información general actualizada correctamente", "success");
         } catch (error) {
-            console.error("Error saving lead info:", error);
-            showNotification("Error al guardar información", "error");
+            console.error("Error saving general lead info:", error);
+            showNotification("Error al guardar información general", "error");
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleEditToggleCommercial = () => {
+        if (!isEditingCommercial && lead?.data) {
+            setEditDataCommercial({ ...lead.data });
+        }
+        setIsEditingCommercial(!isEditingCommercial);
+    };
+
+    const handleSaveEditCommercial = async () => {
+        if (!lead) return;
+        setIsUpdating(true);
+        try {
+            const latestLead = await getLeadById(lead.lead_id);
+            const currentData = latestLead?.data || lead.data || {};
+            const mergedData = {
+                ...currentData,
+                company_linkedin: editDataCommercial.company_linkedin !== undefined ? editDataCommercial.company_linkedin : (currentData.company_linkedin || ''),
+                rubro_principal: editDataCommercial.rubro_principal !== undefined ? editDataCommercial.rubro_principal : (currentData.rubro_principal || ''),
+                subrubro: editDataCommercial.subrubro !== undefined ? editDataCommercial.subrubro : (currentData.subrubro || ''),
+                prioridad_lead: editDataCommercial.prioridad_lead !== undefined ? editDataCommercial.prioridad_lead : (currentData.prioridad_lead || ''),
+                tipo_empresa: editDataCommercial.tipo_empresa !== undefined ? editDataCommercial.tipo_empresa : (currentData.tipo_empresa || ''),
+                tamano_empresa: editDataCommercial.tamano_empresa !== undefined ? editDataCommercial.tamano_empresa : (currentData.tamano_empresa || ''),
+                zona_geografica: editDataCommercial.zona_geografica !== undefined ? editDataCommercial.zona_geografica : (currentData.zona_geografica || ''),
+                servicio_ofrecido: editDataCommercial.servicio_ofrecido !== undefined ? editDataCommercial.servicio_ofrecido : (currentData.servicio_ofrecido || ''),
+                dolor_principal: editDataCommercial.dolor_principal !== undefined ? editDataCommercial.dolor_principal : (currentData.dolor_principal || ''),
+                comentarios: editDataCommercial.comentarios !== undefined ? editDataCommercial.comentarios : (currentData.comentarios || '')
+            };
+            await updateLead(lead.lead_id, { data: mergedData });
+            const { addLeadEvent } = await import("@/lib/firebase");
+            await addLeadEvent(lead.lead_id, {
+                type: 'NOTE_ADDED',
+                description: 'Información comercial actualizada.',
+                timestamp: Timestamp.now()
+            } as any);
+            await fetchLead();
+            setIsEditingCommercial(false);
+            showNotification("Información comercial actualizada correctamente", "success");
+        } catch (error) {
+            console.error("Error saving commercial lead info:", error);
+            showNotification("Error al guardar información comercial", "error");
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleEditToggleProject = () => {
+        if (!isEditingProject && lead?.data) {
+            setEditDataProject({ ...lead.data });
+        }
+        setIsEditingProject(!isEditingProject);
+    };
+
+    const handleSaveEditProject = async () => {
+        if (!lead) return;
+        setIsUpdating(true);
+        try {
+            const latestLead = await getLeadById(lead.lead_id);
+            const currentData = latestLead?.data || lead.data || {};
+            const mergedData = {
+                ...currentData,
+                impact: editDataProject.impact !== undefined ? editDataProject.impact : (currentData.impact || ''),
+                project_desc: editDataProject.project_desc !== undefined ? editDataProject.project_desc : (currentData.project_desc || '')
+            };
+            await updateLead(lead.lead_id, { data: mergedData });
+            const { addLeadEvent } = await import("@/lib/firebase");
+            await addLeadEvent(lead.lead_id, {
+                type: 'NOTE_ADDED',
+                description: 'Descripción e impacto del proyecto actualizado.',
+                timestamp: Timestamp.now()
+            } as any);
+            await fetchLead();
+            setIsEditingProject(false);
+            showNotification("Proyecto actualizado correctamente", "success");
+        } catch (error) {
+            console.error("Error saving project lead info:", error);
+            showNotification("Error al guardar información de proyecto", "error");
         } finally {
             setIsUpdating(false);
         }
@@ -655,6 +751,52 @@ export default function LeadDetailPage() {
                 {/* Main Info Card */}
                 <div className={styles.infoSection}>
                     <div className={styles.sectionCard} style={{ position: 'relative' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #f0f0f0', paddingBottom: '0.75rem' }}>
+                            <h3 className="admin-h3" style={{ fontSize: '14px', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-primary)', height: '10px' }}></span>
+                                Información General y Operativa
+                            </h3>
+                            {(isGrowOrArchitect || lead.created_by === currentUserData?.uid) && lead.status_flow.current !== 'WIN_CLOSED' && lead.status_flow.current !== 'LOST' && (
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    {isEditingGeneral ? (
+                                        <>
+                                            <button 
+                                                onClick={handleSaveEditGeneral} 
+                                                className="admin-btn admin-btn-primary" 
+                                                style={{ fontSize: '10px', padding: '0.35rem 0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                                                disabled={isUpdating}
+                                            >
+                                                {isUpdating ? '...' : '💾 Guardar'}
+                                            </button>
+                                            <button 
+                                                onClick={handleEditToggleGeneral} 
+                                                className="admin-btn admin-btn-secondary" 
+                                                style={{ fontSize: '10px', padding: '0.35rem 0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                                            >
+                                                ✕ Cancelar
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button 
+                                            onClick={handleEditToggleGeneral} 
+                                            className="admin-btn admin-btn-primary" 
+                                            style={{ 
+                                                fontSize: '10px', 
+                                                padding: '0.35rem 0.75rem', 
+                                                borderRadius: '8px', 
+                                                cursor: 'pointer', 
+                                                fontWeight: 'bold',
+                                                background: 'var(--admin-primary)',
+                                                color: '#ffffff',
+                                                border: 'none'
+                                            }}
+                                        >
+                                            ✏️ Editar
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
                             <section>
                                 <h3 className="admin-h3" style={{ fontSize: '12px', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -662,27 +804,27 @@ export default function LeadDetailPage() {
                                     Datos de Contacto
                                 </h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    {isEditing ? (
+                                    {isEditingGeneral ? (
                                         <>
                                             <div>
                                                 <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Nombre del Contacto</label>
-                                                <input type="text" className={styles.editInput} value={editData.name || ''} onChange={e => setEditData({ ...editData, name: e.target.value })} />
+                                                <input type="text" className={styles.editInput} value={editDataGeneral.name || ''} onChange={e => setEditDataGeneral({ ...editDataGeneral, name: e.target.value })} />
                                             </div>
                                             <div>
                                                 <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Email</label>
-                                                <input type="email" className={styles.editInput} value={editData.email || ''} onChange={e => setEditData({ ...editData, email: e.target.value })} />
+                                                <input type="email" className={styles.editInput} value={editDataGeneral.email || ''} onChange={e => setEditDataGeneral({ ...editDataGeneral, email: e.target.value })} />
                                             </div>
                                             <div>
                                                 <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Teléfono</label>
-                                                <input type="tel" className={styles.editInput} value={editData.phone || ''} onChange={e => setEditData({ ...editData, phone: e.target.value })} />
+                                                <input type="tel" className={styles.editInput} value={editDataGeneral.phone || ''} onChange={e => setEditDataGeneral({ ...editDataGeneral, phone: e.target.value })} />
                                             </div>
                                             <div>
                                                 <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Empresa</label>
-                                                <input type="text" className={styles.editInput} value={editData.company || ''} onChange={e => setEditData({ ...editData, company: e.target.value })} />
+                                                <input type="text" className={styles.editInput} value={editDataGeneral.company || ''} onChange={e => setEditDataGeneral({ ...editDataGeneral, company: e.target.value })} />
                                             </div>
                                             <div>
                                                 <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Website</label>
-                                                <input type="url" className={styles.editInput} value={editData.website || ''} onChange={e => setEditData({ ...editData, website: e.target.value })} />
+                                                <input type="url" className={styles.editInput} value={editDataGeneral.website || ''} onChange={e => setEditDataGeneral({ ...editDataGeneral, website: e.target.value })} />
                                             </div>
                                         </>
                                     ) : (
@@ -725,11 +867,11 @@ export default function LeadDetailPage() {
                                         Modelo Operativo
                                     </h3>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                        {isEditing ? (
+                                        {isEditingGeneral ? (
                                             <>
                                                 <div>
                                                     <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Delivery Model</label>
-                                                    <select className={styles.editSelect} value={editData.delivery_model || 'ADVISORY'} onChange={e => setEditData({ ...editData, delivery_model: e.target.value })}>
+                                                    <select className={styles.editSelect} value={editDataGeneral.delivery_model || 'ADVISORY'} onChange={e => setEditDataGeneral({ ...editDataGeneral, delivery_model: e.target.value })}>
                                                         <option value="ADVISORY">Advisory</option>
                                                         <option value="IMPLEMENTATION">Implementation</option>
                                                         <option value="MANAGED_SERVICES">Managed Services</option>
@@ -738,7 +880,7 @@ export default function LeadDetailPage() {
                                                 </div>
                                                 <div>
                                                     <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Capability</label>
-                                                    <select className={styles.editSelect} value={editData.capability || 'SOFTWARE'} onChange={e => setEditData({ ...editData, capability: e.target.value })}>
+                                                    <select className={styles.editSelect} value={editDataGeneral.capability || 'SOFTWARE'} onChange={e => setEditDataGeneral({ ...editDataGeneral, capability: e.target.value })}>
                                                         <option value="SOFTWARE">Software Development</option>
                                                         <option value="AI">AI & Machine Learning</option>
                                                         <option value="CLOUD">Cloud Solutions</option>
@@ -771,52 +913,69 @@ export default function LeadDetailPage() {
                                 </section>
                             )}
                         </div>
-                        
-                        {/* Botón Editar / Guardar */}
-                        {(['GROW', 'ADMIN'].includes(userPillar || '') || userSecondaryPillars?.includes('GROW') || lead.created_by === currentUserData?.uid) && (
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #f0f0f0' }}>
-                                {isEditing && (
-                                    <button 
-                                        onClick={handleSaveEdit} 
-                                        className="admin-btn admin-btn-primary" 
-                                        style={{ fontSize: '10px', padding: '0.5rem 1rem' }}
-                                        disabled={isUpdating}
-                                    >
-                                        {isUpdating ? 'Guardando...' : 'Guardar'}
-                                    </button>
-                                )}
-                                {(isGrowOrArchitect || lead.created_by === currentUserData?.uid) && lead.status_flow.current !== 'WIN_CLOSED' && lead.status_flow.current !== 'LOST' && (
-                                    <button 
-                                        onClick={handleEditToggle} 
-                                        className={isEditing ? "admin-btn admin-btn-secondary" : "admin-btn admin-btn-primary"} 
-                                        style={{ fontSize: '10px', padding: '0.5rem 1rem' }}
-                                    >
-                                        {isEditing ? 'Cancelar' : 'Editar Información'}
-                                    </button>
-                                )}
-                            </div>
-                        )}
                     </div>
 
                     {/* Sección Comercial de Prospecto */}
                     <div className={styles.sectionCard} style={{ marginTop: '1rem' }}>
-                        <h3 className="admin-h3" style={{ fontSize: '14px', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-accent)', height: '10px' }}></span>
-                            Información y Clasificación Comercial
-                        </h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #f0f0f0', paddingBottom: '0.75rem' }}>
+                            <h3 className="admin-h3" style={{ fontSize: '14px', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-accent)', height: '10px' }}></span>
+                                Información y Clasificación Comercial
+                            </h3>
+                            {(isGrowOrArchitect || lead.created_by === currentUserData?.uid) && lead.status_flow.current !== 'WIN_CLOSED' && lead.status_flow.current !== 'LOST' && (
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    {isEditingCommercial ? (
+                                        <>
+                                            <button 
+                                                onClick={handleSaveEditCommercial} 
+                                                className="admin-btn admin-btn-primary" 
+                                                style={{ fontSize: '10px', padding: '0.35rem 0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                                                disabled={isUpdating}
+                                            >
+                                                {isUpdating ? '...' : '💾 Guardar'}
+                                            </button>
+                                            <button 
+                                                onClick={handleEditToggleCommercial} 
+                                                className="admin-btn admin-btn-secondary" 
+                                                style={{ fontSize: '10px', padding: '0.35rem 0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                                            >
+                                                ✕ Cancelar
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button 
+                                            onClick={handleEditToggleCommercial} 
+                                            className="admin-btn admin-btn-primary" 
+                                            style={{ 
+                                                fontSize: '10px', 
+                                                padding: '0.35rem 0.75rem', 
+                                                borderRadius: '8px', 
+                                                cursor: 'pointer', 
+                                                fontWeight: 'bold',
+                                                background: 'var(--admin-primary)',
+                                                color: '#ffffff',
+                                                border: 'none'
+                                            }}
+                                        >
+                                            ✏️ Editar
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
                             {/* Columna Izquierda: Identificación y Clasificación */}
                             <section style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                {isEditing ? (
+                                {isEditingCommercial ? (
                                     <>
                                         <div>
                                             <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>LinkedIn de Empresa</label>
                                             <input 
                                                 type="url" 
                                                 className={styles.editInput} 
-                                                value={editData.company_linkedin || ''} 
-                                                onChange={e => setEditData({ ...editData, company_linkedin: e.target.value })} 
+                                                value={editDataCommercial.company_linkedin || ''} 
+                                                onChange={e => setEditDataCommercial({ ...editDataCommercial, company_linkedin: e.target.value })} 
                                                 placeholder="https://linkedin.com/company/..."
                                             />
                                         </div>
@@ -824,8 +983,8 @@ export default function LeadDetailPage() {
                                             <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Rubro Principal</label>
                                             <select 
                                                 className={styles.editSelect} 
-                                                value={editData.rubro_principal || ''} 
-                                                onChange={e => setEditData({ ...editData, rubro_principal: e.target.value, subrubro: '' })}
+                                                value={editDataCommercial.rubro_principal || ''} 
+                                                onChange={e => setEditDataCommercial({ ...editDataCommercial, rubro_principal: e.target.value, subrubro: '' })}
                                             >
                                                 <option value="">-- Seleccionar Rubro --</option>
                                                 {Object.entries(RUBROS_CATALOG).map(([key, info]) => (
@@ -837,12 +996,12 @@ export default function LeadDetailPage() {
                                             <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Subrubro</label>
                                             <select 
                                                 className={styles.editSelect} 
-                                                value={editData.subrubro || ''} 
-                                                onChange={e => setEditData({ ...editData, subrubro: e.target.value })}
+                                                value={editDataCommercial.subrubro || ''} 
+                                                onChange={e => setEditDataCommercial({ ...editDataCommercial, subrubro: e.target.value })}
                                             >
                                                 <option value="">-- Seleccionar Subrubro --</option>
                                                 {(() => {
-                                                    const selectedRubroObj = Object.values(RUBROS_CATALOG).find(r => r.name === editData.rubro_principal);
+                                                    const selectedRubroObj = Object.values(RUBROS_CATALOG).find(r => r.name === editDataCommercial.rubro_principal);
                                                     const availableSubrubros = selectedRubroObj ? [...selectedRubroObj.subrubros, ...SUBRUBROS_VENTAS] : SUBRUBROS_VENTAS;
                                                     return availableSubrubros.map(sub => (
                                                         <option key={sub} value={sub}>{sub}</option>
@@ -858,12 +1017,12 @@ export default function LeadDetailPage() {
                                                     { val: 'tibio', label: '⚡ Tibio', color: '#ffedd5', border: '#fdba74', text: '#c2410c', activeBg: '#f97316', activeText: '#ffffff' },
                                                     { val: 'frio', label: '❄️ Frío', color: '#dbeafe', border: '#93c5fd', text: '#1d4ed8', activeBg: '#3b82f6', activeText: '#ffffff' }
                                                 ].map(item => {
-                                                    const isSelected = editData.prioridad_lead === item.val;
+                                                    const isSelected = editDataCommercial.prioridad_lead === item.val;
                                                     return (
                                                         <button
                                                             key={item.val}
                                                             type="button"
-                                                            onClick={() => setEditData({ ...editData, prioridad_lead: item.val as any })}
+                                                            onClick={() => setEditDataCommercial({ ...editDataCommercial, prioridad_lead: item.val as any })}
                                                             style={{
                                                                 flex: 1,
                                                                 padding: '8px 10px',
@@ -930,14 +1089,14 @@ export default function LeadDetailPage() {
 
                             {/* Columna Derecha: Dimensiones de Empresa y Dolor */}
                             <section style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                {isEditing ? (
+                                {isEditingCommercial ? (
                                     <>
                                         <div>
                                             <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Tipo de Empresa</label>
                                             <select 
                                                 className={styles.editSelect} 
-                                                value={editData.tipo_empresa || ''} 
-                                                onChange={e => setEditData({ ...editData, tipo_empresa: e.target.value })}
+                                                value={editDataCommercial.tipo_empresa || ''} 
+                                                onChange={e => setEditDataCommercial({ ...editDataCommercial, tipo_empresa: e.target.value })}
                                             >
                                                 <option value="">-- Seleccionar Tipo --</option>
                                                 {TIPO_EMPRESA_OPTIONS.map(opt => (
@@ -949,8 +1108,8 @@ export default function LeadDetailPage() {
                                             <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Tamaño de Empresa</label>
                                             <select 
                                                 className={styles.editSelect} 
-                                                value={editData.tamano_empresa || ''} 
-                                                onChange={e => setEditData({ ...editData, tamano_empresa: e.target.value })}
+                                                value={editDataCommercial.tamano_empresa || ''} 
+                                                onChange={e => setEditDataCommercial({ ...editDataCommercial, tamano_empresa: e.target.value })}
                                             >
                                                 <option value="">-- Seleccionar Tamaño --</option>
                                                 {TAMANO_EMPRESA_OPTIONS.map(opt => (
@@ -962,8 +1121,8 @@ export default function LeadDetailPage() {
                                             <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Zona Geográfica</label>
                                             <select 
                                                 className={styles.editSelect} 
-                                                value={editData.zona_geografica || ''} 
-                                                onChange={e => setEditData({ ...editData, zona_geografica: e.target.value })}
+                                                value={editDataCommercial.zona_geografica || ''} 
+                                                onChange={e => setEditDataCommercial({ ...editDataCommercial, zona_geografica: e.target.value })}
                                             >
                                                 <option value="">-- Seleccionar Zona --</option>
                                                 {ZONA_GEOGRAFICA_OPTIONS.map(opt => (
@@ -976,8 +1135,8 @@ export default function LeadDetailPage() {
                                             <input 
                                                 type="text" 
                                                 className={styles.editInput} 
-                                                value={editData.servicio_ofrecido || ''} 
-                                                onChange={e => setEditData({ ...editData, servicio_ofrecido: e.target.value })} 
+                                                value={editDataCommercial.servicio_ofrecido || ''} 
+                                                onChange={e => setEditDataCommercial({ ...editDataCommercial, servicio_ofrecido: e.target.value })} 
                                                 placeholder="Ej. Desarrollo de CRM a medida"
                                             />
                                         </div>
@@ -1007,14 +1166,14 @@ export default function LeadDetailPage() {
 
                         {/* Fila inferior: Dolor y Comentarios */}
                         <div style={{ marginTop: '1.25rem', borderTop: '1px solid #f0f0f0', paddingTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {isEditing ? (
+                            {isEditingCommercial ? (
                                 <>
                                     <div>
                                         <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Dolor Principal</label>
                                         <textarea 
                                             className={styles.editTextarea} 
-                                            value={editData.dolor_principal || ''} 
-                                            onChange={e => setEditData({ ...editData, dolor_principal: e.target.value })} 
+                                            value={editDataCommercial.dolor_principal || ''} 
+                                            onChange={e => setEditDataCommercial({ ...editDataCommercial, dolor_principal: e.target.value })} 
                                             placeholder="Describa el dolor o problema principal del cliente..."
                                             style={{ minHeight: '60px' }}
                                         />
@@ -1023,8 +1182,8 @@ export default function LeadDetailPage() {
                                         <label className="admin-label" style={{ fontSize: '9px', marginBottom: '2px', marginLeft: 0 }}>Comentarios Comerciales</label>
                                         <textarea 
                                             className={styles.editTextarea} 
-                                            value={editData.comentarios || ''} 
-                                            onChange={e => setEditData({ ...editData, comentarios: e.target.value })} 
+                                            value={editDataCommercial.comentarios || ''} 
+                                            onChange={e => setEditDataCommercial({ ...editDataCommercial, comentarios: e.target.value })} 
                                             placeholder="Notas de seguimiento o comentarios comerciales..."
                                             style={{ minHeight: '60px' }}
                                         />
@@ -1049,10 +1208,10 @@ export default function LeadDetailPage() {
                         </div>
 
                         {/* Botones de acción duplicados para mejorar UX al final de esta sección */}
-                        {(['GROW', 'ADMIN'].includes(userPillar || '') || userSecondaryPillars?.includes('GROW') || lead.created_by === currentUserData?.uid) && isEditing && (
+                        {(['GROW', 'ADMIN'].includes(userPillar || '') || userSecondaryPillars?.includes('GROW') || lead.created_by === currentUserData?.uid) && isEditingCommercial && (
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #f0f0f0' }}>
                                 <button 
-                                    onClick={handleSaveEdit} 
+                                    onClick={handleSaveEditCommercial} 
                                     className="admin-btn admin-btn-primary" 
                                     style={{ fontSize: '10px', padding: '0.5rem 1rem' }}
                                     disabled={isUpdating}
@@ -1060,7 +1219,7 @@ export default function LeadDetailPage() {
                                     {isUpdating ? 'Guardando...' : 'Guardar Cambios'}
                                 </button>
                                 <button 
-                                    onClick={handleEditToggle} 
+                                    onClick={handleEditToggleCommercial} 
                                     className="admin-btn admin-btn-secondary" 
                                     style={{ fontSize: '10px', padding: '0.5rem 1rem' }}
                                 >
@@ -1177,18 +1336,65 @@ export default function LeadDetailPage() {
                     </div>
 
                     {/* Impact & Project Description */}
-                    <div className={styles.sectionCard}>
+                    <div className={styles.sectionCard} style={{ position: 'relative' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #f0f0f0', paddingBottom: '0.75rem' }}>
+                            <h3 className="admin-h3" style={{ fontSize: '14px', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-primary)', height: '10px' }}></span>
+                                Proyecto e Impacto Comercial
+                            </h3>
+                            {(isGrowOrArchitect || lead.created_by === currentUserData?.uid) && lead.status_flow.current !== 'WIN_CLOSED' && lead.status_flow.current !== 'LOST' && (
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    {isEditingProject ? (
+                                        <>
+                                            <button 
+                                                onClick={handleSaveEditProject} 
+                                                className="admin-btn admin-btn-primary" 
+                                                style={{ fontSize: '10px', padding: '0.35rem 0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                                                disabled={isUpdating}
+                                            >
+                                                {isUpdating ? '...' : '💾 Guardar'}
+                                            </button>
+                                            <button 
+                                                onClick={handleEditToggleProject} 
+                                                className="admin-btn admin-btn-secondary" 
+                                                style={{ fontSize: '10px', padding: '0.35rem 0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                                            >
+                                                ✕ Cancelar
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button 
+                                            onClick={handleEditToggleProject} 
+                                            className="admin-btn admin-btn-primary" 
+                                            style={{ 
+                                                fontSize: '10px', 
+                                                padding: '0.35rem 0.75rem', 
+                                                borderRadius: '8px', 
+                                                cursor: 'pointer', 
+                                                fontWeight: 'bold',
+                                                background: 'var(--admin-primary)',
+                                                color: '#ffffff',
+                                                border: 'none'
+                                            }}
+                                        >
+                                            ✏️ Editar
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
                         {isGrowOrArchitect && (
                             <section style={{ marginBottom: '1.5rem' }}>
                                 <h3 className="admin-h3" style={{ fontSize: '12px', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-success)', height: '10px' }}></span>
                                     Impacto de Negocio
                                 </h3>
-                                {isEditing ? (
+                                {isEditingProject ? (
                                     <textarea 
                                         className={styles.editTextarea} 
-                                        value={editData.impact || ''} 
-                                        onChange={e => setEditData({ ...editData, impact: e.target.value })}
+                                        value={editDataProject.impact || ''} 
+                                        onChange={e => setEditDataProject({ ...editDataProject, impact: e.target.value })}
                                     />
                                 ) : (
                                     <p style={{ padding: '1rem', background: 'var(--admin-surface)', borderRadius: '0.75rem', fontWeight: 'bold', lineHeight: '1.4', fontSize: '12px', margin: 0 }}>
@@ -1203,11 +1409,11 @@ export default function LeadDetailPage() {
                                 <span className={styles.titleDecorator} style={{ backgroundColor: 'var(--admin-primary)', height: '10px' }}></span>
                                 Descripción del Proyecto
                             </h3>
-                            {isEditing ? (
+                            {isEditingProject ? (
                                 <textarea 
                                     className={styles.editTextarea} 
-                                    value={editData.project_desc || ''} 
-                                    onChange={e => setEditData({ ...editData, project_desc: e.target.value })}
+                                    value={editDataProject.project_desc || ''} 
+                                    onChange={e => setEditDataProject({ ...editDataProject, project_desc: e.target.value })}
                                     style={{ minHeight: '120px' }}
                                 />
                             ) : (
