@@ -152,6 +152,8 @@ export async function POST(request: Request) {
         // Build the lead document following the existing structure
         const leadDoc = {
             lead_id: leadId,
+            has_attachments: false,
+            created_from_excel: false,
             data: sanitizedData,
             audit_logs: {
                 created_at: Timestamp.now(),

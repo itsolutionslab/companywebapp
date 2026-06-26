@@ -346,6 +346,8 @@ export const createLead = async (leadData: Partial<Lead>) => {
     const newLead = {
         ...leadData,
         lead_id: Math.random().toString(36).substr(2, 9), // Temporary, will be overwritten by doc id if using addDoc, but here we might want to specify it
+        has_attachments: false,
+        created_from_excel: false,
         status_flow: leadData.status_flow || { current: 'LEAD_NEW', history: [] },
         audit_logs: {
             created_at: Timestamp.now(),

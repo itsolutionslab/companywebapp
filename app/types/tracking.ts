@@ -172,6 +172,8 @@ export interface Lead {
     data: LeadData;
     kpis: LeadKPIs;
     priority: 'LOW' | 'MEDIUM' | 'HIGH';
+    has_attachments?: boolean;
+    created_from_excel?: boolean;
 }
 
 export interface InteractionEvent {

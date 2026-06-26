@@ -823,3 +823,182 @@ select.input option {
   -webkit-mask-composite: xor;
   padding: 2px;
 }
+
+/* --- SEGMENTED CONTROL & EXCEL IMPORT MODAL STYLES --- */
+.modalTabs {
+  display: flex;
+  background: #f2f2f7;
+  padding: 4px;
+  border-radius: 12px;
+  margin: 0 24px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.modalTabButton {
+  flex: 1;
+  padding: 8px 16px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #8e8e93;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modalTabButtonActive {
+  background: #ffffff;
+  color: var(--admin-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.excelImportWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.importInstructions {
+  background: rgba(5, 17, 242, 0.03);
+  border: 1px solid rgba(5, 17, 242, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.importInstructions p {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #48484a;
+  margin: 0;
+}
+
+.btnTemplateDownload {
+  align-self: flex-start;
+  padding: 8px 16px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--admin-primary);
+  background: #ffffff;
+  border: 1.5px solid var(--admin-primary);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btnTemplateDownload:hover {
+  background: var(--admin-primary);
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(5, 17, 242, 0.15);
+}
+
+.dragDropZone {
+  border: 2px dashed #c7c7cc;
+  background: #f8f9fa;
+  border-radius: 16px;
+  padding: 32px 20px;
+  text-align: center;
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.dragDropZone:hover,
+.dragDropZoneActive {
+  border-color: var(--admin-primary);
+  background: rgba(5, 17, 242, 0.02);
+}
+
+.fileInputHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.fileInputLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.uploadIcon {
+  font-size: 2rem;
+  margin-bottom: 4px;
+  transition: transform 0.2s ease;
+}
+
+.dragDropZone:hover .uploadIcon {
+  transform: translateY(-3px);
+}
+
+.uploadTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1c1c1e;
+}
+
+.uploadSubtitle {
+  font-size: 11px;
+  color: #8e8e93;
+}
+
+.fileIcon {
+  font-size: 2.25rem;
+  margin-bottom: 4px;
+}
+
+.fileName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--admin-primary);
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileSize {
+  font-size: 11px;
+  color: #8e8e93;
+  font-weight: 600;
+}
+
+.changeFileText {
+  font-size: 10px;
+  font-weight: 700;
+  color: #636366;
+  text-transform: uppercase;
+  margin-top: 8px;
+  background: #ebebf0;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.excelErrorBox {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: left;
+}

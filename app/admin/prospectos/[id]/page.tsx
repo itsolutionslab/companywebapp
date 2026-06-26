@@ -159,7 +159,8 @@ export default function LeadDetailPage() {
 
             const docRef = doc(db, "leads", id as string);
             await updateDoc(docRef, {
-                documents: arrayUnion(...newDocs)
+                documents: arrayUnion(...newDocs),
+                has_attachments: true
             });
 
             await addLeadEvent(id as string, {

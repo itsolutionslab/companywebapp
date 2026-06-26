@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import * as XLSX from "xlsx";
 import { onLeadsUpdate, updateLead, createLead, auth, db, getStaffUsers } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { Lead, LeadStatus, DeliveryModel, Capability } from "@/types/tracking";
@@ -51,6 +52,13 @@ export default function ProspectosPage() {
     const [dateFilterType, setDateFilterType] = useState<DateFilterType>('TODAY');
     const [exactDate, setExactDate] = useState<string>('');
     const [dateRange, setDateRange] = useState<{start: string, end: string}>({start: '', end: ''});
+
+    // Excel Import & Attachment Filter State
+    const [modalTab, setModalTab] = useState<'manual' | 'excel'>('manual');
+    const [excelFile, setExcelFile] = useState<File | null>(null);
+    const [excelError, setExcelError] = useState<string | null>(null);
+    const [uploadLoading, setUploadLoading] = useState(false);
+    const [hasAttachmentsFilter, setHasAttachmentsFilter] = useState<'ALL' | 'WITH' | 'WITHOUT'>('ALL');
 
     // Form State
     const [formData, setFormData] = useState({
@@ -119,6 +127,168 @@ export default function ProspectosPage() {
             unsubscribeAuth();
         };
     }, []);
+
+    // Excel Import Handlers
+    const handleDownloadTemplate = () => {
+        const headers = [
+            "Nombre de Contacto", "Empresa", "Email", "Teléfono", "Modelo de Entrega", 
+            "Capacidad", "Descripción de Proyecto", "LinkedIn Empresa", "Rubro Principal", 
+            "Subrubro", "Prioridad", "Comentarios", "Tipo de Empresa", 
+            "Tamaño de Empresa", "Zona Geográfica", "Dolor Principal", "Servicio Ofrecido"
+        ];
+        
+        // Sheet 1: Blank Template
+        const wsTemplate = XLSX.utils.aoa_to_sheet([headers]);
+        
+        // Sheet 2: Options and values permitted
+        const optHeaders = ["Modelo de Entrega", "Capacidad", "Rubro Principal", "Prioridad"];
+        const deliveryModels = ['ADVISORY', 'IMPLEMENTATION', 'MANAGED_SERVICES', 'STAFF_AUGMENTATION'];
+        const capabilities = ['SOFTWARE', 'AI', 'MARKETING', 'CLOUD', 'ERP', 'DATA', 'PMO', 'AUTOMATION'];
+        const rubros = Object.values(RUBROS_CATALOG).map(r => r.name);
+        const priorities = ['caliente', 'tibio', 'frio'];
+        
+        // Combine options in columns
+        const maxLength = Math.max(deliveryModels.length, capabilities.length, rubros.length, priorities.length);
+        const optionsRows = [optHeaders];
+        for (let i = 0; i < maxLength; i++) {
+            optionsRows.push([
+                deliveryModels[i] || "",
+                capabilities[i] || "",
+                rubros[i] || "",
+                priorities[i] || ""
+            ]);
+        }
+        
+        const wsOptions = XLSX.utils.aoa_to_sheet(optionsRows);
+        
+        // Create Workbook and append sheets
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, wsTemplate, "Plantilla Leads");
+        XLSX.utils.book_append_sheet(wb, wsOptions, "Opciones de Selección");
+        
+        // Generate and download
+        XLSX.writeFile(wb, "plantilla_importacion_leads.xlsx");
+    };
+
+    const handleFileChange = (file: File) => {
+        setExcelError(null);
+        if (!file) return;
+
+        const ext = file.name.split('.').pop()?.toLowerCase();
+        if (ext !== 'xlsx' && ext !== 'xls' && ext !== 'csv') {
+            setExcelFile(null);
+            setExcelError('Formato no soportado. Sube un archivo .xlsx, .xls o .csv.');
+            showNotification('Formato de archivo no soportado', 'error');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                if (workbook.SheetNames.length === 0) {
+                    setExcelFile(null);
+                    setExcelError('El archivo Excel está vacío.');
+                    showNotification('El archivo está vacío', 'error');
+                    return;
+                }
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" }) as any[][];
+                if (json.length === 0) {
+                    setExcelFile(null);
+                    setExcelError('El archivo Excel está vacío.');
+                    showNotification('El archivo está vacío', 'error');
+                    return;
+                }
+
+                // Check headers
+                const expectedHeaders = [
+                    "Nombre de Contacto", "Empresa", "Email", "Teléfono", "Modelo de Entrega", 
+                    "Capacidad", "Descripción de Proyecto", "LinkedIn Empresa", "Rubro Principal", 
+                    "Subrubro", "Prioridad", "Comentarios", "Tipo de Empresa", 
+                    "Tamaño de Empresa", "Zona Geográfica", "Dolor Principal", "Servicio Ofrecido"
+                ];
+                const headerRow = json[0].map(h => String(h || "").trim().toLowerCase());
+                const headersMatch = expectedHeaders.map(h => h.toLowerCase()).every((h, idx) => headerRow[idx] === h);
+                if (!headersMatch) {
+                    setExcelFile(null);
+                    setExcelError('La estructura del archivo no respeta la plantilla. Por favor, descarga la plantilla y úsala sin modificar sus columnas.');
+                    showNotification('Estructura de plantilla incorrecta', 'error');
+                    return;
+                }
+
+                // Count valid data rows
+                const dataRows = [];
+                for (let i = 1; i < json.length; i++) {
+                    const isEmpty = json[i].every(val => String(val || "").trim() === "");
+                    if (!isEmpty) dataRows.push(json[i]);
+                }
+
+                if (dataRows.length === 0) {
+                    setExcelFile(null);
+                    setExcelError('El archivo Excel no contiene registros.');
+                    showNotification('El archivo no contiene registros', 'error');
+                    return;
+                }
+
+                if (dataRows.length > 500) {
+                    setExcelFile(null);
+                    setExcelError('El archivo excede el límite máximo de 500 registros de datos.');
+                    showNotification('Límite de registros excedido (Máx 500)', 'error');
+                    return;
+                }
+
+                setExcelFile(file);
+            } catch (err) {
+                setExcelFile(null);
+                setExcelError('Error al leer el archivo. Asegúrate de que no esté dañado.');
+                showNotification('Error al leer el archivo', 'error');
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+    const handleUploadExcel = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!excelFile) return;
+
+        setUploadLoading(true);
+        try {
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+                showNotification("Sesión no iniciada", "error");
+                return;
+            }
+
+            const token = await currentUser.getIdToken();
+            const formData = new FormData();
+            formData.append('file', excelFile);
+
+            const res = await fetch('/api/leads/import', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            const result = await res.json();
+            if (res.ok && result.success) {
+                showNotification(`Se importaron ${result.count} prospectos exitosamente`, "success");
+                setIsCreating(false);
+                setExcelFile(null);
+                setExcelError(null);
+                setModalTab('manual');
+            } else {
+                showNotification(result.error || "Error al importar los prospectos", "error");
+            }
+        } catch (err: any) {
+            showNotification(`Error de red: ${err.message}`, "error");
+        } finally {
+            setUploadLoading(false);
+        }
+    };
 
     const canSwitchDomain = useMemo(() => {
         if (!userPillar) return true;
@@ -205,9 +375,17 @@ export default function ProspectosPage() {
                 matchesCreator = lead.created_by === creatorFilter;
             }
 
-            return matchesDomain && matchesSearch && matchesDate && matchesCreator;
+            // Filter by attachments
+            let matchesAttachments = true;
+            if (hasAttachmentsFilter === 'WITH') {
+                matchesAttachments = !!lead.has_attachments || !!(lead.documents && lead.documents.length > 0);
+            } else if (hasAttachmentsFilter === 'WITHOUT') {
+                matchesAttachments = !lead.has_attachments && (!lead.documents || lead.documents.length === 0);
+            }
+
+            return matchesDomain && matchesSearch && matchesDate && matchesCreator && matchesAttachments;
         });
-    }, [leads, activeDomain, searchTerm, dateFilterType, exactDate, dateRange, currentUserData, userLevel, creatorFilter]);
+    }, [leads, activeDomain, searchTerm, dateFilterType, exactDate, dateRange, currentUserData, userLevel, creatorFilter, hasAttachmentsFilter]);
 
     const getStatusColor = (status: LeadStatus) => {
         const s = status as string;
@@ -474,6 +652,19 @@ export default function ProspectosPage() {
                         </div>
                     )}
 
+                    <div className={styles.filterGroupCompact} style={{ marginLeft: '0.5rem' }}>
+                        <span className={styles.filterLabelCompact}>📂 Adjuntos:</span>
+                        <select 
+                            className={styles.filterSelectCompact}
+                            value={hasAttachmentsFilter}
+                            onChange={(e) => setHasAttachmentsFilter(e.target.value as any)}
+                        >
+                            <option value="ALL">Todos</option>
+                            <option value="WITH">Con Archivos</option>
+                            <option value="WITHOUT">Sin Archivos</option>
+                        </select>
+                    </div>
+
                     <div className={styles.filterGroupCompact} style={{marginLeft: '0.5rem'}}>
                         <span className={styles.countTextCompact}>{filteredLeads.length} Items</span>
                         <div className={styles.pulseDot}></div>
@@ -657,213 +848,328 @@ export default function ProspectosPage() {
                             <button type="button" onClick={() => setIsCreating(false)} className={styles.modalClose}>✕</button>
                         </div>
 
-                        <form onSubmit={handleCreateLead} className={styles.formContainer}>
-                            <div className={styles.formGrid}>
-                                <div className={styles.inputGroup}>
-                                    <label className={styles.inputLabel}>Nombre del Contacto</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        placeholder="Ej. Juan Pérez"
-                                        value={formData.name}
-                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                        className={styles.input}
-                                    />
-                                </div>
-                                <div className={styles.inputGroup}>
-                                    <label className={styles.inputLabel}>Nombre de Empresa</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Ej. Brecomp"
-                                        value={formData.company}
-                                        onChange={e => setFormData({ ...formData, company: e.target.value })}
-                                        className={styles.input}
-                                    />
-                                </div>
-                            </div>
+                        {/* Segmented Control / Tabs */}
+                        <div className={styles.modalTabs}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setModalTab('manual');
+                                    setExcelFile(null);
+                                    setExcelError(null);
+                                }}
+                                className={`${styles.modalTabButton} ${modalTab === 'manual' ? styles.modalTabButtonActive : ''}`}
+                            >
+                                Crear Manualmente
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setModalTab('excel');
+                                }}
+                                className={`${styles.modalTabButton} ${modalTab === 'excel' ? styles.modalTabButtonActive : ''}`}
+                            >
+                                Subir desde Excel
+                            </button>
+                        </div>
 
-                            <div className={styles.formGrid} style={{ marginTop: '1.5rem' }}>
-                                <div className={styles.inputGroup}>
-                                    <label className={styles.inputLabel}>Email Corporativo</label>
-                                    <input
-                                        type="email"
-                                        placeholder="juan@empresa.com"
-                                        value={formData.email}
-                                        onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                        className={styles.input}
-                                    />
+                        {modalTab === 'manual' ? (
+                            <form onSubmit={handleCreateLead} className={styles.formContainer}>
+                                <div className={styles.formGrid}>
+                                    <div className={styles.inputGroup}>
+                                        <label className={styles.inputLabel}>Nombre del Contacto</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder="Ej. Juan Pérez"
+                                            value={formData.name}
+                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                            className={styles.input}
+                                        />
+                                    </div>
+                                    <div className={styles.inputGroup}>
+                                        <label className={styles.inputLabel}>Nombre de Empresa</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Ej. Brecomp"
+                                            value={formData.company}
+                                            onChange={e => setFormData({ ...formData, company: e.target.value })}
+                                            className={styles.input}
+                                        />
+                                    </div>
                                 </div>
-                                <div className={styles.inputGroup}>
-                                    <label className={styles.inputLabel}>WhatsApp de Contacto</label>
-                                    <input
-                                        type="tel"
-                                        placeholder="+51 9.. ... ..."
-                                        value={formData.phone}
-                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                        className={styles.input}
-                                    />
-                                </div>
-                            </div>
 
-                            <div className={styles.formGrid} style={{ marginTop: '1.5rem' }}>
-                                <div className={styles.inputGroup}>
-                                    <label className={styles.inputLabel}>Modelo de Entrega</label>
+                                <div className={styles.formGrid} style={{ marginTop: '1.5rem' }}>
+                                    <div className={styles.inputGroup}>
+                                        <label className={styles.inputLabel}>Email Corporativo</label>
+                                        <input
+                                            type="email"
+                                            placeholder="juan@empresa.com"
+                                            value={formData.email}
+                                            onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                            className={styles.input}
+                                        />
+                                    </div>
+                                    <div className={styles.inputGroup}>
+                                        <label className={styles.inputLabel}>WhatsApp de Contacto</label>
+                                        <input
+                                            type="tel"
+                                            placeholder="+51 9.. ... ..."
+                                            value={formData.phone}
+                                            onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                            className={styles.input}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className={styles.formGrid} style={{ marginTop: '1.5rem' }}>
+                                    <div className={styles.inputGroup}>
+                                        <label className={styles.inputLabel}>Modelo de Entrega</label>
+                                        <select
+                                            value={formData.delivery_model}
+                                            onChange={e => setFormData({ ...formData, delivery_model: e.target.value as DeliveryModel })}
+                                            className={styles.input}
+                                        >
+                                            <option value="ADVISORY">ADVISORY</option>
+                                            <option value="IMPLEMENTATION">IMPLEMENTATION</option>
+                                            <option value="MANAGED_SERVICES">MANAGED SERVICES</option>
+                                            <option value="STAFF_AUGMENTATION">STAFF AUGMENTATION</option>
+                                        </select>
+                                    </div>
+                                    <div className={styles.inputGroup}>
+                                        <label className={styles.inputLabel}>Capacidad</label>
+                                        <select
+                                            value={formData.capability}
+                                            onChange={e => setFormData({ ...formData, capability: e.target.value as Capability })}
+                                            className={styles.input}
+                                        >
+                                            <option value="SOFTWARE">💻 Software & Apps</option>
+                                            <option value="AI">🤖 IA & Data Science</option>
+                                            <option value="MARKETING">📣 Marketing & Growth</option>
+                                            <option value="CLOUD">☁️ Cloud & Infra</option>
+                                            <option value="ERP">🏢 ERP & Business</option>
+                                            <option value="DATA">📊 Data Analytics</option>
+                                            <option value="PMO">📋 PMO & Governance</option>
+                                            <option value="AUTOMATION">⚡ Automation / RPA</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className={styles.inputGroup} style={{ marginTop: '1.5rem' }}>
+                                    <label className={styles.inputLabel}>Necesidad / Dolor Detectado</label>
+                                    <textarea
+                                        rows={3}
+                                        placeholder="¿Qué problema estamos resolviendo?"
+                                        value={formData.project_desc}
+                                        onChange={e => setFormData({ ...formData, project_desc: e.target.value })}
+                                        className={styles.input}
+                                        style={{ resize: 'vertical', minHeight: '80px' }}
+                                    />
+                                </div>
+
+                                <div className={styles.formGrid} style={{ marginTop: '1.5rem' }}>
+                                    <div className={styles.inputGroup}>
+                                        <label className={styles.inputLabel}>LinkedIn de Empresa</label>
+                                        <input
+                                            type="url"
+                                            placeholder="https://linkedin.com/company/..."
+                                            value={formData.company_linkedin}
+                                            onChange={e => setFormData({ ...formData, company_linkedin: e.target.value })}
+                                            className={styles.input}
+                                        />
+                                    </div>
+                                    <div className={styles.inputGroup}>
+                                        <label className={styles.inputLabel}>Rubro Principal</label>
+                                        <select
+                                            value={formData.rubro_principal}
+                                            onChange={e => setFormData({ ...formData, rubro_principal: e.target.value })}
+                                            className={styles.input}
+                                        >
+                                            <option value="">-- Seleccionar Rubro --</option>
+                                            {Object.entries(RUBROS_CATALOG).map(([key, info]) => (
+                                                <option key={key} value={info.name}>{info.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className={styles.inputGroup} style={{ marginTop: '1.5rem' }}>
+                                    <label className={styles.inputLabel}>Clasificación del Lead</label>
+                                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '4px' }}>
+                                        {[
+                                            { val: 'caliente', label: '🔥 Caliente', color: '#fee2e2', border: '#fca5a5', text: '#b91c1c', activeBg: '#ef4444', activeText: '#ffffff' },
+                                            { val: 'tibio', label: '⚡ Tibio', color: '#ffedd5', border: '#fdba74', text: '#c2410c', activeBg: '#f97316', activeText: '#ffffff' },
+                                            { val: 'frio', label: '❄️ Frío', color: '#dbeafe', border: '#93c5fd', text: '#1d4ed8', activeBg: '#3b82f6', activeText: '#ffffff' }
+                                        ].map(item => {
+                                            const isSelected = formData.prioridad_lead === item.val;
+                                            return (
+                                                <button
+                                                    key={item.val}
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, prioridad_lead: item.val as any })}
+                                                    style={{
+                                                        flex: 1,
+                                                        padding: '10px 16px',
+                                                        borderRadius: '12px',
+                                                        border: `1.5px solid ${isSelected ? item.activeBg : item.border}`,
+                                                        background: isSelected ? item.activeBg : item.color,
+                                                        color: isSelected ? item.activeText : item.text,
+                                                        fontWeight: 'bold',
+                                                        fontSize: '12px',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s ease',
+                                                        textAlign: 'center',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        boxShadow: isSelected ? `0 4px 10px rgba(0,0,0,0.1)` : 'none'
+                                                    }}
+                                                >
+                                                    {item.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                <div className={styles.inputGroup} style={{ marginTop: '1.5rem' }}>
+                                    <label className={styles.inputLabel}>Comentarios Comerciales</label>
+                                    <textarea
+                                        rows={2}
+                                        placeholder="Comentarios o notas adicionales sobre el contacto..."
+                                        value={formData.comentarios}
+                                        onChange={e => setFormData({ ...formData, comentarios: e.target.value })}
+                                        className={styles.input}
+                                        style={{ resize: 'vertical', minHeight: '60px' }}
+                                    />
+                                </div>
+
+                                <div className={styles.inputGroup} style={{ marginTop: '1.5rem' }}>
+                                    <label className={styles.inputLabel}>Asignar a (Pilar Destino)</label>
                                     <select
-                                        value={formData.delivery_model}
-                                        onChange={e => setFormData({ ...formData, delivery_model: e.target.value as DeliveryModel })}
+                                        value={formData.targetDomain}
+                                        onChange={e => setFormData({ ...formData, targetDomain: e.target.value as Domain })}
                                         className={styles.input}
                                     >
-                                        <option value="ADVISORY">ADVISORY</option>
-                                        <option value="IMPLEMENTATION">IMPLEMENTATION</option>
-                                        <option value="MANAGED_SERVICES">MANAGED SERVICES</option>
-                                        <option value="STAFF_AUGMENTATION">STAFF AUGMENTATION</option>
-                                    </select>
-                                </div>
-                                <div className={styles.inputGroup}>
-                                    <label className={styles.inputLabel}>Capacidad</label>
-                                    <select
-                                        value={formData.capability}
-                                        onChange={e => setFormData({ ...formData, capability: e.target.value as Capability })}
-                                        className={styles.input}
-                                    >
-                                        <option value="SOFTWARE">💻 Software & Apps</option>
-                                        <option value="AI">🤖 IA & Data Science</option>
-                                        <option value="MARKETING">📣 Marketing & Growth</option>
-                                        <option value="CLOUD">☁️ Cloud & Infra</option>
-                                        <option value="ERP">🏢 ERP & Business</option>
-                                        <option value="DATA">📊 Data Analytics</option>
-                                        <option value="PMO">📋 PMO & Governance</option>
-                                        <option value="AUTOMATION">⚡ Automation / RPA</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className={styles.inputGroup} style={{ marginTop: '1.5rem' }}>
-                                <label className={styles.inputLabel}>Necesidad / Dolor Detectado</label>
-                                <textarea
-                                    rows={3}
-                                    placeholder="¿Qué problema estamos resolviendo?"
-                                    value={formData.project_desc}
-                                    onChange={e => setFormData({ ...formData, project_desc: e.target.value })}
-                                    className={styles.input}
-                                    style={{ resize: 'vertical', minHeight: '80px' }}
-                                />
-                            </div>
-
-                            <div className={styles.formGrid} style={{ marginTop: '1.5rem' }}>
-                                <div className={styles.inputGroup}>
-                                    <label className={styles.inputLabel}>LinkedIn de Empresa</label>
-                                    <input
-                                        type="url"
-                                        placeholder="https://linkedin.com/company/..."
-                                        value={formData.company_linkedin}
-                                        onChange={e => setFormData({ ...formData, company_linkedin: e.target.value })}
-                                        className={styles.input}
-                                    />
-                                </div>
-                                <div className={styles.inputGroup}>
-                                    <label className={styles.inputLabel}>Rubro Principal</label>
-                                    <select
-                                        value={formData.rubro_principal}
-                                        onChange={e => setFormData({ ...formData, rubro_principal: e.target.value })}
-                                        className={styles.input}
-                                    >
-                                        <option value="">-- Seleccionar Rubro --</option>
-                                        {Object.entries(RUBROS_CATALOG).map(([key, info]) => (
-                                            <option key={key} value={info.name}>{info.name}</option>
+                                        {targetDomainOptions.map(domain => (
+                                            <option key={domain} value={domain}>
+                                                {domain === 'GROW' ? '📈 GROW (Ventas / Comercial)' :
+                                                    domain === 'OPERATIONS' ? '⚙️ OPERATIONS (Delivery)' :
+                                                        '🤝 SUPPORT (Postventa / Mant.)'}
+                                            </option>
                                         ))}
                                     </select>
+                                    <p className={styles.inputHint}>
+                                        Al asignar, el Lead comenzará en el primer estado de ese dominio.
+                                    </p>
                                 </div>
-                            </div>
 
-                            <div className={styles.inputGroup} style={{ marginTop: '1.5rem' }}>
-                                <label className={styles.inputLabel}>Clasificación del Lead</label>
-                                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '4px' }}>
-                                    {[
-                                        { val: 'caliente', label: '🔥 Caliente', color: '#fee2e2', border: '#fca5a5', text: '#b91c1c', activeBg: '#ef4444', activeText: '#ffffff' },
-                                        { val: 'tibio', label: '⚡ Tibio', color: '#ffedd5', border: '#fdba74', text: '#c2410c', activeBg: '#f97316', activeText: '#ffffff' },
-                                        { val: 'frio', label: '❄️ Frío', color: '#dbeafe', border: '#93c5fd', text: '#1d4ed8', activeBg: '#3b82f6', activeText: '#ffffff' }
-                                    ].map(item => {
-                                        const isSelected = formData.prioridad_lead === item.val;
-                                        return (
-                                            <button
-                                                key={item.val}
-                                                type="button"
-                                                onClick={() => setFormData({ ...formData, prioridad_lead: item.val as any })}
-                                                style={{
-                                                    flex: 1,
-                                                    padding: '10px 16px',
-                                                    borderRadius: '12px',
-                                                    border: `1.5px solid ${isSelected ? item.activeBg : item.border}`,
-                                                    background: isSelected ? item.activeBg : item.color,
-                                                    color: isSelected ? item.activeText : item.text,
-                                                    fontWeight: 'bold',
-                                                    fontSize: '12px',
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s ease',
-                                                    textAlign: 'center',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    boxShadow: isSelected ? `0 4px 10px rgba(0,0,0,0.1)` : 'none'
-                                                }}
-                                            >
-                                                {item.label}
-                                            </button>
-                                        );
-                                    })}
+                                <div className={styles.formActions} style={{ marginTop: '1.5rem' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsCreating(false)}
+                                        className={styles.btnSecondary}
+                                    >
+                                        DESCARTAR
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={createLoading}
+                                        className={styles.btnPrimary}
+                                    >
+                                        {createLoading ? '...' : 'GUARDAR EN PIPELINE'}
+                                    </button>
                                 </div>
-                            </div>
+                            </form>
+                        ) : (
+                            <form onSubmit={handleUploadExcel} className={styles.formContainer}>
+                                <div className={styles.excelImportWrapper}>
+                                    <div className={styles.importInstructions}>
+                                        <p>
+                                            Puedes subir una lista de prospectos desde un archivo de Excel (.xlsx, .xls) o CSV (.csv). 
+                                            El archivo debe respetar la estructura de la plantilla y contener como máximo <strong>500 registros</strong> de datos.
+                                        </p>
+                                        <p style={{ fontSize: '11px', color: '#636366', marginTop: '-4px', lineHeight: '1.4' }}>
+                                            💡 La plantilla descargada incluye una pestaña adicional llamada <strong>"Opciones de Selección"</strong> que contiene todos los valores válidos para las columnas con opciones desglosables (Modelo de Entrega, Capacidad, Rubro Principal y Prioridad).
+                                        </p>
+                                        <button 
+                                            type="button" 
+                                            onClick={handleDownloadTemplate}
+                                            className={styles.btnTemplateDownload}
+                                        >
+                                            📥 Descargar Plantilla Excel
+                                        </button>
+                                    </div>
 
-                            <div className={styles.inputGroup} style={{ marginTop: '1.5rem' }}>
-                                <label className={styles.inputLabel}>Comentarios Comerciales</label>
-                                <textarea
-                                    rows={2}
-                                    placeholder="Comentarios o notas adicionales sobre el contacto..."
-                                    value={formData.comentarios}
-                                    onChange={e => setFormData({ ...formData, comentarios: e.target.value })}
-                                    className={styles.input}
-                                    style={{ resize: 'vertical', minHeight: '60px' }}
-                                />
-                            </div>
+                                    <div 
+                                        className={`${styles.dragDropZone} ${excelFile ? styles.dragDropZoneActive : ''}`}
+                                        onDragOver={(e) => e.preventDefault()}
+                                        onDrop={(e) => {
+                                            e.preventDefault();
+                                            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                                                handleFileChange(e.dataTransfer.files[0]);
+                                            }
+                                        }}
+                                    >
+                                        <input 
+                                            type="file" 
+                                            id="excelFileInput"
+                                            accept=".xlsx,.xls,.csv"
+                                            onChange={(e) => {
+                                                if (e.target.files && e.target.files[0]) {
+                                                    handleFileChange(e.target.files[0]);
+                                                }
+                                            }}
+                                            className={styles.fileInputHidden}
+                                        />
+                                        <label htmlFor="excelFileInput" className={styles.fileInputLabel}>
+                                            {excelFile ? (
+                                                <>
+                                                    <span className={styles.fileIcon}>📄</span>
+                                                    <span className={styles.fileName}>{excelFile.name}</span>
+                                                    <span className={styles.fileSize}>({(excelFile.size / 1024).toFixed(1)} KB)</span>
+                                                    <span className={styles.changeFileText}>Haga clic para cambiar de archivo</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className={styles.uploadIcon}>📤</span>
+                                                    <span className={styles.uploadTitle}>Arrastre y suelte el archivo aquí</span>
+                                                    <span className={styles.uploadSubtitle}>o haga clic para buscar en su equipo</span>
+                                                </>
+                                            )}
+                                        </label>
+                                    </div>
 
-                            <div className={styles.inputGroup} style={{ marginTop: '1.5rem' }}>
-                                <label className={styles.inputLabel}>Asignar a (Pilar Destino)</label>
-                                <select
-                                    value={formData.targetDomain}
-                                    onChange={e => setFormData({ ...formData, targetDomain: e.target.value as Domain })}
-                                    className={styles.input}
-                                >
-                                    {targetDomainOptions.map(domain => (
-                                        <option key={domain} value={domain}>
-                                            {domain === 'GROW' ? '📈 GROW (Ventas / Comercial)' :
-                                                domain === 'OPERATIONS' ? '⚙️ OPERATIONS (Delivery)' :
-                                                    '🤝 SUPPORT (Postventa / Mant.)'}
-                                        </option>
-                                    ))}
-                                </select>
-                                <p className={styles.inputHint}>
-                                    Al asignar, el Lead comenzará en el primer estado de ese dominio.
-                                </p>
-                            </div>
+                                    {excelError && (
+                                        <div className={styles.excelErrorBox}>
+                                            ⚠️ {excelError}
+                                        </div>
+                                    )}
+                                </div>
 
-                            <div className={styles.formActions} style={{ marginTop: '1.5rem' }}>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsCreating(false)}
-                                    className={styles.btnSecondary}
-                                >
-                                    DESCARTAR
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={createLoading}
-                                    className={styles.btnPrimary}
-                                >
-                                    {createLoading ? '...' : 'GUARDAR EN PIPELINE'}
-                                </button>
-                            </div>
-                        </form>
+                                <div className={styles.formActions} style={{ marginTop: '2rem' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsCreating(false);
+                                            setExcelFile(null);
+                                            setExcelError(null);
+                                            setModalTab('manual');
+                                        }}
+                                        className={styles.btnSecondary}
+                                        disabled={uploadLoading}
+                                    >
+                                        DESCARTAR
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={!excelFile || uploadLoading}
+                                        className={styles.btnPrimary}
+                                    >
+                                        {uploadLoading ? 'Cargando y Procesando...' : 'SUBIR Y REGISTRAR'}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
                     </div>
                 </div>
             )}
